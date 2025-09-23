@@ -1,0 +1,109 @@
+application {
+  config {
+    applicationType monolith
+    authenticationType oauth2
+    baseName espritLivre
+    buildTool maven
+    cacheProvider hazelcast
+    clientFramework no
+    creationTimestamp 1758653144865
+    databaseType sql
+    devDatabaseType postgresql
+    enableHibernateCache true
+    enableTranslation true
+    jhipsterVersion "8.11.0"
+    languages [fr, en]
+    microfrontends []
+    nativeLanguage fr
+    packageName com.oussamabenberkane.espritlivre
+    prodDatabaseType postgresql
+    reactive false
+    skipClient true
+    skipUserManagement true
+    testFrameworks []
+    websocket spring-websocket
+  }
+
+  entities Book, Like, Order, OrderItem, Tag
+}
+
+@ChangelogDate("20250923205031")
+entity Book {
+  title String required
+  author String
+  price BigDecimal
+  stockQuantity Integer
+  coverImageUrl String
+  description String maxlength(1000)
+  active Boolean
+  createdAt ZonedDateTime
+  updatedAt ZonedDateTime
+}
+@ChangelogDate("20250923211624")
+entity Like (jhi_like) {
+  createdAt ZonedDateTime
+}
+@ChangelogDate("20250923212539")
+entity Order (jhi_order) {
+  uniqueId String
+  status OrderStatus
+  totalAmount BigDecimal
+  shippingCost BigDecimal
+  shippingProvider ShippingProvider
+  shippingMethod ShippingMethod
+  fullName String
+  phone String required
+  email String
+  address String
+  createdAt ZonedDateTime
+  createdBy String
+  updatedAt ZonedDateTime
+}
+@ChangelogDate("20250923212846")
+entity OrderItem {
+  quantity Integer
+  unitPrice BigDecimal
+  totalPrice BigDecimal
+}
+@ChangelogDate("20250923211229")
+entity Tag {
+  nameEn String
+  nameFr String
+  type TagType
+  active Boolean
+}
+
+enum OrderStatus {
+  PENDING,
+  CONFIRMED,
+  SHIPPED,
+  DELIVERED,
+  CANCELLED
+}
+enum ShippingProvider {
+  YALIDINE,
+  ZR
+}
+enum ShippingMethod {
+  HOME_DELIVERY,
+  SHIPPING_PROVIDER
+}
+enum TagType {
+  ETIQUETTE,
+  CATEGORY,
+  MAIN_DISPLAY
+}
+
+relationship ManyToOne {
+  Like{book} to Book
+  OrderItem{order} to Order
+  OrderItem{book} to Book
+}
+relationship ManyToMany {
+  Tag{book} to Book
+}
+
+dto Book, Like, Order, OrderItem, Tag with mapstruct
+paginate Book, Like, Order, OrderItem, Tag with pagination
+service Book, Like, Order, OrderItem, Tag with serviceClass
+search Book, Like, Order, OrderItem, Tag with no
