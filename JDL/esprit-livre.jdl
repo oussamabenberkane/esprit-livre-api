@@ -96,6 +96,7 @@ enum TagType {
 
 relationship ManyToOne {
   Like{book} to Book
+  Order{user} to User
   OrderItem{order} to Order
   OrderItem{book} to Book
 }
