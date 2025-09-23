@@ -1,0 +1,3 @@
+org.springframework.test.context.ContextCustomizerFactory = \
+    com.oussamabenberkane.espritlivre.config.\
+    SqlTestContainersSpringContextCustomizerFactory
