@@ -1,10 +1,13 @@
 package com.oussamabenberkane.espritlivre.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -53,6 +56,11 @@ public class Book implements Serializable {
 
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "books")
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
+    private Set<Tag> tags = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -184,6 +192,37 @@ public class Book implements Serializable {
 
     public void setUpdatedAt(ZonedDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Set<Tag> getTags() {
+        return this.tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        if (this.tags != null) {
+            this.tags.forEach(i -> i.removeBook(this));
+        }
+        if (tags != null) {
+            tags.forEach(i -> i.addBook(this));
+        }
+        this.tags = tags;
+    }
+
+    public Book tags(Set<Tag> tags) {
+        this.setTags(tags);
+        return this;
+    }
+
+    public Book addTag(Tag tag) {
+        this.tags.add(tag);
+        tag.getBooks().add(this);
+        return this;
+    }
+
+    public Book removeTag(Tag tag) {
+        this.tags.remove(tag);
+        tag.getBooks().remove(this);
+        return this;
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here

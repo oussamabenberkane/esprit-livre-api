@@ -77,6 +77,8 @@ public class BookAsserts {
      * @param actual the actual entity
      */
     public static void assertBookUpdatableRelationshipsEquals(Book expected, Book actual) {
-        // empty method
+        assertThat(actual)
+            .as("Verify Book relationships")
+            .satisfies(a -> assertThat(a.getTags()).as("check tags").isEqualTo(expected.getTags()));
     }
 }

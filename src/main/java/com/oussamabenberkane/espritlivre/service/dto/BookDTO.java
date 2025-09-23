@@ -4,7 +4,9 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A DTO for the {@link com.oussamabenberkane.espritlivre.domain.Book} entity.
@@ -33,6 +35,8 @@ public class BookDTO implements Serializable {
     private ZonedDateTime createdAt;
 
     private ZonedDateTime updatedAt;
+
+    private Set<TagDTO> tags = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -114,6 +118,14 @@ public class BookDTO implements Serializable {
         this.updatedAt = updatedAt;
     }
 
+    public Set<TagDTO> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<TagDTO> tags) {
+        this.tags = tags;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -149,6 +161,7 @@ public class BookDTO implements Serializable {
             ", active='" + getActive() + "'" +
             ", createdAt='" + getCreatedAt() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +
+            ", tags=" + getTags() +
             "}";
     }
 }

@@ -1,0 +1,41 @@
+{
+  "annotations": {
+    "changelogDate": "20250923211229"
+  },
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "nameEn",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "nameFr",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "type",
+      "fieldType": "TagType",
+      "fieldValues": "ETIQUETTE,CATEGORY,MAIN_DISPLAY"
+    },
+    {
+      "fieldName": "active",
+      "fieldType": "Boolean"
+    }
+  ],
+  "jpaMetamodelFiltering": false,
+  "name": "Tag",
+  "pagination": "pagination",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityField": "id",
+      "otherEntityName": "book",
+      "otherEntityRelationshipName": "tag",
+      "relationshipName": "book",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

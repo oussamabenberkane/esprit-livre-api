@@ -371,7 +371,7 @@ class BookResourceIT {
         Book partialUpdatedBook = new Book();
         partialUpdatedBook.setId(book.getId());
 
-        partialUpdatedBook.stockQuantity(UPDATED_STOCK_QUANTITY).updatedAt(UPDATED_UPDATED_AT);
+        partialUpdatedBook.price(UPDATED_PRICE).stockQuantity(UPDATED_STOCK_QUANTITY).active(UPDATED_ACTIVE).updatedAt(UPDATED_UPDATED_AT);
 
         restBookMockMvc
             .perform(
