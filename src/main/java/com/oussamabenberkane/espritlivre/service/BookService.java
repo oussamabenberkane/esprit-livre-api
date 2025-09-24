@@ -4,13 +4,26 @@ import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookMapper;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import com.oussamabenberkane.espritlivre.service.specs.BookSpecifications;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * Service Implementation for managing {@link com.oussamabenberkane.espritlivre.domain.Book}.
@@ -22,6 +35,9 @@ public class BookService {
     private static final Logger LOG = LoggerFactory.getLogger(BookService.class);
 
     private final BookRepository bookRepository;
+
+    @PersistenceContext
+    private EntityManager em;
 
     private final BookMapper bookMapper;
 
@@ -56,36 +72,54 @@ public class BookService {
         return bookMapper.toDto(book);
     }
 
-    /**
-     * Partially update a book.
-     *
-     * @param bookDTO the entity to update partially.
-     * @return the persisted entity.
-     */
-    public Optional<BookDTO> partialUpdate(BookDTO bookDTO) {
-        LOG.debug("Request to partially update Book : {}", bookDTO);
+    @Transactional(readOnly = true)
+    public Page<BookDTO> findAll(
+        Pageable pageable,
+        String author,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Long categoryId,
+        Long mainDisplayId
+    ) {
+        LOG.debug("Request to get all Books with filters - author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}",
+            author, minPrice, maxPrice, categoryId, mainDisplayId);
 
-        return bookRepository
-            .findById(bookDTO.getId())
-            .map(existingBook -> {
-                bookMapper.partialUpdate(existingBook, bookDTO);
+        Specification<Book> spec = Specification.where(null);
 
-                return existingBook;
-            })
-            .map(bookRepository::save)
-            .map(bookMapper::toDto);
+        // Apply individual filters only if parameters are provided
+        if (StringUtils.hasText(author)) {
+            spec = spec.and(BookSpecifications.hasAuthor(author));
+        }
+
+        if (minPrice != null || maxPrice != null) {
+            spec = spec.and(BookSpecifications.hasPriceBetween(minPrice, maxPrice));
+        }
+
+        // Tag filtering - books that have EITHER category OR mainDisplay tag
+        if (categoryId != null || mainDisplayId != null) {
+            Specification<Book> tagSpec = buildTagSpecification(categoryId, mainDisplayId);
+            if (tagSpec != null) {
+                spec = spec.and(tagSpec);
+            }
+        }
+
+        Page<Book> books = bookRepository.findAll(spec, pageable);
+        return books.map(bookMapper::toDto);
     }
 
-    /**
-     * Get all the books.
-     *
-     * @param pageable the pagination information.
-     * @return the list of entities.
-     */
-    @Transactional(readOnly = true)
-    public Page<BookDTO> findAll(Pageable pageable) {
-        LOG.debug("Request to get all Books");
-        return bookRepository.findAll(pageable).map(bookMapper::toDto);
+    private Specification<Book> buildTagSpecification(Long categoryId, Long mainDisplayId) {
+        Specification<Book> tagSpec = null;
+
+        if (categoryId != null) {
+            tagSpec = BookSpecifications.hasCategory(categoryId);
+        }
+
+        if (mainDisplayId != null) {
+            Specification<Book> mainDisplaySpec = BookSpecifications.hasMainDisplay(mainDisplayId);
+            tagSpec = tagSpec != null ? tagSpec.or(mainDisplaySpec) : mainDisplaySpec;
+        }
+
+        return tagSpec;
     }
 
     /**

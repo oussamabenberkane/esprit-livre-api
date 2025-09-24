@@ -5,7 +5,11 @@ import com.oussamabenberkane.espritlivre.service.BookService;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -13,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -99,52 +104,20 @@ public class BookResource {
             .body(bookDTO);
     }
 
-    /**
-     * {@code PATCH  /books/:id} : Partial updates given fields of an existing book, field will ignore if it is null
-     *
-     * @param id the id of the bookDTO to save.
-     * @param bookDTO the bookDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated bookDTO,
-     * or with status {@code 400 (Bad Request)} if the bookDTO is not valid,
-     * or with status {@code 404 (Not Found)} if the bookDTO is not found,
-     * or with status {@code 500 (Internal Server Error)} if the bookDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
-     */
-    @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
-    public ResponseEntity<BookDTO> partialUpdateBook(
-        @PathVariable(value = "id", required = false) final Long id,
-        @NotNull @RequestBody BookDTO bookDTO
-    ) throws URISyntaxException {
-        LOG.debug("REST request to partial update Book partially : {}, {}", id, bookDTO);
-        if (bookDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
-        }
-        if (!Objects.equals(id, bookDTO.getId())) {
-            throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
-        }
-
-        if (!bookRepository.existsById(id)) {
-            throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
-        }
-
-        Optional<BookDTO> result = bookService.partialUpdate(bookDTO);
-
-        return ResponseUtil.wrapOrNotFound(
-            result,
-            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, bookDTO.getId().toString())
-        );
-    }
-
-    /**
-     * {@code GET  /books} : get all the books.
-     *
-     * @param pageable the pagination information.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of books in body.
-     */
     @GetMapping("")
-    public ResponseEntity<List<BookDTO>> getAllBooks(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
-        LOG.debug("REST request to get a page of Books");
-        Page<BookDTO> page = bookService.findAll(pageable);
+    public ResponseEntity<List<BookDTO>> getAllBooks(
+        @ParameterObject Pageable pageable,
+        @RequestParam(required = false) String author,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal minPrice,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
+        @RequestParam(required = false) @Min(1) Long categoryId,
+        @RequestParam(required = false) @Min(1) Long mainDisplayId
+    ) {
+        // Add price range validation
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new IllegalArgumentException("minPrice cannot be greater than maxPrice");
+        }
+        Page<BookDTO> page = bookService.findAll(pageable, author, minPrice, maxPrice, categoryId, mainDisplayId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
