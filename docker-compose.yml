@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: espritlivre-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=espritlivre-dev-db
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - espritlivre_postgres_data:/var/lib/postgresql/data
+    networks:
+      - espritlivre-network
+
+volumes:
+  espritlivre_postgres_data:
+    name: espritlivre_postgres_data
+
+networks:
+  espritlivre-network:

@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.web.rest;
 
+import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import com.oussamabenberkane.espritlivre.repository.TagRepository;
 import com.oussamabenberkane.espritlivre.service.TagService;
 import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
@@ -96,60 +97,18 @@ public class TagResource {
     }
 
     /**
-     * {@code PATCH  /tags/:id} : Partial updates given fields of an existing tag, field will ignore if it is null
+     * {@code GET  /tags} : get all active tags by type.
      *
-     * @param id the id of the tagDTO to save.
-     * @param tagDTO the tagDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO,
-     * or with status {@code 400 (Bad Request)} if the tagDTO is not valid,
-     * or with status {@code 404 (Not Found)} if the tagDTO is not found,
-     * or with status {@code 500 (Internal Server Error)} if the tagDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
-     */
-    @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
-    public ResponseEntity<TagDTO> partialUpdateTag(@PathVariable(value = "id", required = false) final Long id, @RequestBody TagDTO tagDTO)
-        throws URISyntaxException {
-        LOG.debug("REST request to partial update Tag partially : {}, {}", id, tagDTO);
-        if (tagDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
-        }
-        if (!Objects.equals(id, tagDTO.getId())) {
-            throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
-        }
-
-        if (!tagRepository.existsById(id)) {
-            throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
-        }
-
-        Optional<TagDTO> result = tagService.partialUpdate(tagDTO);
-
-        return ResponseUtil.wrapOrNotFound(
-            result,
-            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, tagDTO.getId().toString())
-        );
-    }
-
-    /**
-     * {@code GET  /tags} : get all the tags.
-     *
-     * @param pageable the pagination information.
-     * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).
+     * @param type the tag type (required).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of tags in body.
      */
     @GetMapping("")
     public ResponseEntity<List<TagDTO>> getAllTags(
-        @org.springdoc.core.annotations.ParameterObject Pageable pageable,
-        @RequestParam(name = "eagerload", required = false, defaultValue = "true") boolean eagerload
+        @RequestParam(name = "type") TagType type
     ) {
-        LOG.debug("REST request to get a page of Tags");
-        Page<TagDTO> page;
-        if (eagerload) {
-            page = tagService.findAllWithEagerRelationships(pageable);
-        } else {
-            page = tagService.findAll(pageable);
-        }
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        LOG.debug("REST request to get all Tags with type: {}", type);
+        List<TagDTO> tags = tagService.findAllByType(type);
+        return ResponseEntity.ok().body(tags);
     }
 
     /**
