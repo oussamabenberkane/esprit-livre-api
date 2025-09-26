@@ -1,0 +1,48 @@
+-- Sample data for Book, Tag, User and Authority entities
+-- This script inserts users, authorities, 5 books and 10 tags with proper relationships
+
+-- Insert Tags (using custom sequence starting from 1)
+INSERT INTO tag (id, name_en, name_fr, type, active) VALUES
+-- Main Display Tags (3)
+(1, 'On promotion this week', 'En promotion cette semaine', 'MAIN_DISPLAY', true),
+(2, 'New arrivals', 'Nouveautés', 'MAIN_DISPLAY', true),
+(3, 'Bestsellers', 'Meilleures ventes', 'MAIN_DISPLAY', true),
+
+-- Etiquette Tags (3)
+(4, 'Favorite pick', 'Coup de cœur', 'ETIQUETTE', true),
+(5, 'Must read', 'À lire absolument', 'ETIQUETTE', true),
+(6, 'Hidden gem', 'Perle rare', 'ETIQUETTE', true),
+
+-- Category Tags (4)
+(7, 'Romance', 'Romance', 'CATEGORY', true),
+(8, 'Science Fiction', 'Science-Fiction', 'CATEGORY', true),
+(9, 'Mystery', 'Mystère', 'CATEGORY', true),
+(10, 'Fantasy', 'Fantastique', 'CATEGORY', true);
+
+-- Insert Books (using custom sequence starting from 1)
+INSERT INTO book (id, title, author, price, stock_quantity, cover_image_url, description, active, created_at, updated_at) VALUES
+(1, 'The Time Traveler''s Wife', 'Audrey Niffenegger', 15.99, 25, 'https://example.com/cover1.jpg', 'A romantic science fiction novel about love transcending time.', true, NOW(), NOW()),
+(2, 'Dune', 'Frank Herbert', 18.50, 15, 'https://example.com/cover2.jpg', 'Epic science fiction novel set in a distant future.', true, NOW(), NOW()),
+(3, 'Gone Girl', 'Gillian Flynn', 14.75, 30, 'https://example.com/cover3.jpg', 'Psychological thriller about a marriage gone wrong.', true, NOW(), NOW()),
+(4, 'The Name of the Wind', 'Patrick Rothfuss', 16.99, 20, 'https://example.com/cover4.jpg', 'Fantasy novel about a legendary figure telling his story.', true, NOW(), NOW()),
+(5, 'Pride and Prejudice', 'Jane Austen', 12.99, 40, 'https://example.com/cover5.jpg', 'Classic romance novel about Elizabeth Bennet and Mr. Darcy.', true, NOW(), NOW());
+
+-- Link Books to Tags (each book gets one tag of each type: MAIN_DISPLAY, ETIQUETTE, CATEGORY)
+INSERT INTO rel_tag__book (tag_id, book_id) VALUES
+-- Book 1 (The Time Traveler's Wife): On promotion + Favorite pick + Romance
+(1, 1), (4, 1), (7, 1),
+-- Book 2 (Dune): New arrivals + Must read + Science Fiction
+(2, 2), (5, 2), (8, 2),
+-- Book 3 (Gone Girl): Bestsellers + Hidden gem + Mystery
+(3, 3), (6, 3), (9, 3),
+-- Book 4 (The Name of the Wind): On promotion + Favorite pick + Fantasy
+(1, 4), (4, 4), (10, 4),
+-- Book 5 (Pride and Prejudice): New arrivals + Must read + Romance
+(2, 5), (5, 5), (7, 5);
+
+-- Update sequences to continue from next available values
+ALTER SEQUENCE book_seq RESTART WITH 6;
+ALTER SEQUENCE tag_seq RESTART WITH 11;
+ALTER SEQUENCE like_seq RESTART WITH 1;
+ALTER SEQUENCE order_seq RESTART WITH 1;
+ALTER SEQUENCE order_item_seq RESTART WITH 1;

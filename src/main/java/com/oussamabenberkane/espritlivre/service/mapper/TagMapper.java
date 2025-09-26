@@ -13,19 +13,10 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface TagMapper extends EntityMapper<TagDTO, Tag> {
-    @Mapping(target = "books", source = "books", qualifiedByName = "bookIdSet")
+    @Override
+    @Mapping(target = "books", ignore = true)
     TagDTO toDto(Tag s);
 
     @Mapping(target = "removeBook", ignore = true)
     Tag toEntity(TagDTO tagDTO);
-
-    @Named("bookId")
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id", source = "id")
-    BookDTO toDtoBookId(Book book);
-
-    @Named("bookIdSet")
-    default Set<BookDTO> toDtoBookIdSet(Set<Book> book) {
-        return book.stream().map(this::toDtoBookId).collect(Collectors.toSet());
-    }
 }
