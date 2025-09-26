@@ -3,6 +3,7 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.service.BookService;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
+import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -107,6 +108,7 @@ public class BookResource {
     @GetMapping("")
     public ResponseEntity<List<BookDTO>> getAllBooks(
         @ParameterObject Pageable pageable,
+        @RequestParam(required = false) String search,
         @RequestParam(required = false) String author,
         @RequestParam(required = false) @DecimalMin("0") BigDecimal minPrice,
         @RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
@@ -115,11 +117,24 @@ public class BookResource {
     ) {
         // Add price range validation
         if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
-            throw new IllegalArgumentException("minPrice cannot be greater than maxPrice");
+            throw new BadRequestAlertException("minPrice cannot be greater than maxPrice", "Book", "min_price_greater_than_max_price");
         }
-        Page<BookDTO> page = bookService.findAll(pageable, author, minPrice, maxPrice, categoryId, mainDisplayId);
+        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /books/suggestions} : get search suggestions.
+     *
+     * @param q the search term to get suggestions for.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the list of suggestions.
+     */
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<BookSuggestionDTO>> getSuggestions(@RequestParam("q") String q) {
+        LOG.debug("REST request to get suggestions for term : {}", q);
+        List<BookSuggestionDTO> suggestions = bookService.getSuggestions(q);
+        return ResponseEntity.ok().body(suggestions);
     }
 
     /**

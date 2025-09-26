@@ -57,26 +57,6 @@ public class OrderItemService {
     }
 
     /**
-     * Partially update a orderItem.
-     *
-     * @param orderItemDTO the entity to update partially.
-     * @return the persisted entity.
-     */
-    public Optional<OrderItemDTO> partialUpdate(OrderItemDTO orderItemDTO) {
-        LOG.debug("Request to partially update OrderItem : {}", orderItemDTO);
-
-        return orderItemRepository
-            .findById(orderItemDTO.getId())
-            .map(existingOrderItem -> {
-                orderItemMapper.partialUpdate(existingOrderItem, orderItemDTO);
-
-                return existingOrderItem;
-            })
-            .map(orderItemRepository::save)
-            .map(orderItemMapper::toDto);
-    }
-
-    /**
      * Get all the orderItems.
      *
      * @param pageable the pagination information.

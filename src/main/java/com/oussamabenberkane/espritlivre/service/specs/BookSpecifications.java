@@ -63,4 +63,26 @@ public class BookSpecifications {
     public static Specification<Book> hasMainDisplay(Long mainDisplayId) {
         return hasTagOfType(TagType.MAIN_DISPLAY, mainDisplayId);
     }
+
+    public static Specification<Book> searchByText(String searchTerm) {
+        return (root, query, builder) -> {
+            if (searchTerm == null || searchTerm.trim().isEmpty()) {
+                return builder.conjunction();
+            }
+
+            String searchPattern = "%" + searchTerm.toLowerCase().trim() + "%";
+            query.distinct(true);
+
+            // Search in title and author
+            Predicate titleMatch = builder.like(builder.lower(root.get("title")), searchPattern);
+            Predicate authorMatch = builder.like(builder.lower(root.get("author")), searchPattern);
+
+            // Search in tag names (both English and French)
+            Join<Book, Tag> tagJoin = root.join("tags", JoinType.LEFT);
+            Predicate tagNameEnMatch = builder.like(builder.lower(tagJoin.get("nameEn")), searchPattern);
+            Predicate tagNameFrMatch = builder.like(builder.lower(tagJoin.get("nameFr")), searchPattern);
+
+            return builder.or(titleMatch, authorMatch, tagNameEnMatch, tagNameFrMatch);
+        };
+    }
 }

@@ -3,13 +3,16 @@ package com.oussamabenberkane.espritlivre.service;
 import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
+import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookMapper;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.oussamabenberkane.espritlivre.service.specs.BookSpecifications;
 import jakarta.persistence.EntityManager;
@@ -75,16 +78,22 @@ public class BookService {
     @Transactional(readOnly = true)
     public Page<BookDTO> findAll(
         Pageable pageable,
+        String search,
         String author,
         BigDecimal minPrice,
         BigDecimal maxPrice,
         Long categoryId,
         Long mainDisplayId
     ) {
-        LOG.debug("Request to get all Books with filters - author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}",
-            author, minPrice, maxPrice, categoryId, mainDisplayId);
+        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}",
+            search, author, minPrice, maxPrice, categoryId, mainDisplayId);
 
         Specification<Book> spec = Specification.where(null);
+
+        // Apply search filter if provided
+        if (StringUtils.hasText(search)) {
+            spec = spec.and(BookSpecifications.searchByText(search));
+        }
 
         // Apply individual filters only if parameters are provided
         if (StringUtils.hasText(author)) {
@@ -142,5 +151,81 @@ public class BookService {
     public void delete(Long id) {
         LOG.debug("Request to delete Book : {}", id);
         bookRepository.deleteById(id);
+    }
+
+    /**
+     * Get suggestions for search terms.
+     *
+     * @param searchTerm the search term to get suggestions for.
+     * @return the list of suggestions.
+     */
+    @Transactional(readOnly = true)
+    public List<BookSuggestionDTO> getSuggestions(String searchTerm) {
+        LOG.debug("Request to get suggestions for search term: {}", searchTerm);
+
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<BookSuggestionDTO> suggestions = new ArrayList<>();
+        String searchPattern = "%" + searchTerm.toLowerCase().trim() + "%";
+
+        // Get book title suggestions
+        String titleQuery = """
+            SELECT DISTINCT b.title
+            FROM Book b
+            WHERE LOWER(b.title) LIKE :searchPattern
+            ORDER BY b.title
+            """;
+
+        List<String> titles = em.createQuery(titleQuery, String.class)
+            .setParameter("searchPattern", searchPattern)
+            .setMaxResults(5)
+            .getResultList();
+
+        titles.forEach(title -> suggestions.add(
+            new BookSuggestionDTO(title, BookSuggestionDTO.SuggestionType.BOOK_TITLE)
+        ));
+
+        // Get author suggestions
+        String authorQuery = """
+            SELECT DISTINCT b.author
+            FROM Book b
+            WHERE LOWER(b.author) LIKE :searchPattern
+            AND b.author IS NOT NULL
+            ORDER BY b.author
+            """;
+
+        List<String> authors = em.createQuery(authorQuery, String.class)
+            .setParameter("searchPattern", searchPattern)
+            .setMaxResults(5)
+            .getResultList();
+
+        authors.forEach(author -> suggestions.add(
+            new BookSuggestionDTO(author, BookSuggestionDTO.SuggestionType.AUTHOR)
+        ));
+
+        // Get category suggestions (from tags)
+        String categoryQuery = """
+            SELECT DISTINCT t.nameEn
+            FROM Tag t
+            WHERE (LOWER(t.nameEn) LIKE :searchPattern OR LOWER(t.nameFr) LIKE :searchPattern)
+            AND t.type = com.oussamabenberkane.espritlivre.domain.enumeration.TagType.CATEGORY
+            ORDER BY t.nameEn
+            """;
+
+        List<String> categories = em.createQuery(categoryQuery, String.class)
+            .setParameter("searchPattern", searchPattern)
+            .setMaxResults(5)
+            .getResultList();
+
+        categories.forEach(category -> suggestions.add(
+            new BookSuggestionDTO(category, BookSuggestionDTO.SuggestionType.CATEGORY)
+        ));
+
+        return suggestions.stream()
+            .distinct()
+            .limit(15)
+            .collect(Collectors.toList());
     }
 }

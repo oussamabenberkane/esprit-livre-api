@@ -57,26 +57,6 @@ public class LikeService {
     }
 
     /**
-     * Partially update a like.
-     *
-     * @param likeDTO the entity to update partially.
-     * @return the persisted entity.
-     */
-    public Optional<LikeDTO> partialUpdate(LikeDTO likeDTO) {
-        LOG.debug("Request to partially update Like : {}", likeDTO);
-
-        return likeRepository
-            .findById(likeDTO.getId())
-            .map(existingLike -> {
-                likeMapper.partialUpdate(existingLike, likeDTO);
-
-                return existingLike;
-            })
-            .map(likeRepository::save)
-            .map(likeMapper::toDto);
-    }
-
-    /**
      * Get all the likes.
      *
      * @param pageable the pagination information.

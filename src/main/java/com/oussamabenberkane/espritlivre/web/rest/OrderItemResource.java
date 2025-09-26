@@ -98,42 +98,6 @@ public class OrderItemResource {
     }
 
     /**
-     * {@code PATCH  /order-items/:id} : Partial updates given fields of an existing orderItem, field will ignore if it is null
-     *
-     * @param id the id of the orderItemDTO to save.
-     * @param orderItemDTO the orderItemDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated orderItemDTO,
-     * or with status {@code 400 (Bad Request)} if the orderItemDTO is not valid,
-     * or with status {@code 404 (Not Found)} if the orderItemDTO is not found,
-     * or with status {@code 500 (Internal Server Error)} if the orderItemDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
-     */
-    @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
-    public ResponseEntity<OrderItemDTO> partialUpdateOrderItem(
-        @PathVariable(value = "id", required = false) final Long id,
-        @RequestBody OrderItemDTO orderItemDTO
-    ) throws URISyntaxException {
-        LOG.debug("REST request to partial update OrderItem partially : {}, {}", id, orderItemDTO);
-        if (orderItemDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
-        }
-        if (!Objects.equals(id, orderItemDTO.getId())) {
-            throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
-        }
-
-        if (!orderItemRepository.existsById(id)) {
-            throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
-        }
-
-        Optional<OrderItemDTO> result = orderItemService.partialUpdate(orderItemDTO);
-
-        return ResponseUtil.wrapOrNotFound(
-            result,
-            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, orderItemDTO.getId().toString())
-        );
-    }
-
-    /**
      * {@code GET  /order-items} : get all the orderItems.
      *
      * @param pageable the pagination information.

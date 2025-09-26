@@ -22,8 +22,6 @@ public class TagDTO implements Serializable {
 
     private Boolean active;
 
-    private Set<BookDTO> books = new HashSet<>();
-
     public Long getId() {
         return id;
     }
@@ -64,24 +62,15 @@ public class TagDTO implements Serializable {
         this.active = active;
     }
 
-    public Set<BookDTO> getBooks() {
-        return books;
-    }
-
-    public void setBooks(Set<BookDTO> books) {
-        this.books = books;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TagDTO)) {
+        if (!(o instanceof TagDTO tagDTO)) {
             return false;
         }
 
-        TagDTO tagDTO = (TagDTO) o;
         if (this.id == null) {
             return false;
         }
@@ -102,7 +91,6 @@ public class TagDTO implements Serializable {
             ", nameFr='" + getNameFr() + "'" +
             ", type='" + getType() + "'" +
             ", active='" + getActive() + "'" +
-            ", books=" + getBooks() +
             "}";
     }
 }

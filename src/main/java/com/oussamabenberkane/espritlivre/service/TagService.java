@@ -61,26 +61,6 @@ public class TagService {
     }
 
     /**
-     * Partially update a tag.
-     *
-     * @param tagDTO the entity to update partially.
-     * @return the persisted entity.
-     */
-    public Optional<TagDTO> partialUpdate(TagDTO tagDTO) {
-        LOG.debug("Request to partially update Tag : {}", tagDTO);
-
-        return tagRepository
-            .findById(tagDTO.getId())
-            .map(existingTag -> {
-                tagMapper.partialUpdate(existingTag, tagDTO);
-
-                return existingTag;
-            })
-            .map(tagRepository::save)
-            .map(tagMapper::toDto);
-    }
-
-    /**
      * Get all the tags.
      *
      * @param pageable the pagination information.
