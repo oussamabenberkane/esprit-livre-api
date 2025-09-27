@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.specs;
 
+import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
@@ -13,13 +14,14 @@ import java.util.List;
 
 public class BookSpecifications {
 
-    public static Specification<Book> hasAuthor(String author) {
+    public static Specification<Book> hasAuthor(String authorName) {
         return (root, query, builder) -> {
-            if (author == null || author.trim().isEmpty()) {
+            if (authorName == null || authorName.trim().isEmpty()) {
                 return builder.conjunction();
             }
-            return builder.like(builder.lower(root.get("author")),
-                "%" + author.toLowerCase().trim() + "%");
+            Join<Book, Author> authorJoin = root.join("author", JoinType.INNER);
+            return builder.like(builder.lower(authorJoin.get("name")),
+                "%" + authorName.toLowerCase().trim() + "%");
         };
     }
 
@@ -75,7 +77,10 @@ public class BookSpecifications {
 
             // Search in title and author
             Predicate titleMatch = builder.like(builder.lower(root.get("title")), searchPattern);
-            Predicate authorMatch = builder.like(builder.lower(root.get("author")), searchPattern);
+
+            // Search in author name
+            Join<Book, Author> authorJoin = root.join("author", JoinType.LEFT);
+            Predicate authorMatch = builder.like(builder.lower(authorJoin.get("name")), searchPattern);
 
             // Search in tag names (both English and French)
             Join<Book, Tag> tagJoin = root.join("tags", JoinType.LEFT);

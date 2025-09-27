@@ -32,8 +32,9 @@ public class Book implements Serializable {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "author")
-    private String author;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
+    private Author author;
 
     @Column(name = "price", precision = 21, scale = 2)
     private BigDecimal price;
@@ -90,16 +91,16 @@ public class Book implements Serializable {
         this.title = title;
     }
 
-    public String getAuthor() {
+    public Author getAuthor() {
         return this.author;
     }
 
-    public Book author(String author) {
+    public Book author(Author author) {
         this.setAuthor(author);
         return this;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(Author author) {
         this.author = author;
     }
 
@@ -250,7 +251,7 @@ public class Book implements Serializable {
         return "Book{" +
             "id=" + getId() +
             ", title='" + getTitle() + "'" +
-            ", author='" + getAuthor() + "'" +
+            ", author=" + getAuthor() +
             ", price=" + getPrice() +
             ", stockQuantity=" + getStockQuantity() +
             ", coverImageUrl='" + getCoverImageUrl() + "'" +

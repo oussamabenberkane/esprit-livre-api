@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <!--
+        Update Book entity to use Author relationship.
+    -->
+    <changeSet id="20250926220002-1" author="jhipster">
+        <!-- Add author_id column to book table -->
+        <addColumn tableName="book">
+            <column name="author_id" type="bigint"/>
+        </addColumn>
+
+        <!-- Add foreign key constraint -->
+        <addForeignKeyConstraint baseColumnNames="author_id"
+                                 baseTableName="book"
+                                 constraintName="fk_book__author_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="author"/>
+    </changeSet>
+
+    <changeSet id="20250926220002-2" author="jhipster">
+        <!-- Remove the old author string column -->
+        <dropColumn tableName="book">
+            <column name="author"/>
+        </dropColumn>
+    </changeSet>
+
+    <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
+</databaseChangeLog>

@@ -189,11 +189,10 @@ public class BookService {
 
         // Get author suggestions
         String authorQuery = """
-            SELECT DISTINCT b.author
-            FROM Book b
-            WHERE LOWER(b.author) LIKE :searchPattern
-            AND b.author IS NOT NULL
-            ORDER BY b.author
+            SELECT DISTINCT a.name
+            FROM Author a
+            WHERE LOWER(a.name) LIKE :searchPattern
+            ORDER BY a.name
             """;
 
         List<String> authors = em.createQuery(authorQuery, String.class)

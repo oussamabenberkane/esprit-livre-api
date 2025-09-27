@@ -19,7 +19,7 @@ public class BookDTO implements Serializable {
     @NotNull
     private String title;
 
-    private String author;
+    private AuthorDTO author;
 
     private BigDecimal price;
 
@@ -54,11 +54,11 @@ public class BookDTO implements Serializable {
         this.title = title;
     }
 
-    public String getAuthor() {
+    public AuthorDTO getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(AuthorDTO author) {
         this.author = author;
     }
 
@@ -153,7 +153,7 @@ public class BookDTO implements Serializable {
         return "BookDTO{" +
             "id=" + getId() +
             ", title='" + getTitle() + "'" +
-            ", author='" + getAuthor() + "'" +
+            ", author=" + getAuthor() +
             ", price=" + getPrice() +
             ", stockQuantity=" + getStockQuantity() +
             ", coverImageUrl='" + getCoverImageUrl() + "'" +

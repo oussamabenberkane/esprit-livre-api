@@ -1,7 +1,9 @@
 package com.oussamabenberkane.espritlivre.service.mapper;
 
+import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.Tag;
+import com.oussamabenberkane.espritlivre.service.dto.AuthorDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import java.util.Set;
@@ -13,6 +15,7 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface BookMapper extends EntityMapper<BookDTO, Book> {
+    @Mapping(target = "author", source = "author", qualifiedByName = "authorFull")
     @Mapping(target = "tags", source = "tags", qualifiedByName = "tagFullSet")
     BookDTO toDto(Book s);
 
@@ -33,4 +36,10 @@ public interface BookMapper extends EntityMapper<BookDTO, Book> {
     default Set<TagDTO> toDtoTagFullSet(Set<Tag> tag) {
         return tag.stream().map(this::toDtoTagFull).collect(Collectors.toSet());
     }
+
+    @Named("authorFull")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    AuthorDTO toDtoAuthorFull(Author author);
 }

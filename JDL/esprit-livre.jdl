@@ -24,13 +24,17 @@ application {
     websocket spring-websocket
   }
 
-  entities Book, Like, Order, OrderItem, Tag
+  entities Author, Book, Like, Order, OrderItem, Tag
+}
+
+@ChangelogDate("20250926220000")
+entity Author {
+  name String required
 }
 
 @ChangelogDate("20250923205031")
 entity Book {
   title String required
-  author String
   price BigDecimal
   stockQuantity Integer
   coverImageUrl String
@@ -95,6 +99,7 @@ enum TagType {
 }
 
 relationship ManyToOne {
+  Book{author} to Author
   Like{book} to Book
   Order{user} to User
   OrderItem{order} to Order
@@ -104,7 +109,7 @@ relationship ManyToMany {
   Tag{book} to Book
 }
 
-dto Book, Like, Order, OrderItem, Tag with mapstruct
-paginate Book, Like, Order, OrderItem, Tag with pagination
-service Book, Like, Order, OrderItem, Tag with serviceClass
-search Book, Like, Order, OrderItem, Tag with no
+dto Author, Book, Like, Order, OrderItem, Tag with mapstruct
+paginate Author, Book, Like, Order, OrderItem, Tag with pagination
+service Author, Book, Like, Order, OrderItem, Tag with serviceClass
+search Author, Book, Like, Order, OrderItem, Tag with no
