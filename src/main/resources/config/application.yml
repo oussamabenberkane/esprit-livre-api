@@ -157,7 +157,7 @@ spring:
         registration:
           oidc:
             client-id: web_app
-            client-secret: web_app
+            client-secret: GClkRcZ7OYmB8aDInuIqFsVdPm8BwugS
             scope: openid, profile, email, offline_access # last one for refresh tokens
   task:
     execution:

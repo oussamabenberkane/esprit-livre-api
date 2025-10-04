@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.web.rest;
 
 import com.oussamabenberkane.espritlivre.repository.LikeRepository;
+import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.LikeService;
 import com.oussamabenberkane.espritlivre.service.dto.LikeDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tech.jhipster.web.util.HeaderUtil;
@@ -53,6 +55,7 @@ public class LikeResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<LikeDTO> createLike(@RequestBody LikeDTO likeDTO) throws URISyntaxException {
         LOG.debug("REST request to save Like : {}", likeDTO);
         if (likeDTO.getId() != null) {
@@ -75,6 +78,7 @@ public class LikeResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<LikeDTO> updateLike(@PathVariable(value = "id", required = false) final Long id, @RequestBody LikeDTO likeDTO)
         throws URISyntaxException {
         LOG.debug("REST request to update Like : {}, {}", id, likeDTO);
@@ -103,6 +107,7 @@ public class LikeResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of likes in body.
      */
     @GetMapping("")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<List<LikeDTO>> getAllLikes(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
         @RequestParam(name = "eagerload", required = false, defaultValue = "true") boolean eagerload
@@ -125,6 +130,7 @@ public class LikeResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the likeDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<LikeDTO> getLike(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Like : {}", id);
         Optional<LikeDTO> likeDTO = likeService.findOne(id);
@@ -138,6 +144,7 @@ public class LikeResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<Void> deleteLike(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Like : {}", id);
         likeService.delete(id);
