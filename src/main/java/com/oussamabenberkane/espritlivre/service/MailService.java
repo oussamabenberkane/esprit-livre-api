@@ -36,7 +36,7 @@ public class MailService {
     private final ApplicationProperties applicationProperties;
     private final MessageSource messageSource;
 
-    @Value("${spring.mail.from:noreply@espritlivre.dz}")
+    @Value("${jhipster.mail.from:noreply@espritlivre.dz}")
     private String from;
 
     public MailService(

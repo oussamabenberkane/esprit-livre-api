@@ -57,6 +57,7 @@ spring:
           starttls:
             enable: true
             required: true
+        debug: true
 
 server:
   port: 8080

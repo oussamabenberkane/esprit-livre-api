@@ -136,8 +136,8 @@
                 <div class="detail-row">
                     <div class="detail-label" th:text="#{email.admin.newuser.location}">Location:</div>
                     <div class="detail-value">
-                        <span th:if="${user.city}" th:text="${user.city}">City</span><span th:if="${user.city and user.wilaya}">, </span><span th:if="${user.wilaya}" th:text="${user.wilaya}">Wilaya</span>
-                        <span th:if="${!user.city and !user.wilaya}" th:text="#{email.admin.newuser.notprovided}">Not provided</span>
+                        <span th:if="${user.city}" th:text="${user.city}">City</span><span th:if="${user.city != null and user.wilaya != null}">, </span><span th:if="${user.wilaya}" th:text="${user.wilaya}">Wilaya</span>
+                        <span th:if="${user.city == null and user.wilaya == null}" th:text="#{email.admin.newuser.notprovided}">Not provided</span>
                     </div>
                 </div>
                 <div class="detail-row" th:if="${user.streetAddress}">
