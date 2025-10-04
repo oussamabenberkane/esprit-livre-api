@@ -60,26 +60,6 @@ public class AuthorService {
     }
 
     /**
-     * Partially update a author.
-     *
-     * @param authorDTO the entity to update partially.
-     * @return the persisted entity.
-     */
-    public Optional<AuthorDTO> partialUpdate(AuthorDTO authorDTO) {
-        LOG.debug("Request to partially update Author : {}", authorDTO);
-
-        return authorRepository
-            .findById(authorDTO.getId())
-            .map(existingAuthor -> {
-                authorMapper.partialUpdate(existingAuthor, authorDTO);
-
-                return existingAuthor;
-            })
-            .map(authorRepository::save)
-            .map(authorMapper::toDto);
-    }
-
-    /**
      * Get all the authors.
      *
      * @param pageable the pagination information.

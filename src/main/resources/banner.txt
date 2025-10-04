@@ -1,10 +1,14 @@
 
-  ${AnsiColor.GREEN}      ██╗${AnsiColor.RED} ██╗   ██╗ ████████╗ ███████╗   ██████╗ ████████╗ ████████╗ ███████╗
-  ${AnsiColor.GREEN}      ██║${AnsiColor.RED} ██║   ██║ ╚══██╔══╝ ██╔═══██╗ ██╔════╝ ╚══██╔══╝ ██╔═════╝ ██╔═══██╗
-  ${AnsiColor.GREEN}      ██║${AnsiColor.RED} ████████║    ██║    ███████╔╝ ╚█████╗     ██║    ██████╗   ███████╔╝
-  ${AnsiColor.GREEN}██╗   ██║${AnsiColor.RED} ██╔═══██║    ██║    ██╔════╝   ╚═══██╗    ██║    ██╔═══╝   ██╔══██║
-  ${AnsiColor.GREEN}╚██████╔╝${AnsiColor.RED} ██║   ██║ ████████╗ ██║       ██████╔╝    ██║    ████████╗ ██║  ╚██╗
-  ${AnsiColor.GREEN} ╚═════╝ ${AnsiColor.RED} ╚═╝   ╚═╝ ╚═══════╝ ╚═╝       ╚═════╝     ╚═╝    ╚═══════╝ ╚═╝   ╚═╝
+${AnsiColor.BRIGHT_BLUE}
+ ███████╗ ███████╗ ██████╗  ██████╗  ██╗ ████████╗    ██╗     ██╗ ██╗   ██╗ ██████╗  ███████╗
+ ██╔════╝ ██╔════╝ ██╔══██╗ ██╔══██╗ ██║ ╚══██╔══╝    ██║     ██║ ██║   ██║ ██╔══██╗ ██╔════╝
+ █████╗   ███████╗ ██████╔╝ ██████╔╝ ██║    ██║       ██║     ██║ ██║   ██║ ██████╔╝ █████╗
+ ██╔══╝   ╚════██║ ██╔═══╝  ██╔══██╗ ██║    ██║       ██║     ██║ ╚██╗ ██╔╝ ██╔══██╗ ██╔══╝
+ ███████╗ ███████║ ██║      ██║  ██║ ██║    ██║       ███████╗██║  ╚████╔╝  ██║  ██║ ███████╗
+ ╚══════╝ ╚══════╝ ╚═╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝       ╚══════╝╚═╝   ╚═══╝   ╚═╝  ╚═╝ ╚══════╝
+${AnsiColor.CYAN}
+                           📚  ${app.dev-website:oussamabenberkane} 📖
+${AnsiColor.WHITE}
+:: Spring Boot ${spring-boot.version} :: Profile: ${spring.profiles.active} :: Port: ${server.port:8080} ::
+${AnsiColor.BRIGHT_BLUE}:: OAuth2: ${spring.security.oauth2.client.provider.oidc.issuer-uri:Keycloak} ::${AnsiColor.DEFAULT}
 
-${AnsiColor.BRIGHT_BLUE}:: JHipster 🤓  :: Running Spring Boot ${spring-boot.version} :: Startup profile(s) ${spring.profiles.active} ::
-:: https://www.jhipster.tech ::${AnsiColor.DEFAULT}

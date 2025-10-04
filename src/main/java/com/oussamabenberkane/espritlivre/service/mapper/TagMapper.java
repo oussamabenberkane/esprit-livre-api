@@ -13,10 +13,7 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface TagMapper extends EntityMapper<TagDTO, Tag> {
-    @Override
     @Mapping(target = "books", ignore = true)
-    TagDTO toDto(Tag s);
-
     @Mapping(target = "removeBook", ignore = true)
     Tag toEntity(TagDTO tagDTO);
 }

@@ -14,9 +14,6 @@ public interface AuthorMapper extends EntityMapper<AuthorDTO, Author> {
     @Mapping(target = "removeBook", ignore = true)
     Author toEntity(AuthorDTO authorDTO);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void partialUpdate(@MappingTarget Author entity, AuthorDTO dto);
-
     default Author fromId(Long id) {
         if (id == null) {
             return null;
