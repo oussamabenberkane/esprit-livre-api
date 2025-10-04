@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{email.admin.newuser.title}">New User Registration</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            padding: 40px 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1e40af;
+        }
+        .message {
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: #555555;
+        }
+        .user-details {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .detail-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #1e40af;
+            min-width: 150px;
+        }
+        .detail-value {
+            color: #333333;
+        }
+        .timestamp {
+            background-color: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Esprit Livre</h1>
+        </div>
+
+        <div class="email-body">
+            <div class="greeting">
+                <span th:text="#{email.admin.newuser.greeting}">Hello Admin,</span>
+                <span class="badge" th:text="#{email.admin.newuser.badge}">NEW USER</span>
+            </div>
+
+            <div class="message">
+                <p th:text="#{email.admin.newuser.message}">A new user has successfully registered on Esprit Livre. Here are the details:</p>
+            </div>
+
+            <div class="user-details">
+                <div class="detail-row">
+                    <div class="detail-label" th:text="#{email.admin.newuser.name}">Name:</div>
+                    <div class="detail-value">
+                        <span th:text="${user.firstName}">First</span> <span th:text="${user.lastName}">Last</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label" th:text="#{email.admin.newuser.email}">Email:</div>
+                    <div class="detail-value">
+                        <a th:href="'mailto:' + ${user.email}" th:text="${user.email}">email@example.com</a>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label" th:text="#{email.admin.newuser.phone}">Phone:</div>
+                    <div class="detail-value" th:text="${user.phone} ?: #{email.admin.newuser.notprovided}">Not provided</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label" th:text="#{email.admin.newuser.location}">Location:</div>
+                    <div class="detail-value">
+                        <span th:if="${user.city}" th:text="${user.city}">City</span><span th:if="${user.city and user.wilaya}">, </span><span th:if="${user.wilaya}" th:text="${user.wilaya}">Wilaya</span>
+                        <span th:if="${!user.city and !user.wilaya}" th:text="#{email.admin.newuser.notprovided}">Not provided</span>
+                    </div>
+                </div>
+                <div class="detail-row" th:if="${user.streetAddress}">
+                    <div class="detail-label" th:text="#{email.admin.newuser.address}">Address:</div>
+                    <div class="detail-value" th:text="${user.streetAddress}">Street Address</div>
+                </div>
+                <div class="detail-row" th:if="${user.postalCode}">
+                    <div class="detail-label" th:text="#{email.admin.newuser.postalcode}">Postal Code:</div>
+                    <div class="detail-value" th:text="${user.postalCode}">Postal Code</div>
+                </div>
+                <div class="detail-row" th:if="${user.defaultShippingMethod}">
+                    <div class="detail-label" th:text="#{email.admin.newuser.shipping}">Shipping Method:</div>
+                    <div class="detail-value">
+                        <span th:text="${user.defaultShippingMethod}">HOME_DELIVERY</span>
+                        <span th:if="${user.defaultShippingProvider}"> - <span th:text="${user.defaultShippingProvider}">Provider</span></span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label" th:text="#{email.admin.newuser.language}">Language:</div>
+                    <div class="detail-value" th:text="${user.langKey}">en</div>
+                </div>
+            </div>
+
+            <div class="timestamp">
+                ⏰ <span th:text="#{email.admin.newuser.timestamp(${registrationDate}, ${registrationTime})}">Registration time</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                <strong>Esprit Livre</strong><br/>
+                <span th:text="#{email.footer.admin}">Admin Notification System</span>
+            </p>
+            <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+                <span th:text="#{email.footer.copyright}">© 2025 Esprit Livre. All rights reserved.</span>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

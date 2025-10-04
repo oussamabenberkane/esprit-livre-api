@@ -208,7 +208,7 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: espritLivre@localhost
+    from: oussamabenberkane.pro@gmail.com
   api-docs:
     default-include-pattern: /api/**
     management-include-pattern: /management/**
@@ -238,6 +238,6 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
-app:
+application:
+  admin-email: oussamabenberkane.pro@gmail.com
   dev-website: https://oussamabenberkane.com

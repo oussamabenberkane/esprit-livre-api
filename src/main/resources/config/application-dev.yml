@@ -45,6 +45,18 @@ spring:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
   thymeleaf:
     cache: false
+  mail:
+    host: in-v3.mailjet.com
+    port: 587
+    username: 882157472f08d8fdffb37ab6e23d137c
+    password: 8ee0c5a33b00d9cf11f7ee6f88aee644
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 server:
   port: 8080
@@ -89,4 +101,5 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
+application:
+  admin-email: oussamabenberkane.pro@gmail.com

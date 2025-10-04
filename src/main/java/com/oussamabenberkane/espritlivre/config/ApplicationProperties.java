@@ -13,10 +13,30 @@ public class ApplicationProperties {
 
     private final Liquibase liquibase = new Liquibase();
 
+    private String adminEmail;
+
+    private String devWebsite;
+
     // jhipster-needle-application-properties-property
 
     public Liquibase getLiquibase() {
         return liquibase;
+    }
+
+    public String getAdminEmail() {
+        return adminEmail;
+    }
+
+    public void setAdminEmail(String adminEmail) {
+        this.adminEmail = adminEmail;
+    }
+
+    public String getDevWebsite() {
+        return devWebsite;
+    }
+
+    public void setDevWebsite(String devWebsite) {
+        this.devWebsite = devWebsite;
     }
 
     // jhipster-needle-application-properties-property-getter

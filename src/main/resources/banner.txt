@@ -7,7 +7,7 @@ ${AnsiColor.BRIGHT_BLUE}
  ███████╗ ███████║ ██║      ██║  ██║ ██║    ██║       ███████╗██║  ╚████╔╝  ██║  ██║ ███████╗
  ╚══════╝ ╚══════╝ ╚═╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝       ╚══════╝╚═╝   ╚═══╝   ╚═╝  ╚═╝ ╚══════╝
 ${AnsiColor.CYAN}
-                           📚  ${app.dev-website:oussamabenberkane} 📖
+                           📚  ${application.dev-website:oussamabenberkane} 📖
 ${AnsiColor.WHITE}
 :: Spring Boot ${spring-boot.version} :: Profile: ${spring.profiles.active} :: Port: ${server.port:8080} ::
 ${AnsiColor.BRIGHT_BLUE}:: OAuth2: ${spring.security.oauth2.client.provider.oidc.issuer-uri:Keycloak} ::${AnsiColor.DEFAULT}

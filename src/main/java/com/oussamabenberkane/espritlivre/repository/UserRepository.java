@@ -23,5 +23,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Cacheable(cacheNames = USERS_BY_LOGIN_CACHE, unless = "#result == null")
     Optional<User> findOneWithAuthoritiesByLogin(String login);
 
+    @Cacheable(cacheNames = USERS_BY_EMAIL_CACHE, unless = "#result == null")
+    Optional<User> findOneByEmailIgnoreCase(String email);
+
     Page<User> findAllByIdNotNullAndActivatedIsTrue(Pageable pageable);
 }

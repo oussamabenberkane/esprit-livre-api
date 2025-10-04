@@ -219,6 +219,186 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"langKey\": \"en\",\n  \"imageUrl\": \"https://example.com/avatar.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/account",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"account"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "App Users",
+			"item": [
+				{
+					"name": "Complete Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Ahmed\",\n  \"lastName\": \"Benali\",\n  \"phone\": \"+213555123456\",\n  \"wilaya\": \"Alger\",\n  \"city\": \"Bab Ezzouar\",\n  \"streetAddress\": \"12 Rue de la Liberté\",\n  \"postalCode\": \"16000\",\n  \"defaultShippingMethod\": \"HOME_DELIVERY\",\n  \"defaultShippingProvider\": \"YALIDINE\",\n  \"langKey\": \"fr\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/app-users/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"app-users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/app-users/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"app-users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Ahmed\",\n  \"lastName\": \"Benali\",\n  \"phone\": \"+213555999888\",\n  \"wilaya\": \"Oran\",\n  \"city\": \"Oran Centre\",\n  \"streetAddress\": \"25 Boulevard de la Revolution\",\n  \"postalCode\": \"31000\",\n  \"defaultShippingMethod\": \"SHIPPING_PROVIDER\",\n  \"defaultShippingProvider\": \"ZR\",\n  \"langKey\": \"ar\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/app-users/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"app-users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request Email Change",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"newEmail\": \"newemail@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/app-users/change-email",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"app-users",
+								"change-email"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Email Change",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/app-users/verify-email?token=YOUR_TOKEN_HERE",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"app-users",
+								"verify-email"
+							],
+							"query": [
+								{
+									"key": "token",
+									"value": "YOUR_TOKEN_HERE",
+									"description": "Token from verification email"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Account",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/app-users/account",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"app-users",
+								"account"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},

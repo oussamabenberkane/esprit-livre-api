@@ -2,14 +2,15 @@ package com.oussamabenberkane.espritlivre.web.rest;
 
 import com.oussamabenberkane.espritlivre.service.UserService;
 import com.oussamabenberkane.espritlivre.service.dto.AdminUserDTO;
+import com.oussamabenberkane.espritlivre.service.dto.UserProfileDTO;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -62,5 +63,25 @@ public class AccountResource {
     public ResponseEntity<Void> isAuthenticated(Principal principal) {
         LOG.debug("REST request to check if the current user is authenticated");
         return ResponseEntity.status(principal == null ? HttpStatus.UNAUTHORIZED : HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * {@code POST  /account} : update the current user information.
+     *
+     * @param userProfileDTO the current user information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
+     * @throws AccountResourceException {@code 400 (Bad Request)} if the email is already in use.
+     */
+    @PostMapping("/account")
+    public ResponseEntity<Void> saveAccount(@Valid @RequestBody UserProfileDTO userProfileDTO) {
+        LOG.debug("REST request to update user profile : {}", userProfileDTO);
+        userService.updateUser(
+            userProfileDTO.getFirstName(),
+            userProfileDTO.getLastName(),
+            userProfileDTO.getEmail(),
+            userProfileDTO.getLangKey(),
+            userProfileDTO.getImageUrl()
+        );
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20251004132406-1" author="system">
+        <addColumn tableName="jhi_user">
+            <column name="phone" type="varchar(20)">
+                <constraints nullable="true" />
+            </column>
+            <column name="wilaya" type="varchar(100)">
+                <constraints nullable="true" />
+            </column>
+            <column name="city" type="varchar(100)">
+                <constraints nullable="true" />
+            </column>
+            <column name="street_address" type="varchar(500)">
+                <constraints nullable="true" />
+            </column>
+            <column name="postal_code" type="varchar(10)">
+                <constraints nullable="true" />
+            </column>
+            <column name="default_shipping_method" type="varchar(50)">
+                <constraints nullable="true" />
+            </column>
+            <column name="default_shipping_provider" type="varchar(50)">
+                <constraints nullable="true" />
+            </column>
+            <column name="email_verification_token" type="varchar(20)">
+                <constraints nullable="true" />
+            </column>
+            <column name="email_verification_token_expiry" type="timestamp">
+                <constraints nullable="true" />
+            </column>
+            <column name="pending_email" type="varchar(254)">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

@@ -2,6 +2,8 @@ package com.oussamabenberkane.espritlivre.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oussamabenberkane.espritlivre.config.Constants;
+import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
+import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -59,6 +61,48 @@ public class User extends AbstractAuditingEntity<String> implements Serializable
     @Size(max = 256)
     @Column(name = "image_url", length = 256)
     private String imageUrl;
+
+    @Size(max = 20)
+    @Column(name = "phone", length = 20)
+    private String phone;
+
+    @Size(max = 100)
+    @Column(name = "wilaya", length = 100)
+    private String wilaya;
+
+    @Size(max = 100)
+    @Column(name = "city", length = 100)
+    private String city;
+
+    @Size(max = 500)
+    @Column(name = "street_address", length = 500)
+    private String streetAddress;
+
+    @Size(max = 10)
+    @Column(name = "postal_code", length = 10)
+    private String postalCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "default_shipping_method")
+    private ShippingMethod defaultShippingMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "default_shipping_provider")
+    private ShippingProvider defaultShippingProvider;
+
+    @Size(max = 20)
+    @Column(name = "email_verification_token", length = 20)
+    @JsonIgnore
+    private String emailVerificationToken;
+
+    @Column(name = "email_verification_token_expiry")
+    @JsonIgnore
+    private java.time.Instant emailVerificationTokenExpiry;
+
+    @Size(max = 254)
+    @Column(name = "pending_email", length = 254)
+    @JsonIgnore
+    private String pendingEmail;
 
     @JsonIgnore
     @ManyToMany
@@ -142,6 +186,86 @@ public class User extends AbstractAuditingEntity<String> implements Serializable
 
     public void setAuthorities(Set<Authority> authorities) {
         this.authorities = authorities;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getWilaya() {
+        return wilaya;
+    }
+
+    public void setWilaya(String wilaya) {
+        this.wilaya = wilaya;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getStreetAddress() {
+        return streetAddress;
+    }
+
+    public void setStreetAddress(String streetAddress) {
+        this.streetAddress = streetAddress;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public ShippingMethod getDefaultShippingMethod() {
+        return defaultShippingMethod;
+    }
+
+    public void setDefaultShippingMethod(ShippingMethod defaultShippingMethod) {
+        this.defaultShippingMethod = defaultShippingMethod;
+    }
+
+    public ShippingProvider getDefaultShippingProvider() {
+        return defaultShippingProvider;
+    }
+
+    public void setDefaultShippingProvider(ShippingProvider defaultShippingProvider) {
+        this.defaultShippingProvider = defaultShippingProvider;
+    }
+
+    public String getEmailVerificationToken() {
+        return emailVerificationToken;
+    }
+
+    public void setEmailVerificationToken(String emailVerificationToken) {
+        this.emailVerificationToken = emailVerificationToken;
+    }
+
+    public java.time.Instant getEmailVerificationTokenExpiry() {
+        return emailVerificationTokenExpiry;
+    }
+
+    public void setEmailVerificationTokenExpiry(java.time.Instant emailVerificationTokenExpiry) {
+        this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
+    }
+
+    public String getPendingEmail() {
+        return pendingEmail;
+    }
+
+    public void setPendingEmail(String pendingEmail) {
+        this.pendingEmail = pendingEmail;
     }
 
     @Override

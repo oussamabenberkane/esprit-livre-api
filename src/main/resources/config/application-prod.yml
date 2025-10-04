@@ -102,4 +102,5 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
+application:
+  admin-email: oussamabenberkane.pro@gmail.com
