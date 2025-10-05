@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Add performance indexes for frequently queried fields.
+        Priority: P0 (High Impact, Low Effort, Very High ROI)
+
+        Note: Foreign key columns (author_id, user_id, book_id, order_id) already have
+        indexes created automatically by PostgreSQL, so they are not duplicated here.
+    -->
+    <changeSet id="20251005000002-1" author="system">
+
+        <!-- Book table indexes -->
+        <createIndex indexName="idx_book_title" tableName="book">
+            <column name="title"/>
+        </createIndex>
+
+        <createIndex indexName="idx_book_price" tableName="book">
+            <column name="price"/>
+        </createIndex>
+
+        <!-- Order table indexes -->
+        <createIndex indexName="idx_order_status" tableName="jhi_order">
+            <column name="status"/>
+        </createIndex>
+
+        <createIndex indexName="idx_order_created_at" tableName="jhi_order">
+            <column name="created_at"/>
+        </createIndex>
+
+        <!-- Unique index for order tracking by unique ID -->
+        <createIndex indexName="idx_order_unique_id" tableName="jhi_order" unique="true">
+            <column name="unique_id"/>
+        </createIndex>
+
+        <!-- Tag table indexes -->
+        <createIndex indexName="idx_tag_type" tableName="tag">
+            <column name="type"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tag_active" tableName="tag">
+            <column name="active"/>
+        </createIndex>
+
+        <!-- Composite indexes for common query patterns -->
+        <!-- Covers user order history queries (user_id + created_at) -->
+        <createIndex indexName="idx_order_user_created" tableName="jhi_order">
+            <column name="user_id"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <!-- Covers active tag filtering by type -->
+        <createIndex indexName="idx_tag_active_type" tableName="tag">
+            <column name="active"/>
+            <column name="type"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
