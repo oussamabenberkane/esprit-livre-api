@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7bcb308f-0f48-44e0-9818-eab77d829e3a",
+		"_postman_id": "2931cb85-dfda-4e85-b592-a03699c24ae1",
 		"name": "Esprit Livre API",
 		"description": "Esprit Livre bookstore API with OAuth2 authentication",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -118,7 +118,20 @@
 									"    }",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -153,12 +166,12 @@
 								},
 								{
 									"key": "username",
-									"value": "user",
+									"value": "yani",
 									"type": "text"
 								},
 								{
 									"key": "password",
-									"value": "user",
+									"value": "yani",
 									"type": "text"
 								},
 								{
@@ -232,7 +245,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"langKey\": \"en\",\n  \"imageUrl\": \"https://example.com/avatar.jpg\"\n}"
+							"raw": "{\n    \"id\": \"c4af4e2f-b432-4c3b-8405-cca86cd5b97b\",\n    \"login\": \"user\",\n    \"firstName\": \"Oussama\",\n    \"lastName\": \"Benberkane\",\n    \"email\": \"oussamabenberkane.pro@gmail.com\",\n    \"langKey\": \"fr\",\n    \"imageUrl\": null,\n    \"phone\": \"+213549697533\",\n    \"wilaya\": \"Bejaia\",\n    \"city\": \"Akbou\",\n    \"streetAddress\": \"Sidi Ali\",\n    \"postalCode\": \"06001\",\n    \"defaultShippingMethod\": \"HOME_DELIVERY\",\n    \"defaultShippingProvider\": \"YALIDINE\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/account",
@@ -264,7 +277,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Ahmed\",\n  \"lastName\": \"Benali\",\n  \"phone\": \"+213555123456\",\n  \"wilaya\": \"Alger\",\n  \"city\": \"Bab Ezzouar\",\n  \"streetAddress\": \"12 Rue de la Liberté\",\n  \"postalCode\": \"16000\",\n  \"defaultShippingMethod\": \"HOME_DELIVERY\",\n  \"defaultShippingProvider\": \"YALIDINE\",\n  \"langKey\": \"fr\"\n}"
+							"raw": "{\n  \"firstName\": \"Yani\",\n  \"lastName\": \"Ferhaten\",\n  \"phone\": \"+213549697533\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"Ighrem\",\n  \"postalCode\": \"06001\",\n  \"defaultShippingMethod\": \"SHIPPING_PROVIDER\",\n  \"defaultShippingProvider\": \"ZR\",\n  \"langKey\": \"fr\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/app-users/register",
@@ -311,7 +324,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Ahmed\",\n  \"lastName\": \"Benali\",\n  \"phone\": \"+213555999888\",\n  \"wilaya\": \"Oran\",\n  \"city\": \"Oran Centre\",\n  \"streetAddress\": \"25 Boulevard de la Revolution\",\n  \"postalCode\": \"31000\",\n  \"defaultShippingMethod\": \"SHIPPING_PROVIDER\",\n  \"defaultShippingProvider\": \"ZR\",\n  \"langKey\": \"ar\"\n}"
+							"raw": "{\n    \"login\": \"user\",\n    \"firstName\": \"Oussama\",\n    \"lastName\": \"Benberkane\",\n    \"email\": \"oussamabenberkane.pro@gmail.com\",\n    \"langKey\": \"fr\",\n    \"imageUrl\": null,\n    \"phone\": \"+213549697533\",\n    \"wilaya\": \"Bejaia\",\n    \"city\": \"Akbou\",\n    \"streetAddress\": \"Sidi Ali\",\n    \"postalCode\": \"06001\",\n    \"defaultShippingMethod\": \"HOME_DELIVERY\",\n    \"defaultShippingProvider\": \"YALIDINE\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/app-users/profile",
@@ -339,7 +352,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"newEmail\": \"newemail@example.com\"\n}"
+							"raw": "{\n  \"newEmail\": \"oussamabenberkane.pro@gmail.com\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/app-users/change-email",
@@ -361,7 +374,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/app-users/verify-email?token=YOUR_TOKEN_HERE",
+							"raw": "{{base_url}}/api/app-users/verify-email?token=Isr7taD1NbATYHTXihmC",
 							"host": [
 								"{{base_url}}"
 							],
@@ -373,7 +386,7 @@
 							"query": [
 								{
 									"key": "token",
-									"value": "YOUR_TOKEN_HERE",
+									"value": "Isr7taD1NbATYHTXihmC",
 									"description": "Token from verification email"
 								}
 							]

@@ -90,4 +90,11 @@ public class BookSpecifications {
             return builder.or(titleMatch, authorMatch, tagNameEnMatch, tagNameFrMatch);
         };
     }
+
+    public static Specification<Book> isLikedByCurrentUser() {
+        return (root, query, builder) -> {
+            query.distinct(true);
+            return builder.isNotNull(root.get("id"));
+        };
+    }
 }

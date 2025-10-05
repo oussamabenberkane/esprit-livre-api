@@ -176,6 +176,58 @@ public class BookService {
     }
 
     /**
+     * Get all books liked by the current authenticated user.
+     *
+     * @param pageable the pagination information.
+     * @param search the search term.
+     * @param author the author name filter.
+     * @param minPrice the minimum price filter.
+     * @param maxPrice the maximum price filter.
+     * @param categoryId the category tag id filter.
+     * @param mainDisplayId the main display tag id filter.
+     * @return the list of liked books.
+     */
+    @Transactional(readOnly = true)
+    public Page<BookDTO> findLikedBooksByCurrentUser(
+        Pageable pageable,
+        String search,
+        String author,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Long categoryId,
+        Long mainDisplayId
+    ) {
+        LOG.debug("Request to get books liked by current user with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}",
+            search, author, minPrice, maxPrice, categoryId, mainDisplayId);
+
+        Specification<Book> spec = BookSpecifications.isLikedByCurrentUser();
+
+        // Apply search filter if provided
+        if (StringUtils.hasText(search)) {
+            spec = spec.and(BookSpecifications.searchByText(search));
+        }
+
+        // Apply individual filters only if parameters are provided
+        if (StringUtils.hasText(author)) {
+            spec = spec.and(BookSpecifications.hasAuthor(author));
+        }
+
+        if (minPrice != null || maxPrice != null) {
+            spec = spec.and(BookSpecifications.hasPriceBetween(minPrice, maxPrice));
+        }
+
+        // Tag filtering - books that have EITHER category OR mainDisplay tag
+        if (categoryId != null || mainDisplayId != null) {
+            Specification<Book> tagSpec = buildTagSpecification(categoryId, mainDisplayId);
+            if (tagSpec != null) {
+                spec = spec.and(tagSpec);
+            }
+        }
+
+        return bookRepository.findLikedBooksByCurrentUser(spec, pageable).map(bookMapper::toDto);
+    }
+
+    /**
      * Get suggestions for search terms.
      *
      * @param searchTerm the search term to get suggestions for.

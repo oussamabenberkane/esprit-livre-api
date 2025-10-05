@@ -129,6 +129,39 @@ public class BookResource {
     }
 
     /**
+     * {@code GET  /books/liked} : get all books liked by current user.
+     *
+     * @param pageable the pagination information.
+     * @param search the search term.
+     * @param author the author name filter.
+     * @param minPrice the minimum price filter.
+     * @param maxPrice the maximum price filter.
+     * @param categoryId the category tag id filter.
+     * @param mainDisplayId the main display tag id filter.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the list of liked books.
+     */
+    @GetMapping("/liked")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
+    public ResponseEntity<List<BookDTO>> getLikedBooks(
+        @ParameterObject Pageable pageable,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false) String author,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal minPrice,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
+        @RequestParam(required = false) @Min(1) Long categoryId,
+        @RequestParam(required = false) @Min(1) Long mainDisplayId
+    ) {
+        LOG.debug("REST request to get liked books");
+        // Add price range validation
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new BadRequestAlertException("minPrice cannot be greater than maxPrice", "Book", "min_price_greater_than_max_price");
+        }
+        Page<BookDTO> page = bookService.findLikedBooksByCurrentUser(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
      * {@code GET  /books/suggestions} : get search suggestions.
      *
      * @param q the search term to get suggestions for.
