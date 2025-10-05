@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * Spring Data JPA repository for the Order entity.
  */
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
     @Query("select jhiOrder from Order jhiOrder where jhiOrder.user.login = ?#{authentication.name}")
     List<Order> findByUserIsCurrentUser();
 
@@ -40,4 +41,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select jhiOrder from Order jhiOrder left join fetch jhiOrder.user where jhiOrder.id =:id")
     Optional<Order> findOneWithToOneRelationships(@Param("id") Long id);
+
+    @Query("select jhiOrder from Order jhiOrder where jhiOrder.user.login = ?#{authentication.name}")
+    Page<Order> findByCurrentUser(Specification<Order> spec, Pageable pageable);
+
+    @Query("select jhiOrder from Order jhiOrder where jhiOrder.id = :id and jhiOrder.user.login = ?#{authentication.name}")
+    Optional<Order> findOneByIdAndCurrentUser(@Param("id") Long id);
+
+    @Query("select o.uniqueId from Order o where o.uniqueId like :prefix% order by o.uniqueId desc")
+    List<String> findUniqueIdsByPrefix(@Param("prefix") String prefix);
+
+    default String findMaxUniqueIdByPrefix(String prefix) {
+        List<String> uniqueIds = findUniqueIdsByPrefix(prefix);
+        return uniqueIds.isEmpty() ? null : uniqueIds.get(0);
+    }
 }

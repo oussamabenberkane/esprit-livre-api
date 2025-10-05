@@ -614,7 +614,101 @@
 			"name": "Likes (Authenticated)",
 			"item": [
 				{
-					"name": "Get All Likes",
+					"name": "Toggle Like for Book",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/likes/toggle/:bookId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"likes",
+								"toggle",
+								":bookId"
+							],
+							"variable": [
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "Book ID to like/unlike"
+								}
+							]
+						},
+						"description": "Toggle like for a book. If already liked, unlikes it. If not liked, likes it. Returns {bookId, isLiked, likeCount}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Liked Books",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books/liked?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books",
+								"liked"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "harry",
+									"description": "Search in title, author, tags",
+									"disabled": true
+								},
+								{
+									"key": "author",
+									"value": "rowling",
+									"description": "Filter by author name",
+									"disabled": true
+								},
+								{
+									"key": "minPrice",
+									"value": "10",
+									"description": "Minimum price filter",
+									"disabled": true
+								},
+								{
+									"key": "maxPrice",
+									"value": "50",
+									"description": "Maximum price filter",
+									"disabled": true
+								},
+								{
+									"key": "categoryId",
+									"value": "7",
+									"description": "Filter by category tag ID",
+									"disabled": true
+								},
+								{
+									"key": "mainDisplayId",
+									"value": "1",
+									"description": "Filter by main display tag",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get all books liked by current user with optional filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Likes (Old - Not Recommended)",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -637,13 +731,22 @@
 									"value": "20"
 								}
 							]
-						}
+						},
+						"description": "Legacy endpoint - use 'Get Liked Books' instead"
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
 				{
-					"name": "Create Like",
+					"name": "Create Order (Guest or Authenticated)",
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -653,53 +756,24 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"book\": {\n    \"id\": 1\n  },\n  \"user\": {\n    \"id\": \"admin\"\n  }\n}"
+							"raw": "{\n  \"phone\": \"+213549697533\",\n  \"email\": \"customer@example.com\",\n  \"fullName\": \"Guest Customer\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"123 Rue de la Liberté\",\n  \"postalCode\": \"06001\",\n  \"shippingMethod\": \"HOME_DELIVERY\",\n  \"shippingProvider\": \"YALIDINE\",\n  \"totalAmount\": 1500.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    },\n    {\n      \"bookId\": 2,\n      \"quantity\": 1,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 500.00\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/likes",
+							"raw": "{{base_url}}/api/orders",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"likes"
+								"orders"
 							]
-						}
+						},
+						"description": "Public endpoint - Guest checkout supported. For authenticated users, city/wilaya/phone will auto-fill from profile if not provided. Stock is validated before order creation."
 					},
 					"response": []
 				},
 				{
-					"name": "Delete Like",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/likes/:id",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"likes",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "1"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Orders (Authenticated)",
-			"item": [
-				{
-					"name": "Get All Orders",
+					"name": "Get My Orders (with filters)",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -714,6 +788,36 @@
 							],
 							"query": [
 								{
+									"key": "status",
+									"value": "PENDING",
+									"description": "PENDING | CONFIRMED | SHIPPED | DELIVERED | CANCELLED",
+									"disabled": true
+								},
+								{
+									"key": "dateFrom",
+									"value": "2025-01-01T00:00:00Z",
+									"description": "ISO 8601 datetime",
+									"disabled": true
+								},
+								{
+									"key": "dateTo",
+									"value": "2025-12-31T23:59:59Z",
+									"description": "ISO 8601 datetime",
+									"disabled": true
+								},
+								{
+									"key": "minAmount",
+									"value": "100",
+									"description": "Minimum total amount",
+									"disabled": true
+								},
+								{
+									"key": "maxAmount",
+									"value": "5000",
+									"description": "Maximum total amount",
+									"disabled": true
+								},
+								{
 									"key": "page",
 									"value": "0"
 								},
@@ -722,7 +826,8 @@
 									"value": "20"
 								}
 							]
-						}
+						},
+						"description": "Regular users see only their own orders. Admins see all orders. Supports filtering by status, date range, and amount range."
 					},
 					"response": []
 				},
@@ -747,14 +852,15 @@
 									"value": "1"
 								}
 							]
-						}
+						},
+						"description": "Regular users can only view their own orders. Admins can view any order."
 					},
 					"response": []
 				},
 				{
-					"name": "Create Order",
+					"name": "Update Order (Admin Only)",
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -763,18 +869,52 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+21612345678\",\n  \"email\": \"customer@example.com\",\n  \"fullName\": \"Test Customer\",\n  \"address\": \"123 Rue de la Liberté, Tunis\",\n  \"shippingMethod\": \"STANDARD\",\n  \"shippingProvider\": \"ARAMEX\",\n  \"totalAmount\": 100.00,\n  \"shippingCost\": 7.00\n}"
+							"raw": "{\n  \"id\": 1,\n  \"status\": \"DELIVERED\",\n  \"phone\": \"+213549697533\",\n  \"email\": \"customer@example.com\",\n  \"fullName\": \"Updated Customer Name\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"Updated Address\",\n  \"postalCode\": \"06001\",\n  \"shippingMethod\": \"SHIPPING_PROVIDER\",\n  \"shippingProvider\": \"ZR\",\n  \"totalAmount\": 1500.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    }\n  ]\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/orders",
+							"raw": "{{base_url}}/api/orders/:id",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"orders"
+								"orders",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
 							]
-						}
+						},
+						"description": "Admin only. Cannot update: id, uniqueId, createdAt, createdBy. When status changes to DELIVERED, book stock is automatically decremented."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Order (Admin Only)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/orders/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Admin only"
 					},
 					"response": []
 				}

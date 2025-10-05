@@ -1,5 +1,7 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -12,6 +14,8 @@ public class OrderItemDTO implements Serializable {
 
     private Long id;
 
+    @NotNull
+    @Min(1)
     private Integer quantity;
 
     private BigDecimal unitPrice;
@@ -21,6 +25,9 @@ public class OrderItemDTO implements Serializable {
     private OrderDTO order;
 
     private BookDTO book;
+
+    @NotNull
+    private Long bookId;
 
     public Long getId() {
         return id;
@@ -70,6 +77,14 @@ public class OrderItemDTO implements Serializable {
         this.book = book;
     }
 
+    public Long getBookId() {
+        return bookId;
+    }
+
+    public void setBookId(Long bookId) {
+        this.bookId = bookId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -101,6 +116,7 @@ public class OrderItemDTO implements Serializable {
             ", totalPrice=" + getTotalPrice() +
             ", order=" + getOrder() +
             ", book=" + getBook() +
+            ", bookId=" + getBookId() +
             "}";
     }
 }

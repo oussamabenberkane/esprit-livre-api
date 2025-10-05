@@ -1,14 +1,19 @@
 package com.oussamabenberkane.espritlivre.web.rest;
 
+import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.repository.OrderRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.OrderService;
 import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -104,31 +110,59 @@ public class OrderResource {
     }
 
     /**
-     * {@code GET  /orders} : get all the orders.
+     * {@code GET  /orders} : get all orders.
+     * Regular users see only their own orders.
+     * Admins see all orders.
      *
      * @param pageable the pagination information.
-     * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).
+     * @param status the order status filter.
+     * @param dateFrom the start date filter.
+     * @param dateTo the end date filter.
+     * @param minAmount the minimum total amount filter.
+     * @param maxAmount the maximum total amount filter.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of orders in body.
      */
     @GetMapping("")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<List<OrderDTO>> getAllOrders(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
-        @RequestParam(name = "eagerload", required = false, defaultValue = "true") boolean eagerload
+        @RequestParam(required = false) OrderStatus status,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateFrom,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateTo,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal minAmount,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal maxAmount
     ) {
         LOG.debug("REST request to get a page of Orders");
-        Page<OrderDTO> page;
-        if (eagerload) {
-            page = orderService.findAllWithEagerRelationships(pageable);
-        } else {
-            page = orderService.findAll(pageable);
+
+        // Amount range validation
+        if (minAmount != null && maxAmount != null && minAmount.compareTo(maxAmount) > 0) {
+            throw new BadRequestAlertException("minAmount cannot be greater than maxAmount", "Order", "min_amount_greater_than_max_amount");
         }
+
+        // Date range validation
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new BadRequestAlertException("dateFrom cannot be after dateTo", "Order", "date_from_after_date_to");
+        }
+
+        boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
+        Page<OrderDTO> page;
+
+        if (isAdmin) {
+            // Admin sees all orders
+            page = orderService.findAll(pageable, status, dateFrom, dateTo, minAmount, maxAmount);
+        } else {
+            // Regular user sees only their orders
+            page = orderService.findAllForCurrentUser(pageable, status, dateFrom, dateTo, minAmount, maxAmount);
+        }
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**
      * {@code GET  /orders/:id} : get the "id" order.
+     * Regular users can only get their own orders.
+     * Admins can get any order.
      *
      * @param id the id of the orderDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the orderDTO, or with status {@code 404 (Not Found)}.
@@ -137,6 +171,7 @@ public class OrderResource {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<OrderDTO> getOrder(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Order : {}", id);
+        // findOne in service already handles user isolation
         Optional<OrderDTO> orderDTO = orderService.findOne(id);
         return ResponseUtil.wrapOrNotFound(orderDTO);
     }

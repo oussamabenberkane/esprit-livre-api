@@ -62,8 +62,19 @@ public class Order implements Serializable {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "address")
-    private String address;
+    @Column(name = "street_address")
+    private String streetAddress;
+
+    @NotNull
+    @Column(name = "wilaya", nullable = false)
+    private String wilaya;
+
+    @NotNull
+    @Column(name = "city", nullable = false)
+    private String city;
+
+    @Column(name = "postal_code")
+    private String postalCode;
 
     @Column(name = "created_at")
     private ZonedDateTime createdAt;
@@ -214,17 +225,56 @@ public class Order implements Serializable {
         this.email = email;
     }
 
-    public String getAddress() {
-        return this.address;
+    public String getStreetAddress() {
+        return this.streetAddress;
     }
 
-    public Order address(String address) {
-        this.setAddress(address);
+    public Order streetAddress(String streetAddress) {
+        this.setStreetAddress(streetAddress);
         return this;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setStreetAddress(String streetAddress) {
+        this.streetAddress = streetAddress;
+    }
+
+    public String getWilaya() {
+        return this.wilaya;
+    }
+
+    public Order wilaya(String wilaya) {
+        this.setWilaya(wilaya);
+        return this;
+    }
+
+    public void setWilaya(String wilaya) {
+        this.wilaya = wilaya;
+    }
+
+    public String getCity() {
+        return this.city;
+    }
+
+    public Order city(String city) {
+        this.setCity(city);
+        return this;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPostalCode() {
+        return this.postalCode;
+    }
+
+    public Order postalCode(String postalCode) {
+        this.setPostalCode(postalCode);
+        return this;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
     }
 
     public ZonedDateTime getCreatedAt() {
@@ -343,7 +393,10 @@ public class Order implements Serializable {
             ", fullName='" + getFullName() + "'" +
             ", phone='" + getPhone() + "'" +
             ", email='" + getEmail() + "'" +
-            ", address='" + getAddress() + "'" +
+            ", streetAddress='" + getStreetAddress() + "'" +
+            ", wilaya='" + getWilaya() + "'" +
+            ", city='" + getCity() + "'" +
+            ", postalCode='" + getPostalCode() + "'" +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +

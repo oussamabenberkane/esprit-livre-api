@@ -28,5 +28,6 @@
     <include file="config/liquibase/changelog/20250926220002_update_book_author_relationship.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251004132406_add_user_app_fields.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251005000000_add_unique_constraint_like_user_book.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251005000001_update_order_add_address_fields.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

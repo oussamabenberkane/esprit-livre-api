@@ -7,7 +7,9 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A DTO for the {@link com.oussamabenberkane.espritlivre.domain.Order} entity.
@@ -36,7 +38,15 @@ public class OrderDTO implements Serializable {
 
     private String email;
 
-    private String address;
+    private String streetAddress;
+
+    @NotNull
+    private String wilaya;
+
+    @NotNull
+    private String city;
+
+    private String postalCode;
 
     private ZonedDateTime createdAt;
 
@@ -45,6 +55,8 @@ public class OrderDTO implements Serializable {
     private ZonedDateTime updatedAt;
 
     private UserDTO user;
+
+    private Set<OrderItemDTO> orderItems = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -126,12 +138,36 @@ public class OrderDTO implements Serializable {
         this.email = email;
     }
 
-    public String getAddress() {
-        return address;
+    public String getStreetAddress() {
+        return streetAddress;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setStreetAddress(String streetAddress) {
+        this.streetAddress = streetAddress;
+    }
+
+    public String getWilaya() {
+        return wilaya;
+    }
+
+    public void setWilaya(String wilaya) {
+        this.wilaya = wilaya;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
     }
 
     public ZonedDateTime getCreatedAt() {
@@ -164,6 +200,14 @@ public class OrderDTO implements Serializable {
 
     public void setUser(UserDTO user) {
         this.user = user;
+    }
+
+    public Set<OrderItemDTO> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(Set<OrderItemDTO> orderItems) {
+        this.orderItems = orderItems;
     }
 
     @Override
@@ -201,11 +245,15 @@ public class OrderDTO implements Serializable {
             ", fullName='" + getFullName() + "'" +
             ", phone='" + getPhone() + "'" +
             ", email='" + getEmail() + "'" +
-            ", address='" + getAddress() + "'" +
+            ", streetAddress='" + getStreetAddress() + "'" +
+            ", wilaya='" + getWilaya() + "'" +
+            ", city='" + getCity() + "'" +
+            ", postalCode='" + getPostalCode() + "'" +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +
             ", user=" + getUser() +
+            ", orderItems=" + getOrderItems() +
             "}";
     }
 }

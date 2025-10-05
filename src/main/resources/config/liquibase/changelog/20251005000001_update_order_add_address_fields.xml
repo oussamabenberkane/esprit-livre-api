@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20251005000001-1" author="system">
+        <!-- Add new address fields -->
+        <addColumn tableName="jhi_order">
+            <column name="wilaya" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="jhi_order">
+            <column name="city" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="jhi_order">
+            <column name="postal_code" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Rename address to street_address -->
+        <renameColumn tableName="jhi_order"
+                      oldColumnName="address"
+                      newColumnName="street_address"
+                      columnDataType="varchar(255)"/>
+    </changeSet>
+
+</databaseChangeLog>
