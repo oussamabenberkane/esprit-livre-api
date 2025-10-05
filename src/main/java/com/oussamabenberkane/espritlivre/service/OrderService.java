@@ -91,15 +91,15 @@ public class OrderService {
         order.setCreatedAt(ZonedDateTime.now());
 
         // Handle user (authenticated or guest)
-        Optional<String> currentUserLogin = SecurityUtils.getCurrentUserLogin();
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().get();
         User user = null;
-        if (currentUserLogin.isPresent()) {
-            user = userRepository.findOneByLogin(currentUserLogin.get())
+        if (currentUserLogin.equals("anonymousUser")) {
+            order.setCreatedBy("guest");
+        } else {
+            user = userRepository.findOneByLogin(currentUserLogin)
                 .orElseThrow(() -> new BadRequestAlertException("User not found", "order", "usernotfound"));
             order.setUser(user);
-            order.setCreatedBy(currentUserLogin.get());
-        } else {
-            order.setCreatedBy("guest");
+            order.setCreatedBy(currentUserLogin);
         }
 
         // Customer details priority logic: use provided values, fallback to user profile

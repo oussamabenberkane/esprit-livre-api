@@ -61,6 +61,7 @@ public class SecurityConfiguration {
                 csrf
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                    .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders"))
             )
             .authorizeHttpRequests(authz ->
                 // prettier-ignore

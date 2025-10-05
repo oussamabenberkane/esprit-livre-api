@@ -150,11 +150,6 @@
             font-weight: 600;
             text-align: center;
             margin: 20px 0;
-            transition: transform 0.2s;
-        }
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
         .button-container {
             text-align: center;
@@ -204,68 +199,68 @@
 <body>
     <div class="email-container">
         <div class="email-header">
-            <h1>🛒 Esprit Livre</h1>
-            <p class="subtitle">Admin Notification</p>
+            <h1 th:text="'🛒 ' + #{email.admin.order.header}">🛒 Esprit Livre</h1>
+            <p class="subtitle" th:text="#{email.admin.order.subtitle}">Admin Notification</p>
         </div>
 
         <div class="email-body">
             <div class="alert-banner">
-                <strong>📢 New Order Received!</strong>
+                <strong th:text="'📢 ' + #{email.admin.order.alert}">📢 New Order Received!</strong>
             </div>
 
             <div class="order-id" th:text="${orderUniqueId}">ORD-20251005-0001</div>
 
             <!-- Customer Information -->
             <div class="info-section">
-                <h3>👤 Customer Information</h3>
+                <h3 th:text="'👤 ' + #{email.admin.order.customer.title}">👤 Customer Information</h3>
                 <div class="info-row" th:if="${customerName != null and !#strings.isEmpty(customerName)}">
-                    <span class="info-label">Name:</span>
+                    <span class="info-label" th:text="#{email.admin.order.customer.name}">Name:</span>
                     <span class="info-value" th:text="${customerName}">John Doe</span>
                 </div>
                 <div class="info-row" th:if="${customerPhone != null and !#strings.isEmpty(customerPhone)}">
-                    <span class="info-label">Phone:</span>
+                    <span class="info-label" th:text="#{email.admin.order.customer.phone}">Phone:</span>
                     <span class="info-value" th:text="${customerPhone}">+213 555 123 456</span>
                 </div>
                 <div class="info-row" th:if="${customerEmail != null and !#strings.isEmpty(customerEmail)}">
-                    <span class="info-label">Email:</span>
+                    <span class="info-label" th:text="#{email.admin.order.customer.email}">Email:</span>
                     <span class="info-value" th:text="${customerEmail}">customer@example.com</span>
                 </div>
             </div>
 
             <!-- Shipping Address -->
             <div class="info-section" th:if="${wilaya != null or city != null or streetAddress != null}">
-                <h3>📍 Shipping Address</h3>
+                <h3 th:text="'📍 ' + #{email.admin.order.shipping.title}">📍 Shipping Address</h3>
                 <div class="info-row" th:if="${wilaya != null and !#strings.isEmpty(wilaya)}">
-                    <span class="info-label">Wilaya:</span>
+                    <span class="info-label" th:text="#{email.admin.order.shipping.wilaya}">Wilaya:</span>
                     <span class="info-value" th:text="${wilaya}">Algiers</span>
                 </div>
                 <div class="info-row" th:if="${city != null and !#strings.isEmpty(city)}">
-                    <span class="info-label">City:</span>
+                    <span class="info-label" th:text="#{email.admin.order.shipping.city}">City:</span>
                     <span class="info-value" th:text="${city}">Bab Ezzouar</span>
                 </div>
                 <div class="info-row" th:if="${streetAddress != null and !#strings.isEmpty(streetAddress)}">
-                    <span class="info-label">Street Address:</span>
+                    <span class="info-label" th:text="#{email.admin.order.shipping.street}">Street Address:</span>
                     <span class="info-value" th:text="${streetAddress}">123 Main Street</span>
                 </div>
                 <div class="info-row" th:if="${postalCode != null and !#strings.isEmpty(postalCode)}">
-                    <span class="info-label">Postal Code:</span>
+                    <span class="info-label" th:text="#{email.admin.order.shipping.postal}">Postal Code:</span>
                     <span class="info-value" th:text="${postalCode}">16000</span>
                 </div>
             </div>
 
             <!-- Order Details -->
             <div class="info-section">
-                <h3>📋 Order Details</h3>
+                <h3 th:text="'📋 ' + #{email.admin.order.details.title}">📋 Order Details</h3>
                 <div class="info-row">
-                    <span class="info-label">Order Date:</span>
+                    <span class="info-label" th:text="#{email.admin.order.details.date}">Order Date:</span>
                     <span class="info-value" th:text="${orderDate}">05/10/2025</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Order Time:</span>
+                    <span class="info-label" th:text="#{email.admin.order.details.time}">Order Time:</span>
                     <span class="info-value" th:text="${orderTime}">14:30</span>
                 </div>
                 <div class="info-row" th:if="${orderStatus != null}">
-                    <span class="info-label">Status:</span>
+                    <span class="info-label" th:text="#{email.admin.order.details.status}">Status:</span>
                     <span class="info-value">
                         <span th:class="'badge badge-' + ${#strings.toLowerCase(orderStatus)}" th:text="${orderStatus}">PENDING</span>
                     </span>
@@ -274,14 +269,14 @@
 
             <!-- Order Items -->
             <div class="info-section" th:if="${orderItems != null and !orderItems.isEmpty()}">
-                <h3>📚 Order Items</h3>
+                <h3 th:text="'📚 ' + #{email.admin.order.items.title}">📚 Order Items</h3>
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th>Book</th>
-                            <th class="text-right">Qty</th>
-                            <th class="text-right">Unit Price</th>
-                            <th class="text-right">Total</th>
+                            <th th:text="#{email.admin.order.items.book}">Book</th>
+                            <th class="text-right" th:text="#{email.admin.order.items.qty}">Qty</th>
+                            <th class="text-right" th:text="#{email.admin.order.items.unitprice}">Unit Price</th>
+                            <th class="text-right" th:text="#{email.admin.order.items.total}">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -297,24 +292,24 @@
 
             <!-- Total Amount -->
             <div class="total-section" th:if="${totalAmount != null}">
-                <span class="total-label">Total Amount:</span>
-                <span class="total-amount" th:text="${totalAmount} + ' DZD'">1,500.00 DZD</span>
+                <span class="total-label" th:text="#{email.admin.order.total} + ' &nbsp; &nbsp;'">Total Amount: &nbsp; &nbsp; </span>
+                <span class="total-amount" th:text="${totalAmount} + ' DZD'"> 1,500.00 DZD</span>
             </div>
 
             <!-- Action Button -->
             <div class="button-container">
-                <a th:href="${adminPanelUrl}" class="action-button">View Order in Admin Panel</a>
+                <a th:href="${adminPanelUrl}" class="action-button" style="color: #ffffff" th:text="#{email.admin.order.button}">View Order in Admin Panel</a>
             </div>
         </div>
 
         <div class="footer">
             <p>
-                <strong>Esprit Livre - Admin Panel</strong>
+                <strong th:text="#{email.admin.order.footer.title}">Esprit Livre - Admin Panel</strong>
             </p>
-            <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+            <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;" th:text="#{email.admin.order.footer.message}">
                 This is an automated notification sent to administrators when a new order is placed.
             </p>
-            <p style="font-size: 12px; color: #94a3b8;">
+            <p style="font-size: 12px; color: #94a3b8;" th:text="#{email.footer.copyright}">
                 © 2025 Esprit Livre. All rights reserved.
             </p>
         </div>

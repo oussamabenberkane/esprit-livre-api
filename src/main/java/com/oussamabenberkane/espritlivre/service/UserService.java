@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.config.Constants;
 import com.oussamabenberkane.espritlivre.domain.Authority;
 import com.oussamabenberkane.espritlivre.domain.User;
@@ -36,11 +37,14 @@ public class UserService {
 
     private final AuthorityRepository authorityRepository;
 
+    private final ApplicationProperties applicationProperties;
+
     private final CacheManager cacheManager;
 
-    public UserService(UserRepository userRepository, AuthorityRepository authorityRepository, CacheManager cacheManager) {
+    public UserService(UserRepository userRepository, AuthorityRepository authorityRepository, ApplicationProperties applicationProperties, CacheManager cacheManager) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
+        this.applicationProperties = applicationProperties;
         this.cacheManager = cacheManager;
     }
 

@@ -24,8 +24,8 @@
 									"pm.test(\"Extract and save access token\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    if (jsonData.access_token) {",
-									"        pm.collectionVariables.set(\"access_token\", jsonData.access_token);",
-									"        console.log(\"✅ Access token saved for ADMIN user\");",
+									"        pm.collectionVariables.set(\"el_admin_access_token\", jsonData.access_token);",
+									"        console.log(\"✅ Admin access token saved\");",
 									"    } else {",
 									"        pm.expect.fail(\"No access_token in response\");",
 									"    }",
@@ -111,8 +111,8 @@
 									"pm.test(\"Extract and save access token\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    if (jsonData.access_token) {",
-									"        pm.collectionVariables.set(\"access_token\", jsonData.access_token);",
-									"        console.log(\"✅ Access token saved for USER\");",
+									"        pm.collectionVariables.set(\"el_user_access_token\", jsonData.access_token);",
+									"        console.log(\"✅ User access token saved\");",
 									"    } else {",
 									"        pm.expect.fail(\"No access_token in response\");",
 									"    }",
@@ -860,6 +860,16 @@
 				{
 					"name": "Update Order (Admin Only)",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PUT",
 						"header": [
 							{
@@ -895,6 +905,16 @@
 				{
 					"name": "Delete Order (Admin Only)",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "DELETE",
 						"header": [],
 						"url": {
@@ -926,7 +946,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "{{access_token}}",
+				"value": "{{el_user_access_token}}",
 				"type": "string"
 			}
 		]
@@ -974,11 +994,21 @@
 		},
 		{
 			"key": "client_secret",
-			"value": "ZR0ibYlwv5tExzTX4QGsFqieCQ8AKgc3",
+			"value": "GClkRcZ7OYmB8aDInuIqFsVdPm8BwugS",
 			"type": "string"
 		},
 		{
 			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "el_admin_access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "el_user_access_token",
 			"value": "",
 			"type": "string"
 		}

@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.User;
+import com.oussamabenberkane.espritlivre.repository.UserRepository;
 import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
 import com.oussamabenberkane.espritlivre.service.dto.OrderItemDTO;
 import jakarta.mail.MessagingException;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,7 @@ public class MailService {
     private final SpringTemplateEngine templateEngine;
     private final ApplicationProperties applicationProperties;
     private final MessageSource messageSource;
+    private final UserRepository userRepository;
 
     @Value("${jhipster.mail.from:noreply@espritlivre.dz}")
     private String from;
@@ -51,12 +54,14 @@ public class MailService {
         JavaMailSender javaMailSender,
         SpringTemplateEngine templateEngine,
         ApplicationProperties applicationProperties,
-        MessageSource messageSource
+        MessageSource messageSource,
+        UserRepository userRepository
     ) {
         this.javaMailSender = javaMailSender;
         this.templateEngine = templateEngine;
         this.applicationProperties = applicationProperties;
         this.messageSource = messageSource;
+        this.userRepository = userRepository;
     }
 
     @Async
@@ -163,7 +168,16 @@ public class MailService {
             return;
         }
 
-        Locale locale = Locale.forLanguageTag("en");
+        // Retrieve admin user and use their language preference, default to French if not found
+        Locale locale = Locale.forLanguageTag("fr");
+        Optional<User> adminUser = userRepository.findOneByEmailIgnoreCase(adminEmail);
+        if (adminUser.isPresent() && adminUser.get().getLangKey() != null) {
+            locale = Locale.forLanguageTag(adminUser.get().getLangKey());
+            LOG.info("Using admin user language preference: {}", adminUser.get().getLangKey());
+        } else {
+            LOG.info("Admin user not found or no language preference set, using default locale: fr");
+        }
+
         Context context = new Context(locale);
 
         // Format order date and time
@@ -212,7 +226,7 @@ public class MailService {
             List<Map<String, Object>> items = order.getOrderItems().stream()
                 .map(item -> {
                     Map<String, Object> itemMap = new HashMap<>();
-                    itemMap.put("bookTitle", item.getBook() != null ? item.getBook().getTitle() : "N/A");
+                    itemMap.put("bookTitle", item.getBookTitle());
                     itemMap.put("quantity", item.getQuantity());
                     itemMap.put("unitPrice", item.getUnitPrice());
                     itemMap.put("totalPrice", item.getTotalPrice());
@@ -226,7 +240,7 @@ public class MailService {
         context.setVariable("adminPanelUrl", adminPanelUrl);
 
         String content = templateEngine.process("mail/adminOrderNotification", context);
-        String subject = "Esprit Livre - New Order #" + order.getUniqueId();
+        String subject = messageSource.getMessage("email.admin.order.title", null, locale) + " #" + order.getUniqueId();
 
         // Send with high priority
         sendEmailWithPriority(adminEmail, subject, content, false, true, 1);

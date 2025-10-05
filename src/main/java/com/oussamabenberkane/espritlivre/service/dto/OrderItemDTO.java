@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -24,10 +25,15 @@ public class OrderItemDTO implements Serializable {
 
     private OrderDTO order;
 
+    @JsonIgnore
     private BookDTO book;
 
     @NotNull
     private Long bookId;
+
+    private String bookTitle;
+
+    private String bookAuthor;
 
     public Long getId() {
         return id;
@@ -85,6 +91,22 @@ public class OrderItemDTO implements Serializable {
         this.bookId = bookId;
     }
 
+    public String getBookTitle() {
+        return bookTitle;
+    }
+
+    public void setBookTitle(String bookTitle) {
+        this.bookTitle = bookTitle;
+    }
+
+    public String getBookAuthor() {
+        return bookAuthor;
+    }
+
+    public void setBookAuthor(String bookAuthor) {
+        this.bookAuthor = bookAuthor;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -117,6 +139,8 @@ public class OrderItemDTO implements Serializable {
             ", order=" + getOrder() +
             ", book=" + getBook() +
             ", bookId=" + getBookId() +
+            ", bookTitle='" + getBookTitle() + "'" +
+            ", bookAuthor='" + getBookAuthor() + "'" +
             "}";
     }
 }

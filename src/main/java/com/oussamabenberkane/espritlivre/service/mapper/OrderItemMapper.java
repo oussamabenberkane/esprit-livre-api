@@ -13,8 +13,11 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface OrderItemMapper extends EntityMapper<OrderItemDTO, OrderItem> {
-    @Mapping(target = "order", source = "order", qualifiedByName = "orderId")
-    @Mapping(target = "book", source = "book", qualifiedByName = "bookId")
+    @Mapping(target = "order", ignore = true)
+    @Mapping(target = "book", ignore = true)
+    @Mapping(target = "bookId", source = "book.id")
+    @Mapping(target = "bookTitle", source = "book.title")
+    @Mapping(target = "bookAuthor", source = "book.author.name")
     OrderItemDTO toDto(OrderItem s);
 
     @Named("orderId")
