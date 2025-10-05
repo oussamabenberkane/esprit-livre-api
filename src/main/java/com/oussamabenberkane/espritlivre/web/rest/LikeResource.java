@@ -4,6 +4,7 @@ import com.oussamabenberkane.espritlivre.repository.LikeRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.LikeService;
 import com.oussamabenberkane.espritlivre.service.dto.LikeDTO;
+import com.oussamabenberkane.espritlivre.service.dto.LikeToggleResponseDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -151,5 +152,19 @@ public class LikeResource {
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .build();
+    }
+
+    /**
+     * {@code POST  /likes/toggle/:bookId} : Toggle like for a book.
+     *
+     * @param bookId the id of the book to like/unlike.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the toggle response in body.
+     */
+    @PostMapping("/toggle/{bookId}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
+    public ResponseEntity<LikeToggleResponseDTO> toggleLike(@PathVariable("bookId") Long bookId) {
+        LOG.debug("REST request to toggle like for book : {}", bookId);
+        LikeToggleResponseDTO response = likeService.toggleLike(bookId);
+        return ResponseEntity.ok(response);
     }
 }

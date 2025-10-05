@@ -1,9 +1,17 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.Like;
+import com.oussamabenberkane.espritlivre.domain.User;
+import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.LikeRepository;
+import com.oussamabenberkane.espritlivre.repository.UserRepository;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.LikeDTO;
+import com.oussamabenberkane.espritlivre.service.dto.LikeToggleResponseDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.LikeMapper;
+import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,20 +33,44 @@ public class LikeService {
 
     private final LikeMapper likeMapper;
 
-    public LikeService(LikeRepository likeRepository, LikeMapper likeMapper) {
+    private final UserRepository userRepository;
+
+    private final BookRepository bookRepository;
+
+    public LikeService(LikeRepository likeRepository, LikeMapper likeMapper, UserRepository userRepository, BookRepository bookRepository) {
         this.likeRepository = likeRepository;
         this.likeMapper = likeMapper;
+        this.userRepository = userRepository;
+        this.bookRepository = bookRepository;
     }
 
     /**
      * Save a like.
+     * Automatically sets the current authenticated user and creation timestamp.
      *
      * @param likeDTO the entity to save.
      * @return the persisted entity.
      */
     public LikeDTO save(LikeDTO likeDTO) {
         LOG.debug("Request to save Like : {}", likeDTO);
-        Like like = likeMapper.toEntity(likeDTO);
+
+        // Get current authenticated user
+        String login = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "like", "notauthenticated"));
+
+        User user = userRepository.findOneByLogin(login)
+            .orElseThrow(() -> new BadRequestAlertException("User not found", "like", "usernotfound"));
+
+        // Get book
+        Book book = bookRepository.findById(likeDTO.getBook().getId())
+            .orElseThrow(() -> new BadRequestAlertException("Book not found", "like", "booknotfound"));
+
+        // Create like entity
+        Like like = new Like();
+        like.setUser(user);
+        like.setBook(book);
+        like.setCreatedAt(ZonedDateTime.now());
+
         like = likeRepository.save(like);
         return likeMapper.toDto(like);
     }
@@ -97,5 +129,52 @@ public class LikeService {
     public void delete(Long id) {
         LOG.debug("Request to delete Like : {}", id);
         likeRepository.deleteById(id);
+    }
+
+    /**
+     * Toggle like for a book (like if not liked, unlike if already liked).
+     * Automatically uses the current authenticated user.
+     *
+     * @param bookId the id of the book.
+     * @return the toggle response with book id, like status, and total like count.
+     */
+    public LikeToggleResponseDTO toggleLike(Long bookId) {
+        LOG.debug("Request to toggle like for book : {}", bookId);
+
+        // Get current authenticated user
+        String login = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "like", "notauthenticated"));
+
+        User user = userRepository.findOneByLogin(login)
+            .orElseThrow(() -> new BadRequestAlertException("User not found", "like", "usernotfound"));
+
+        // Check if book exists
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BadRequestAlertException("Book not found", "like", "booknotfound"));
+
+        // Check if user already liked this book
+        Optional<Like> existingLike = likeRepository.findByBookIdAndCurrentUser(bookId);
+
+        boolean isLiked;
+        if (existingLike.isPresent()) {
+            // Unlike: delete the existing like
+            likeRepository.delete(existingLike.get());
+            isLiked = false;
+            LOG.debug("User {} unliked book {}", login, bookId);
+        } else {
+            // Like: create a new like
+            Like newLike = new Like();
+            newLike.setUser(user);
+            newLike.setBook(book);
+            newLike.setCreatedAt(ZonedDateTime.now());
+            likeRepository.save(newLike);
+            isLiked = true;
+            LOG.debug("User {} liked book {}", login, bookId);
+        }
+
+        // Get updated like count
+        Long likeCount = likeRepository.countByBookId(bookId);
+
+        return new LikeToggleResponseDTO(bookId, isLiked, likeCount);
     }
 }

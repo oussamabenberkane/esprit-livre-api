@@ -38,6 +38,10 @@ public class BookDTO implements Serializable {
 
     private Set<TagDTO> tags = new HashSet<>();
 
+    private Long likeCount;
+
+    private Boolean isLikedByCurrentUser;
+
     public Long getId() {
         return id;
     }
@@ -124,6 +128,22 @@ public class BookDTO implements Serializable {
 
     public void setTags(Set<TagDTO> tags) {
         this.tags = tags;
+    }
+
+    public Long getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(Long likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public Boolean getIsLikedByCurrentUser() {
+        return isLikedByCurrentUser;
+    }
+
+    public void setIsLikedByCurrentUser(Boolean isLikedByCurrentUser) {
+        this.isLikedByCurrentUser = isLikedByCurrentUser;
     }
 
     @Override

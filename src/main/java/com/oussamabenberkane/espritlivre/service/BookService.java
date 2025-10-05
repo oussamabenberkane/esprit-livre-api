@@ -2,6 +2,8 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
+import com.oussamabenberkane.espritlivre.repository.LikeRepository;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookMapper;
@@ -44,9 +46,12 @@ public class BookService {
 
     private final BookMapper bookMapper;
 
-    public BookService(BookRepository bookRepository, BookMapper bookMapper) {
+    private final LikeRepository likeRepository;
+
+    public BookService(BookRepository bookRepository, BookMapper bookMapper, LikeRepository likeRepository) {
         this.bookRepository = bookRepository;
         this.bookMapper = bookMapper;
+        this.likeRepository = likeRepository;
     }
 
     /**
@@ -140,7 +145,24 @@ public class BookService {
     @Transactional(readOnly = true)
     public Optional<BookDTO> findOne(Long id) {
         LOG.debug("Request to get Book : {}", id);
-        return bookRepository.findById(id).map(bookMapper::toDto);
+        return bookRepository.findById(id).map(book -> {
+            BookDTO bookDTO = bookMapper.toDto(book);
+
+            // Add like count
+            Long likeCount = likeRepository.countByBookId(id);
+            bookDTO.setLikeCount(likeCount);
+
+            // Check if current user liked this book (only if authenticated)
+            SecurityUtils.getCurrentUserLogin().ifPresentOrElse(
+                login -> {
+                    Boolean isLiked = likeRepository.existsByBookIdAndCurrentUser(id);
+                    bookDTO.setIsLikedByCurrentUser(isLiked);
+                },
+                () -> bookDTO.setIsLikedByCurrentUser(false) // Not authenticated = not liked
+            );
+
+            return bookDTO;
+        });
     }
 
     /**
