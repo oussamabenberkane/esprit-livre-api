@@ -48,18 +48,22 @@ public class OrderService {
 
     private final BookRepository bookRepository;
 
+    private final MailService mailService;
+
     public OrderService(
         OrderRepository orderRepository,
         OrderMapper orderMapper,
         UniqueIdGeneratorService uniqueIdGeneratorService,
         UserRepository userRepository,
-        BookRepository bookRepository
+        BookRepository bookRepository,
+        MailService mailService
     ) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.uniqueIdGeneratorService = uniqueIdGeneratorService;
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
+        this.mailService = mailService;
     }
 
     /**
@@ -147,7 +151,18 @@ public class OrderService {
         order.setOrderItems(orderItems);
 
         order = orderRepository.save(order);
-        return orderMapper.toDto(order);
+        OrderDTO savedOrderDTO = orderMapper.toDto(order);
+
+        // Send admin notification email
+        try {
+            String adminPanelUrl = "http://localhost:8080/admin/orders/" + savedOrderDTO.getId();
+            mailService.sendNewOrderNotificationToAdmin(savedOrderDTO, adminPanelUrl);
+            LOG.debug("Admin notification email queued for order: {}", savedOrderDTO.getUniqueId());
+        } catch (Exception e) {
+            LOG.error("Failed to send admin notification email for order: {}. Error: {}", savedOrderDTO.getUniqueId(), e.getMessage(), e);
+        }
+
+        return savedOrderDTO;
     }
 
     private String getValueOrUserFallback(String providedValue, String userValue) {

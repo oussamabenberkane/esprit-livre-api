@@ -2,13 +2,21 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.User;
+import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
+import com.oussamabenberkane.espritlivre.service.dto.OrderItemDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -143,5 +151,116 @@ public class MailService {
         String subject = messageSource.getMessage("email.verification.title", null, locale);
 
         sendEmail(user.getPendingEmail(), subject, content, false, true);
+    }
+
+    @Async
+    public void sendNewOrderNotificationToAdmin(OrderDTO order, String adminPanelUrl) {
+        LOG.debug("Sending new order notification to admin for order: {}", order.getUniqueId());
+
+        String adminEmail = applicationProperties.getAdminEmail();
+        if (adminEmail == null || adminEmail.isEmpty()) {
+            LOG.warn("Admin email not configured, skipping order notification for order: {}", order.getUniqueId());
+            return;
+        }
+
+        Locale locale = Locale.forLanguageTag("en");
+        Context context = new Context(locale);
+
+        // Format order date and time
+        ZonedDateTime orderDateTime = order.getCreatedAt() != null ? order.getCreatedAt() : ZonedDateTime.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault());
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
+
+        // Set basic order information
+        context.setVariable("orderUniqueId", order.getUniqueId());
+        context.setVariable("orderDate", dateFormatter.format(orderDateTime));
+        context.setVariable("orderTime", timeFormatter.format(orderDateTime));
+        context.setVariable("orderStatus", order.getStatus() != null ? order.getStatus().toString() : "PENDING");
+
+        // Set customer information (only if not null/empty)
+        if (order.getFullName() != null && !order.getFullName().isEmpty()) {
+            context.setVariable("customerName", order.getFullName());
+        }
+        if (order.getPhone() != null && !order.getPhone().isEmpty()) {
+            context.setVariable("customerPhone", order.getPhone());
+        }
+        if (order.getEmail() != null && !order.getEmail().isEmpty()) {
+            context.setVariable("customerEmail", order.getEmail());
+        }
+
+        // Set shipping address (only if not null/empty)
+        if (order.getWilaya() != null && !order.getWilaya().isEmpty()) {
+            context.setVariable("wilaya", order.getWilaya());
+        }
+        if (order.getCity() != null && !order.getCity().isEmpty()) {
+            context.setVariable("city", order.getCity());
+        }
+        if (order.getStreetAddress() != null && !order.getStreetAddress().isEmpty()) {
+            context.setVariable("streetAddress", order.getStreetAddress());
+        }
+        if (order.getPostalCode() != null && !order.getPostalCode().isEmpty()) {
+            context.setVariable("postalCode", order.getPostalCode());
+        }
+
+        // Set total amount
+        if (order.getTotalAmount() != null) {
+            context.setVariable("totalAmount", order.getTotalAmount());
+        }
+
+        // Set order items
+        if (order.getOrderItems() != null && !order.getOrderItems().isEmpty()) {
+            List<Map<String, Object>> items = order.getOrderItems().stream()
+                .map(item -> {
+                    Map<String, Object> itemMap = new HashMap<>();
+                    itemMap.put("bookTitle", item.getBook() != null ? item.getBook().getTitle() : "N/A");
+                    itemMap.put("quantity", item.getQuantity());
+                    itemMap.put("unitPrice", item.getUnitPrice());
+                    itemMap.put("totalPrice", item.getTotalPrice());
+                    return itemMap;
+                })
+                .collect(Collectors.toList());
+            context.setVariable("orderItems", items);
+        }
+
+        // Set admin panel URL
+        context.setVariable("adminPanelUrl", adminPanelUrl);
+
+        String content = templateEngine.process("mail/adminOrderNotification", context);
+        String subject = "Esprit Livre - New Order #" + order.getUniqueId();
+
+        // Send with high priority
+        sendEmailWithPriority(adminEmail, subject, content, false, true, 1);
+    }
+
+    @Async
+    public void sendEmailWithPriority(String to, String subject, String content, boolean isMultipart, boolean isHtml, int priority) {
+        LOG.debug(
+            "Send priority email[multipart '{}' and html '{}'] to '{}' with subject '{}' and priority={}",
+            isMultipart,
+            isHtml,
+            to,
+            subject,
+            priority
+        );
+
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name());
+            message.setTo(to);
+            message.setFrom(from, "Esprit Livre");
+            message.setSubject(subject);
+            message.setText(content, isHtml);
+
+            // Add headers to improve deliverability
+            mimeMessage.setHeader("X-Mailer", "Esprit Livre Mailer");
+            mimeMessage.setHeader("X-Priority", String.valueOf(priority));
+
+            javaMailSender.send(mimeMessage);
+            LOG.info("Priority email successfully sent to '{}' with subject '{}'", to, subject);
+        } catch (MessagingException e) {
+            LOG.error("Failed to send priority email to '{}'. Error: {}", to, e.getMessage(), e);
+        } catch (Exception e) {
+            LOG.error("Unexpected error while sending priority email to '{}'. Error: {}", to, e.getMessage(), e);
+        }
     }
 }
