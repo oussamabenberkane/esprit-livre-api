@@ -88,7 +88,7 @@ public class Order implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "order")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "order", "book" }, allowSetters = true)
     private Set<OrderItem> orderItems = new HashSet<>();

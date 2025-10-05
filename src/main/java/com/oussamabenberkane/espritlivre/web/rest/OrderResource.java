@@ -5,6 +5,7 @@ import com.oussamabenberkane.espritlivre.repository.OrderRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.OrderService;
+import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
@@ -50,9 +51,12 @@ public class OrderResource {
 
     private final OrderRepository orderRepository;
 
-    public OrderResource(OrderService orderService, OrderRepository orderRepository) {
+    private final ValidationService validationService;
+
+    public OrderResource(OrderService orderService, OrderRepository orderRepository, ValidationService validationService) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
+        this.validationService = validationService;
     }
 
     /**
@@ -124,7 +128,7 @@ public class OrderResource {
      */
     @GetMapping("")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
-    public ResponseEntity<List<OrderDTO>> getAllOrders(
+    public ResponseEntity<Page<OrderDTO>> getAllOrders(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
         @RequestParam(required = false) OrderStatus status,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateFrom,
@@ -134,15 +138,8 @@ public class OrderResource {
     ) {
         LOG.debug("REST request to get a page of Orders");
 
-        // Amount range validation
-        if (minAmount != null && maxAmount != null && minAmount.compareTo(maxAmount) > 0) {
-            throw new BadRequestAlertException("minAmount cannot be greater than maxAmount", "Order", "min_amount_greater_than_max_amount");
-        }
-
-        // Date range validation
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
-            throw new BadRequestAlertException("dateFrom cannot be after dateTo", "Order", "date_from_after_date_to");
-        }
+        validationService.validateAmountRange(minAmount, maxAmount, ENTITY_NAME);
+        validationService.validateDateRange(dateFrom, dateTo, ENTITY_NAME);
 
         boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
         Page<OrderDTO> page;
@@ -156,7 +153,7 @@ public class OrderResource {
         }
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        return ResponseEntity.ok().headers(headers).body(page);
     }
 
     /**

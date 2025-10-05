@@ -103,4 +103,5 @@ jhipster:
 # ===================================================================
 
 application:
-  admin-email: oussamabenberkane.pro@gmail.com
+  admin-email: ${ADMIN_EMAIL:oussamabenberkane.pro@gmail.com}
+  admin-panel-url: ${ADMIN_PANEL_URL:http://localhost:8080/admin}

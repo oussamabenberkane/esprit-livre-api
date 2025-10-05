@@ -33,6 +33,7 @@ public class Book implements Serializable {
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
     private Author author;
 

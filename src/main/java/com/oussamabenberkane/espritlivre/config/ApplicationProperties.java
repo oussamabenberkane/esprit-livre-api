@@ -17,6 +17,8 @@ public class ApplicationProperties {
 
     private String devWebsite;
 
+    private String adminPanelUrl;
+
     // jhipster-needle-application-properties-property
 
     public Liquibase getLiquibase() {
@@ -37,6 +39,14 @@ public class ApplicationProperties {
 
     public void setDevWebsite(String devWebsite) {
         this.devWebsite = devWebsite;
+    }
+
+    public String getAdminPanelUrl() {
+        return adminPanelUrl;
+    }
+
+    public void setAdminPanelUrl(String adminPanelUrl) {
+        this.adminPanelUrl = adminPanelUrl;
     }
 
     // jhipster-needle-application-properties-property-getter

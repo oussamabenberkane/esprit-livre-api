@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -40,6 +42,7 @@ public class TagService {
      * @param tagDTO the entity to save.
      * @return the persisted entity.
      */
+    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO save(TagDTO tagDTO) {
         LOG.debug("Request to save Tag : {}", tagDTO);
         Tag tag = tagMapper.toEntity(tagDTO);
@@ -53,6 +56,7 @@ public class TagService {
      * @param tagDTO the entity to save.
      * @return the persisted entity.
      */
+    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO update(TagDTO tagDTO) {
         LOG.debug("Request to update Tag : {}", tagDTO);
         Tag tag = tagMapper.toEntity(tagDTO);
@@ -67,6 +71,7 @@ public class TagService {
      * @return the list of entities.
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "tags-all", unless = "#result == null")
     public Page<TagDTO> findAll(Pageable pageable) {
         LOG.debug("Request to get all Tags");
         return tagRepository.findAll(pageable).map(tagMapper::toDto);
@@ -80,6 +85,7 @@ public class TagService {
      * @return the list of entities.
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "tags-by-type", key = "#type + '-' + #pageable.pageNumber + '-' + #pageable.pageSize", unless = "#result == null")
     public Page<TagDTO> findAll(Pageable pageable, TagType type) {
         LOG.debug("Request to get all Tags with type: {}", type);
 
@@ -99,6 +105,7 @@ public class TagService {
      * @return the list of entities.
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "tags-by-type", key = "'list-' + #type", unless = "#result == null")
     public List<TagDTO> findAllByType(TagType type) {
         LOG.debug("Request to get all Tags with type: {}", type);
 
@@ -139,6 +146,7 @@ public class TagService {
      *
      * @param id the id of the entity.
      */
+    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public void delete(Long id) {
         LOG.debug("Request to delete Tag : {}", id);
         tagRepository.deleteById(id);

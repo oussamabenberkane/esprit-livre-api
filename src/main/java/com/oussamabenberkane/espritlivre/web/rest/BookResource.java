@@ -3,6 +3,7 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.BookService;
+import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
@@ -50,9 +51,12 @@ public class BookResource {
 
     private final BookRepository bookRepository;
 
-    public BookResource(BookService bookService, BookRepository bookRepository) {
+    private final ValidationService validationService;
+
+    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService) {
         this.bookService = bookService;
         this.bookRepository = bookRepository;
+        this.validationService = validationService;
     }
 
     /**
@@ -110,7 +114,7 @@ public class BookResource {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<BookDTO>> getAllBooks(
+    public ResponseEntity<Page<BookDTO>> getAllBooks(
         @ParameterObject Pageable pageable,
         @RequestParam(required = false) String search,
         @RequestParam(required = false) String author,
@@ -119,13 +123,10 @@ public class BookResource {
         @RequestParam(required = false) @Min(1) Long categoryId,
         @RequestParam(required = false) @Min(1) Long mainDisplayId
     ) {
-        // Add price range validation
-        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
-            throw new BadRequestAlertException("minPrice cannot be greater than maxPrice", "Book", "min_price_greater_than_max_price");
-        }
+        validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
         Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        return ResponseEntity.ok().headers(headers).body(page);
     }
 
     /**
@@ -142,7 +143,7 @@ public class BookResource {
      */
     @GetMapping("/liked")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
-    public ResponseEntity<List<BookDTO>> getLikedBooks(
+    public ResponseEntity<Page<BookDTO>> getLikedBooks(
         @ParameterObject Pageable pageable,
         @RequestParam(required = false) String search,
         @RequestParam(required = false) String author,
@@ -152,13 +153,10 @@ public class BookResource {
         @RequestParam(required = false) @Min(1) Long mainDisplayId
     ) {
         LOG.debug("REST request to get liked books");
-        // Add price range validation
-        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
-            throw new BadRequestAlertException("minPrice cannot be greater than maxPrice", "Book", "min_price_greater_than_max_price");
-        }
+        validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
         Page<BookDTO> page = bookService.findLikedBooksByCurrentUser(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        return ResponseEntity.ok().headers(headers).body(page);
     }
 
     /**
@@ -188,7 +186,7 @@ public class BookResource {
     }
 
     /**
-     * {@code DELETE  /books/:id} : delete the "id" book.
+     * {@code DELETE  /books/:id} : soft delete the "id" book (sets active = false).
      *
      * @param id the id of the bookDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
@@ -196,8 +194,25 @@ public class BookResource {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<Void> deleteBook(@PathVariable("id") Long id) {
-        LOG.debug("REST request to delete Book : {}", id);
+        LOG.debug("REST request to soft delete Book : {}", id);
         bookService.delete(id);
+        return ResponseEntity.noContent()
+            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .build();
+    }
+
+    /**
+     * {@code DELETE  /books/:id/forever} : hard delete the "id" book (permanently removes from database).
+     * WARNING: This cannot be undone and will affect order history.
+     *
+     * @param id the id of the bookDTO to permanently delete.
+     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     */
+    @DeleteMapping("/{id}/forever")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<Void> deleteBookForever(@PathVariable("id") Long id) {
+        LOG.debug("REST request to permanently delete Book : {}", id);
+        bookService.deleteForever(id);
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .build();

@@ -6,14 +6,13 @@
 
     <!--
         Add performance indexes for frequently queried fields.
-        Priority: P0 (High Impact, Low Effort, Very High ROI)
 
         Note: Foreign key columns (author_id, user_id, book_id, order_id) already have
         indexes created automatically by PostgreSQL, so they are not duplicated here.
     -->
     <changeSet id="20251005000002-1" author="system">
 
-        <!-- Book table indexes -->
+        <!-- Book table indexes for filtering and search -->
         <createIndex indexName="idx_book_title" tableName="book">
             <column name="title"/>
         </createIndex>
@@ -22,7 +21,11 @@
             <column name="price"/>
         </createIndex>
 
-        <!-- Order table indexes -->
+        <createIndex indexName="idx_book_active" tableName="book">
+            <column name="active"/>
+        </createIndex>
+
+        <!-- Order table indexes for filtering -->
         <createIndex indexName="idx_order_status" tableName="jhi_order">
             <column name="status"/>
         </createIndex>
@@ -36,27 +39,13 @@
             <column name="unique_id"/>
         </createIndex>
 
-        <!-- Tag table indexes -->
-        <createIndex indexName="idx_tag_type" tableName="tag">
-            <column name="type"/>
+        <!-- Author table index for search/autocomplete -->
+        <createIndex indexName="idx_author_name" tableName="author">
+            <column name="name"/>
         </createIndex>
 
-        <createIndex indexName="idx_tag_active" tableName="tag">
-            <column name="active"/>
-        </createIndex>
-
-        <!-- Composite indexes for common query patterns -->
-        <!-- Covers user order history queries (user_id + created_at) -->
-        <createIndex indexName="idx_order_user_created" tableName="jhi_order">
-            <column name="user_id"/>
-            <column name="created_at"/>
-        </createIndex>
-
-        <!-- Covers active tag filtering by type -->
-        <createIndex indexName="idx_tag_active_type" tableName="tag">
-            <column name="active"/>
-            <column name="type"/>
-        </createIndex>
+        <!-- Composite index for user likes (covered by unique constraint already) -->
+        <!-- idx_like_user_book already exists via unique constraint in 20251005000000 -->
 
     </changeSet>
 

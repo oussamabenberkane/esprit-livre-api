@@ -9,6 +9,7 @@ import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookMapper;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -145,7 +146,7 @@ public class BookService {
     @Transactional(readOnly = true)
     public Optional<BookDTO> findOne(Long id) {
         LOG.debug("Request to get Book : {}", id);
-        return bookRepository.findById(id).map(book -> {
+        return bookRepository.findWithAuthorAndTagsById(id).map(book -> {
             BookDTO bookDTO = bookMapper.toDto(book);
 
             // Add like count
@@ -166,12 +167,27 @@ public class BookService {
     }
 
     /**
-     * Delete the book by id.
+     * Soft delete the book by id (sets active = false).
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete Book : {}", id);
+        LOG.debug("Request to soft delete Book : {}", id);
+        bookRepository.findById(id).ifPresent(book -> {
+            book.setActive(false);
+            book.setUpdatedAt(ZonedDateTime.now());
+            bookRepository.save(book);
+        });
+    }
+
+    /**
+     * Hard delete the book by id (permanently removes from database).
+     * WARNING: This cannot be undone and will affect order history.
+     *
+     * @param id the id of the entity.
+     */
+    public void deleteForever(Long id) {
+        LOG.debug("Request to hard delete Book : {}", id);
         bookRepository.deleteById(id);
     }
 

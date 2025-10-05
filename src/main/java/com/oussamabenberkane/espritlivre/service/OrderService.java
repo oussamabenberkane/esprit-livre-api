@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.Order;
 import com.oussamabenberkane.espritlivre.domain.OrderItem;
@@ -50,13 +51,16 @@ public class OrderService {
 
     private final MailService mailService;
 
+    private final ApplicationProperties applicationProperties;
+
     public OrderService(
         OrderRepository orderRepository,
         OrderMapper orderMapper,
         UniqueIdGeneratorService uniqueIdGeneratorService,
         UserRepository userRepository,
         BookRepository bookRepository,
-        MailService mailService
+        MailService mailService,
+        ApplicationProperties applicationProperties
     ) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
@@ -64,6 +68,7 @@ public class OrderService {
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
         this.mailService = mailService;
+        this.applicationProperties = applicationProperties;
     }
 
     /**
@@ -123,12 +128,12 @@ public class OrderService {
         order.setShippingCost(orderDTO.getShippingCost());
         order.setTotalAmount(orderDTO.getTotalAmount());
 
-        // Process order items
+        // Process order items with pessimistic locking to prevent race conditions
         Set<OrderItem> orderItems = new HashSet<>();
         if (orderDTO.getOrderItems() != null && !orderDTO.getOrderItems().isEmpty()) {
             for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
-                // Validate stock availability
-                Book book = bookRepository.findById(itemDTO.getBookId())
+                // Validate stock availability with pessimistic write lock
+                Book book = bookRepository.findByIdWithLock(itemDTO.getBookId())
                     .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
 
                 if (book.getStockQuantity() == null || book.getStockQuantity() < itemDTO.getQuantity()) {
@@ -155,7 +160,7 @@ public class OrderService {
 
         // Send admin notification email
         try {
-            String adminPanelUrl = "http://localhost:8080/admin/orders/" + savedOrderDTO.getId();
+            String adminPanelUrl = applicationProperties.getAdminPanelUrl() + "/orders/" + savedOrderDTO.getId();
             mailService.sendNewOrderNotificationToAdmin(savedOrderDTO, adminPanelUrl);
             LOG.debug("Admin notification email queued for order: {}", savedOrderDTO.getUniqueId());
         } catch (Exception e) {
