@@ -51,13 +51,13 @@ public class OrderResource {
 
     /**
      * {@code POST  /orders} : Create a new order.
+     * Public endpoint - allows guest checkout (no authentication required).
      *
      * @param orderDTO the orderDTO to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new orderDTO, or with status {@code 400 (Bad Request)} if the order has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderDTO orderDTO) throws URISyntaxException {
         LOG.debug("REST request to save Order : {}", orderDTO);
         if (orderDTO.getId() != null) {

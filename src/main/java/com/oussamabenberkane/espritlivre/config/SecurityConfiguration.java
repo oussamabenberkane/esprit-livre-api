@@ -16,6 +16,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -66,6 +67,19 @@ public class SecurityConfiguration {
                 authz
                     .requestMatchers(mvc.pattern("/api/authenticate")).permitAll()
                     .requestMatchers(mvc.pattern("/api/auth-info")).permitAll()
+                    // Public book browsing endpoints
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/suggestions")).permitAll()
+                    // Public tag endpoints
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*")).permitAll()
+                    // Public author endpoints
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/*")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/top")).permitAll()
+                    // Public order creation (guest checkout)
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders")).permitAll()
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).authenticated()
                     .requestMatchers(mvc.pattern("/websocket/**")).authenticated()
