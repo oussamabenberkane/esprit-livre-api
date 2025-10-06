@@ -1,11 +1,14 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
+import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.TagRepository;
 import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.TagMapper;
 import com.oussamabenberkane.espritlivre.service.specs.TagSpecifications;
+import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -31,9 +34,12 @@ public class TagService {
 
     private final TagMapper tagMapper;
 
-    public TagService(TagRepository tagRepository, TagMapper tagMapper) {
+    private final BookRepository bookRepository;
+
+    public TagService(TagRepository tagRepository, TagMapper tagMapper, BookRepository bookRepository) {
         this.tagRepository = tagRepository;
         this.tagMapper = tagMapper;
+        this.bookRepository = bookRepository;
     }
 
     /**
@@ -45,6 +51,25 @@ public class TagService {
     @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO save(TagDTO tagDTO) {
         LOG.debug("Request to save Tag : {}", tagDTO);
+
+        // Validate required fields
+        if (tagDTO.getNameEn() == null || tagDTO.getNameEn().trim().isEmpty()) {
+            throw new BadRequestAlertException("English name is required", "tag", "nameenrequired");
+        }
+
+        if (tagDTO.getNameFr() == null || tagDTO.getNameFr().trim().isEmpty()) {
+            throw new BadRequestAlertException("French name is required", "tag", "namefrrequired");
+        }
+
+        if (tagDTO.getType() == null) {
+            throw new BadRequestAlertException("Tag type is required", "tag", "typerequired");
+        }
+
+        // Set active to true by default if not provided
+        if (tagDTO.getActive() == null) {
+            tagDTO.setActive(true);
+        }
+
         Tag tag = tagMapper.toEntity(tagDTO);
         tag = tagRepository.save(tag);
         return tagMapper.toDto(tag);
@@ -59,9 +84,36 @@ public class TagService {
     @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO update(TagDTO tagDTO) {
         LOG.debug("Request to update Tag : {}", tagDTO);
-        Tag tag = tagMapper.toEntity(tagDTO);
-        tag = tagRepository.save(tag);
-        return tagMapper.toDto(tag);
+
+        if (tagDTO.getId() == null) {
+            throw new BadRequestAlertException("Invalid id", "tag", "idnull");
+        }
+
+        // Validate tag exists
+        Tag existingTag = tagRepository.findById(tagDTO.getId())
+            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "tag", "idnotfound"));
+
+        // Validate required fields
+        if (tagDTO.getNameEn() == null || tagDTO.getNameEn().trim().isEmpty()) {
+            throw new BadRequestAlertException("English name is required", "tag", "nameenrequired");
+        }
+
+        if (tagDTO.getNameFr() == null || tagDTO.getNameFr().trim().isEmpty()) {
+            throw new BadRequestAlertException("French name is required", "tag", "namefrrequired");
+        }
+
+        if (tagDTO.getType() == null) {
+            throw new BadRequestAlertException("Tag type is required", "tag", "typerequired");
+        }
+
+        // Update fields
+        existingTag.setNameEn(tagDTO.getNameEn());
+        existingTag.setNameFr(tagDTO.getNameFr());
+        existingTag.setType(tagDTO.getType());
+        existingTag.setActive(tagDTO.getActive() != null ? tagDTO.getActive() : true);
+
+        Tag updatedTag = tagRepository.save(existingTag);
+        return tagMapper.toDto(updatedTag);
     }
 
     /**
@@ -149,6 +201,76 @@ public class TagService {
     @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public void delete(Long id) {
         LOG.debug("Request to delete Tag : {}", id);
+
+        Tag tag = tagRepository.findById(id)
+            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "tag", "idnotfound"));
+
+        // Check if tag is assigned to any books
+        if (tag.getBooks() != null && !tag.getBooks().isEmpty()) {
+            throw new BadRequestAlertException(
+                "Cannot delete tag that is assigned to books. Remove books first.",
+                "tag",
+                "taginuse"
+            );
+        }
+
         tagRepository.deleteById(id);
+    }
+
+    /**
+     * Add books to a tag.
+     *
+     * @param tagId the tag ID.
+     * @param bookIds the list of book IDs to add.
+     * @return the updated tag DTO.
+     */
+    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
+    public TagDTO addBooksToTag(Long tagId, List<Long> bookIds) {
+        LOG.debug("Request to add books {} to tag {}", bookIds, tagId);
+
+        Tag tag = tagRepository.findById(tagId)
+            .orElseThrow(() -> new BadRequestAlertException("Tag not found", "tag", "idnotfound"));
+
+        for (Long bookId : bookIds) {
+            Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BadRequestAlertException("Book not found with id: " + bookId, "book", "booknotfound"));
+
+            // Validate book is active
+            if (book.getActive() == null || !book.getActive()) {
+                throw new BadRequestAlertException("Cannot assign inactive book with id: " + bookId, "book", "bookinactive");
+            }
+
+            // Add book to tag if not already present
+            tag.addBook(book);
+        }
+
+        tag = tagRepository.save(tag);
+        return tagMapper.toDto(tag);
+    }
+
+    /**
+     * Remove books from a tag.
+     *
+     * @param tagId the tag ID.
+     * @param bookIds the list of book IDs to remove.
+     * @return the updated tag DTO.
+     */
+    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
+    public TagDTO removeBooksFromTag(Long tagId, List<Long> bookIds) {
+        LOG.debug("Request to remove books {} from tag {}", bookIds, tagId);
+
+        Tag tag = tagRepository.findById(tagId)
+            .orElseThrow(() -> new BadRequestAlertException("Tag not found", "tag", "idnotfound"));
+
+        for (Long bookId : bookIds) {
+            Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BadRequestAlertException("Book not found with id: " + bookId, "book", "booknotfound"));
+
+            // Remove book from tag
+            tag.removeBook(book);
+        }
+
+        tag = tagRepository.save(tag);
+        return tagMapper.toDto(tag);
     }
 }

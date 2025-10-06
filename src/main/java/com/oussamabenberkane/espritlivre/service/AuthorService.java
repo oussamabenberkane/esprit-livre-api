@@ -4,6 +4,7 @@ import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
 import com.oussamabenberkane.espritlivre.service.dto.AuthorDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.AuthorMapper;
+import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,12 @@ public class AuthorService {
      */
     public AuthorDTO save(AuthorDTO authorDTO) {
         LOG.debug("Request to save Author : {}", authorDTO);
+
+        // Validate required fields
+        if (authorDTO.getName() == null || authorDTO.getName().trim().isEmpty()) {
+            throw new BadRequestAlertException("Author name is required", "author", "namerequired");
+        }
+
         Author author = authorMapper.toEntity(authorDTO);
         author = authorRepository.save(author);
         return authorMapper.toDto(author);
@@ -54,9 +61,25 @@ public class AuthorService {
      */
     public AuthorDTO update(AuthorDTO authorDTO) {
         LOG.debug("Request to update Author : {}", authorDTO);
-        Author author = authorMapper.toEntity(authorDTO);
-        author = authorRepository.save(author);
-        return authorMapper.toDto(author);
+
+        if (authorDTO.getId() == null) {
+            throw new BadRequestAlertException("Invalid id", "author", "idnull");
+        }
+
+        // Validate author exists
+        Author existingAuthor = authorRepository.findById(authorDTO.getId())
+            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "author", "idnotfound"));
+
+        // Validate required fields
+        if (authorDTO.getName() == null || authorDTO.getName().trim().isEmpty()) {
+            throw new BadRequestAlertException("Author name is required", "author", "namerequired");
+        }
+
+        // Update fields
+        existingAuthor.setName(authorDTO.getName());
+
+        Author updatedAuthor = authorRepository.save(existingAuthor);
+        return authorMapper.toDto(updatedAuthor);
     }
 
     /**
@@ -90,6 +113,19 @@ public class AuthorService {
      */
     public void delete(Long id) {
         LOG.debug("Request to delete Author : {}", id);
+
+        Author author = authorRepository.findById(id)
+            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "author", "idnotfound"));
+
+        // Check if author has any books
+        if (author.getBooks() != null && !author.getBooks().isEmpty()) {
+            throw new BadRequestAlertException(
+                "Cannot delete author that has books. Remove or reassign books first.",
+                "author",
+                "authorinuse"
+            );
+        }
+
         authorRepository.deleteById(id);
     }
 

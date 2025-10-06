@@ -229,4 +229,44 @@ public class BookResource {
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .build();
     }
+
+    /**
+     * {@code POST  /books/:id/tags/add} : Add tags to a book.
+     *
+     * @param id the id of the book.
+     * @param tagIds the list of tag IDs to add.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated bookDTO.
+     */
+    @PostMapping("/{id}/tags/add")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<BookDTO> addTagsToBook(
+        @PathVariable("id") Long id,
+        @RequestBody List<Long> tagIds
+    ) {
+        LOG.debug("REST request to add tags {} to Book : {}", tagIds, id);
+        BookDTO result = bookService.addTagsToBook(id, tagIds);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
+    /**
+     * {@code POST  /books/:id/tags/remove} : Remove tags from a book.
+     *
+     * @param id the id of the book.
+     * @param tagIds the list of tag IDs to remove.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated bookDTO.
+     */
+    @PostMapping("/{id}/tags/remove")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<BookDTO> removeTagsFromBook(
+        @PathVariable("id") Long id,
+        @RequestBody List<Long> tagIds
+    ) {
+        LOG.debug("REST request to remove tags {} from Book : {}", tagIds, id);
+        BookDTO result = bookService.removeTagsFromBook(id, tagIds);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
 }

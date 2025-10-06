@@ -21,8 +21,8 @@ public class Author extends AbstractAuditingEntity<Long> implements Serializable
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "authorSequenceGenerator")
+    @SequenceGenerator(name = "authorSequenceGenerator", sequenceName = "author_seq", allocationSize = 1)
     @Column(name = "id")
     private Long id;
 

@@ -628,12 +628,189 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Add Tags to Book (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2, 3]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/books/:id/tags/add",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books",
+								":id",
+								"tags",
+								"add"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Add tags to a book. Provide an array of tag IDs. Tags must be active."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Tags from Book (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/books/:id/tags/remove",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books",
+								":id",
+								"tags",
+								"remove"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Remove tags from a book. Provide an array of tag IDs."
+					},
+					"response": []
 				}
 			]
 		},
 		{
 			"name": "Tags",
 			"item": [
+				{
+					"name": "Create Tag (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nameEn\": \"Mystery\",\n  \"nameFr\": \"Mystère\",\n  \"type\": \"CATEGORY\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tags",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags"
+							]
+						},
+						"description": "Create a new tag. Required: nameEn, nameFr, type. Active defaults to true."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Tag (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"nameEn\": \"Updated Fiction\",\n  \"nameFr\": \"Fiction Mise à Jour\",\n  \"type\": \"CATEGORY\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tags/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Update a tag. All fields can be changed including type."
+					},
+					"response": []
+				},
 				{
 					"name": "Get Tags by Type",
 					"request": {
@@ -658,12 +835,250 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get Tag by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tags/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Tag (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tags/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Delete a tag. Cannot delete if tag is assigned to books."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Books to Tag (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2, 3]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tags/:id/books/add",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags",
+								":id",
+								"books",
+								"add"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Add books to a tag. Provide an array of book IDs. Books must be active."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Books from Tag (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tags/:id/books/remove",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags",
+								":id",
+								"books",
+								"remove"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Remove books from a tag. Provide an array of book IDs."
+					},
+					"response": []
 				}
 			]
 		},
 		{
 			"name": "Authors",
 			"item": [
+				{
+					"name": "Create Author (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Yasmina Khadra\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/authors",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"authors"
+							]
+						},
+						"description": "Create a new author. Required: name."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Author (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"name\": \"Updated Author Name\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/authors/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"authors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Update an author's name."
+					},
+					"response": []
+				},
 				{
 					"name": "Get All Authors",
 					"request": {
@@ -708,6 +1123,67 @@
 								"top"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Author by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/authors/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"authors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Author (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/authors/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"authors",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Delete an author. Cannot delete if author has books."
 					},
 					"response": []
 				}

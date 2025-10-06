@@ -1,0 +1,487 @@
+{
+  "authors": [
+    {
+      "name": "Victor Hugo"
+    },
+    {
+      "name": "Albert Camus"
+    },
+    {
+      "name": "Simone de Beauvoir"
+    },
+    {
+      "name": "Antoine de Saint-Exupéry"
+    },
+    {
+      "name": "Alexandre Dumas"
+    },
+    {
+      "name": "Émile Zola"
+    },
+    {
+      "name": "Marcel Proust"
+    },
+    {
+      "name": "Jules Verne"
+    },
+    {
+      "name": "Gustave Flaubert"
+    },
+    {
+      "name": "Jean-Paul Sartre"
+    }
+  ],
+  "tags": [
+    {
+      "nameEn": "Fiction",
+      "nameFr": "Fiction",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Philosophy",
+      "nameFr": "Philosophie",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Classic",
+      "nameFr": "Classique",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Adventure",
+      "nameFr": "Aventure",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Romance",
+      "nameFr": "Romance",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Drama",
+      "nameFr": "Drame",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Science Fiction",
+      "nameFr": "Science-Fiction",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Historical",
+      "nameFr": "Historique",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Children's Literature",
+      "nameFr": "Littérature Jeunesse",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Existentialism",
+      "nameFr": "Existentialisme",
+      "type": "CATEGORY",
+      "active": true
+    },
+    {
+      "nameEn": "Bestseller",
+      "nameFr": "Meilleures Ventes",
+      "type": "ETIQUETTE",
+      "active": true
+    },
+    {
+      "nameEn": "New Release",
+      "nameFr": "Nouveauté",
+      "type": "ETIQUETTE",
+      "active": true
+    },
+    {
+      "nameEn": "Staff Pick",
+      "nameFr": "Choix du Personnel",
+      "type": "ETIQUETTE",
+      "active": true
+    },
+    {
+      "nameEn": "Award Winner",
+      "nameFr": "Prix Littéraire",
+      "type": "ETIQUETTE",
+      "active": true
+    },
+    {
+      "nameEn": "On Sale",
+      "nameFr": "En Promotion",
+      "type": "ETIQUETTE",
+      "active": true
+    },
+    {
+      "nameEn": "Limited Edition",
+      "nameFr": "Édition Limitée",
+      "type": "ETIQUETTE",
+      "active": true
+    },
+    {
+      "nameEn": "Featured",
+      "nameFr": "À la Une",
+      "type": "MAIN_DISPLAY",
+      "active": true
+    },
+    {
+      "nameEn": "Popular",
+      "nameFr": "Populaire",
+      "type": "MAIN_DISPLAY",
+      "active": true
+    },
+    {
+      "nameEn": "Recommended",
+      "nameFr": "Recommandé",
+      "type": "MAIN_DISPLAY",
+      "active": true
+    },
+    {
+      "nameEn": "Trending",
+      "nameFr": "Tendance",
+      "type": "MAIN_DISPLAY",
+      "active": true
+    },
+    {
+      "nameEn": "Must Read",
+      "nameFr": "À Lire Absolument",
+      "type": "MAIN_DISPLAY",
+      "active": true
+    },
+    {
+      "nameEn": "Editor's Choice",
+      "nameFr": "Choix de l'Éditeur",
+      "type": "MAIN_DISPLAY",
+      "active": true
+    }
+  ],
+  "books": [
+    {
+      "title": "Les Misérables",
+      "author": {
+        "name": "Victor Hugo"
+      },
+      "price": 1850.00,
+      "stockQuantity": 45,
+      "description": "Un chef-d'œuvre de la littérature française qui raconte l'histoire poignante de Jean Valjean, un ancien forçat en quête de rédemption dans la France du XIXe siècle."
+    },
+    {
+      "title": "L'Étranger",
+      "author": {
+        "name": "Albert Camus"
+      },
+      "price": 1200.00,
+      "stockQuantity": 60,
+      "description": "Roman existentialiste emblématique suivant Meursault, un homme confronté à l'absurdité de l'existence après avoir commis un meurtre apparemment sans motif."
+    },
+    {
+      "title": "Le Deuxième Sexe",
+      "author": {
+        "name": "Simone de Beauvoir"
+      },
+      "price": 2500.00,
+      "stockQuantity": 30,
+      "description": "Œuvre fondamentale du féminisme moderne qui analyse la condition féminine à travers l'histoire, la biologie, la psychanalyse et le matérialisme historique."
+    },
+    {
+      "title": "Le Petit Prince",
+      "author": {
+        "name": "Antoine de Saint-Exupéry"
+      },
+      "price": 950.00,
+      "stockQuantity": 120,
+      "description": "Conte philosophique et poétique racontant les aventures d'un petit prince voyageant de planète en planète, à la découverte de la nature humaine."
+    },
+    {
+      "title": "Le Comte de Monte-Cristo",
+      "author": {
+        "name": "Alexandre Dumas"
+      },
+      "price": 2200.00,
+      "stockQuantity": 40,
+      "description": "Roman d'aventures captivant narrant la vengeance méthodique d'Edmond Dantès après avoir été emprisonné injustement pendant quatorze ans."
+    },
+    {
+      "title": "Germinal",
+      "author": {
+        "name": "Émile Zola"
+      },
+      "price": 1600.00,
+      "stockQuantity": 35,
+      "description": "Roman naturaliste décrivant les conditions de vie difficiles des mineurs du nord de la France au XIXe siècle et leur lutte pour de meilleures conditions."
+    },
+    {
+      "title": "À la recherche du temps perdu - Du côté de chez Swann",
+      "author": {
+        "name": "Marcel Proust"
+      },
+      "price": 1900.00,
+      "stockQuantity": 25,
+      "description": "Premier volume de la monumentale saga proustienne explorant la mémoire, le temps et la société à travers les souvenirs du narrateur."
+    },
+    {
+      "title": "Vingt mille lieues sous les mers",
+      "author": {
+        "name": "Jules Verne"
+      },
+      "price": 1400.00,
+      "stockQuantity": 55,
+      "description": "Roman d'aventures sous-marines suivant le professeur Aronnax et le mystérieux capitaine Nemo à bord du sous-marin Nautilus."
+    },
+    {
+      "title": "Madame Bovary",
+      "author": {
+        "name": "Gustave Flaubert"
+      },
+      "price": 1350.00,
+      "stockQuantity": 42,
+      "description": "Roman réaliste narrant la vie d'Emma Bovary, une femme insatisfaite de sa vie provinciale qui cherche l'accomplissement dans des relations adultères."
+    },
+    {
+      "title": "La Nausée",
+      "author": {
+        "name": "Jean-Paul Sartre"
+      },
+      "price": 1300.00,
+      "stockQuantity": 38,
+      "description": "Roman philosophique existentialiste présentant le journal intime d'Antoine Roquentin confronté à l'absurdité et à la contingence de l'existence."
+    },
+    {
+      "title": "Notre-Dame de Paris",
+      "author": {
+        "name": "Victor Hugo"
+      },
+      "price": 1750.00,
+      "stockQuantity": 50,
+      "description": "Roman gothique se déroulant dans le Paris médiéval, centré sur les amours impossibles de Quasimodo pour la belle Esmeralda."
+    },
+    {
+      "title": "La Peste",
+      "author": {
+        "name": "Albert Camus"
+      },
+      "price": 1250.00,
+      "stockQuantity": 65,
+      "description": "Allégorie de la condition humaine face à l'absurde, racontant la lutte des habitants d'Oran contre une épidémie de peste bubonique."
+    },
+    {
+      "title": "Les Trois Mousquetaires",
+      "author": {
+        "name": "Alexandre Dumas"
+      },
+      "price": 1800.00,
+      "stockQuantity": 48,
+      "description": "Roman de cape et d'épée suivant les aventures de d'Artagnan et ses trois amis mousquetaires au service du roi Louis XIII."
+    },
+    {
+      "title": "Le Tour du monde en quatre-vingts jours",
+      "author": {
+        "name": "Jules Verne"
+      },
+      "price": 1150.00,
+      "stockQuantity": 70,
+      "description": "Roman d'aventures relatant le pari audacieux de Phileas Fogg de faire le tour du monde en seulement quatre-vingts jours."
+    },
+    {
+      "title": "L'Assommoir",
+      "author": {
+        "name": "Émile Zola"
+      },
+      "price": 1550.00,
+      "stockQuantity": 32,
+      "description": "Roman naturaliste décrivant la descente aux enfers de Gervaise, blanchisseuse parisienne, victime de l'alcoolisme et de la misère."
+    },
+    {
+      "title": "Huis clos",
+      "author": {
+        "name": "Jean-Paul Sartre"
+      },
+      "price": 980.00,
+      "stockQuantity": 55,
+      "description": "Pièce de théâtre existentialiste enfermant trois personnages dans une chambre pour l'éternité, illustrant la célèbre phrase 'l'enfer, c'est les autres'."
+    },
+    {
+      "title": "L'Éducation sentimentale",
+      "author": {
+        "name": "Gustave Flaubert"
+      },
+      "price": 1450.00,
+      "stockQuantity": 28,
+      "description": "Roman d'apprentissage suivant Frédéric Moreau et sa passion pour Madame Arnoux dans le Paris de la révolution de 1848."
+    },
+    {
+      "title": "Vol de nuit",
+      "author": {
+        "name": "Antoine de Saint-Exupéry"
+      },
+      "price": 1100.00,
+      "stockQuantity": 45,
+      "description": "Récit poétique et philosophique sur les débuts de l'aviation postale en Amérique du Sud, célébrant le courage et le dépassement de soi."
+    },
+    {
+      "title": "Les Mandarins",
+      "author": {
+        "name": "Simone de Beauvoir"
+      },
+      "price": 2100.00,
+      "stockQuantity": 22,
+      "description": "Roman Prix Goncourt 1954 dépeignant les intellectuels parisiens de l'après-guerre face aux dilemmes politiques et existentiels."
+    },
+    {
+      "title": "Le Ventre de Paris",
+      "author": {
+        "name": "Émile Zola"
+      },
+      "price": 1380.00,
+      "stockQuantity": 36,
+      "description": "Troisième volume des Rougon-Macquart se déroulant dans les Halles de Paris, peignant la vie quotidienne et les luttes sociales du Second Empire."
+    }
+  ],
+  "orders": [
+    {
+      "phone": "+213549123456",
+      "email": "ahmed.benali@example.dz",
+      "fullName": "Ahmed Benali",
+      "wilaya": "Alger",
+      "city": "Bab Ezzouar",
+      "streetAddress": "Cité 1er Mai, Bâtiment A",
+      "postalCode": "16000",
+      "shippingMethod": "HOME_DELIVERY",
+      "shippingProvider": "YALIDINE",
+      "totalAmount": 3650.00,
+      "shippingCost": 400.00,
+      "orderItems": [
+        {
+          "bookId": 1,
+          "quantity": 2,
+          "unitPrice": 1850.00,
+          "totalPrice": 3700.00
+        }
+      ]
+    },
+    {
+      "phone": "+213661234567",
+      "email": "fatima.kaci@example.dz",
+      "fullName": "Fatima Kaci",
+      "wilaya": "Oran",
+      "city": "Es Sénia",
+      "streetAddress": "Rue des Martyrs N°25",
+      "postalCode": "31000",
+      "shippingMethod": "SHIPPING_PROVIDER",
+      "shippingProvider": "ZR",
+      "totalAmount": 4650.00,
+      "shippingCost": 350.00,
+      "orderItems": [
+        {
+          "bookId": 4,
+          "quantity": 3,
+          "unitPrice": 950.00,
+          "totalPrice": 2850.00
+        },
+        {
+          "bookId": 2,
+          "quantity": 1,
+          "unitPrice": 1200.00,
+          "totalPrice": 1200.00
+        }
+      ]
+    },
+    {
+      "phone": "+213770987654",
+      "email": "karim.messaoudi@example.dz",
+      "fullName": "Karim Messaoudi",
+      "wilaya": "Constantine",
+      "city": "Constantine",
+      "streetAddress": "Boulevard de la République",
+      "postalCode": "25000",
+      "shippingMethod": "HOME_DELIVERY",
+      "shippingProvider": "YALIDINE",
+      "totalAmount": 7050.00,
+      "shippingCost": 450.00,
+      "orderItems": [
+        {
+          "bookId": 3,
+          "quantity": 2,
+          "unitPrice": 2500.00,
+          "totalPrice": 5000.00
+        },
+        {
+          "bookId": 10,
+          "quantity": 1,
+          "unitPrice": 1300.00,
+          "totalPrice": 1300.00
+        }
+      ]
+    },
+    {
+      "phone": "+213555876543",
+      "email": "sarah.amrani@example.dz",
+      "fullName": "Sarah Amrani",
+      "wilaya": "Tizi Ouzou",
+      "city": "Tizi Ouzou",
+      "streetAddress": "Nouvelle Ville, Bloc 12",
+      "postalCode": "15000",
+      "shippingMethod": "SHIPPING_PROVIDER",
+      "shippingProvider": "ZR",
+      "totalAmount": 5550.00,
+      "shippingCost": 300.00,
+      "orderItems": [
+        {
+          "bookId": 5,
+          "quantity": 1,
+          "unitPrice": 2200.00,
+          "totalPrice": 2200.00
+        },
+        {
+          "bookId": 8,
+          "quantity": 2,
+          "unitPrice": 1400.00,
+          "totalPrice": 2800.00
+        }
+      ]
+    },
+    {
+      "phone": "+213698765432",
+      "email": "youcef.boudiaf@example.dz",
+      "fullName": "Youcef Boudiaf",
+      "wilaya": "Bejaia",
+      "city": "Akbou",
+      "streetAddress": "Quartier Sidi Ali",
+      "postalCode": "06001",
+      "shippingMethod": "HOME_DELIVERY",
+      "shippingProvider": "YALIDINE",
+      "totalAmount": 9250.00,
+      "shippingCost": 500.00,
+      "orderItems": [
+        {
+          "bookId": 7,
+          "quantity": 3,
+          "unitPrice": 1900.00,
+          "totalPrice": 5700.00
+        },
+        {
+          "bookId": 14,
+          "quantity": 2,
+          "unitPrice": 1150.00,
+          "totalPrice": 2300.00
+        },
+        {
+          "bookId": 16,
+          "quantity": 1,
+          "unitPrice": 980.00,
+          "totalPrice": 980.00
+        }
+      ]
+    }
+  ]
+}

@@ -7,8 +7,7 @@
         Added the constraints for entity Author.
     -->
     <changeSet id="20250926220001-1" author="jhipster">
-
-        <createSequence sequenceName="author_seq" startValue="1050" incrementBy="1"/>
+        <createSequence sequenceName="author_seq" startValue="1" incrementBy="1"/>
     </changeSet>
     <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
 </databaseChangeLog>

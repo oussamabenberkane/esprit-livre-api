@@ -8,11 +8,13 @@ import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertExceptio
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -22,10 +24,12 @@ public class AppUserService {
 
     private final UserRepository userRepository;
     private final MailService mailService;
+    private final CacheManager cacheManager;
 
-    public AppUserService(UserRepository userRepository, MailService mailService) {
+    public AppUserService(UserRepository userRepository, MailService mailService, CacheManager cacheManager) {
         this.userRepository = userRepository;
         this.mailService = mailService;
+        this.cacheManager = cacheManager;
     }
 
     public void completeAppUserRegistration(AppUserDTO appUserDTO) {
@@ -36,6 +40,8 @@ public class AppUserService {
             .orElseThrow(() -> new BadRequestAlertException("User not found", "appUser", "usernotfound"));
 
         user.setLastName(appUserDTO.getLastName());
+        user.setEmail(appUserDTO.getEmail());
+        user.setPendingEmail(appUserDTO.getEmail());
         user.setPhone(appUserDTO.getPhone());
         user.setWilaya(appUserDTO.getWilaya());
         user.setCity(appUserDTO.getCity());
@@ -52,6 +58,7 @@ public class AppUserService {
         }
 
         userRepository.save(user);
+        clearUserCaches(user);
         mailService.sendNewUserRegistrationEmailToAdmin(user);
     }
 
@@ -82,6 +89,7 @@ public class AppUserService {
         if (appUserDTO.getImageUrl() != null) user.setImageUrl(appUserDTO.getImageUrl());
 
         userRepository.save(user);
+        clearUserCaches(user);
     }
 
     public void requestEmailChange(String newEmail) {
@@ -103,6 +111,7 @@ public class AppUserService {
         user.setPendingEmail(newEmail.toLowerCase());
 
         userRepository.save(user);
+        clearUserCaches(user);
 
         String verificationUrl = "http://localhost:8080/api/app-users/verify-email?token=" + token;
         mailService.sendEmailChangeVerification(user, verificationUrl);
@@ -114,7 +123,7 @@ public class AppUserService {
             .findFirst()
             .orElseThrow(() -> new BadRequestAlertException("Invalid token", "appUser", "invalidtoken"));
 
-        if (user.getEmailVerificationTokenExpiry() == null || 
+        if (user.getEmailVerificationTokenExpiry() == null ||
             Instant.now().isAfter(user.getEmailVerificationTokenExpiry())) {
             throw new BadRequestAlertException("Token expired", "appUser", "tokenexpired");
         }
@@ -125,6 +134,7 @@ public class AppUserService {
         user.setEmailVerificationTokenExpiry(null);
 
         userRepository.save(user);
+        clearUserCaches(user);
     }
 
     public void deleteUserAccount() {
@@ -136,6 +146,7 @@ public class AppUserService {
 
         user.setActivated(false);
         userRepository.save(user);
+        clearUserCaches(user);
     }
 
     private AppUserDTO mapToDTO(User user) {
@@ -155,5 +166,12 @@ public class AppUserService {
         dto.setDefaultShippingMethod(user.getDefaultShippingMethod());
         dto.setDefaultShippingProvider(user.getDefaultShippingProvider());
         return dto;
+    }
+
+    private void clearUserCaches(User user) {
+        Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)).evictIfPresent(user.getLogin());
+        if (user.getEmail() != null) {
+            Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evictIfPresent(user.getEmail());
+        }
     }
 }

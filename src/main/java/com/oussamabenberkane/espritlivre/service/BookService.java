@@ -2,9 +2,11 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
+import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.LikeRepository;
+import com.oussamabenberkane.espritlivre.repository.TagRepository;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
@@ -57,18 +59,22 @@ public class BookService {
 
     private final AuthorRepository authorRepository;
 
+    private final TagRepository tagRepository;
+
     public BookService(
         BookRepository bookRepository,
         BookMapper bookMapper,
         LikeRepository likeRepository,
         FileStorageService fileStorageService,
-        AuthorRepository authorRepository
+        AuthorRepository authorRepository,
+        TagRepository tagRepository
     ) {
         this.bookRepository = bookRepository;
         this.bookMapper = bookMapper;
         this.likeRepository = likeRepository;
         this.fileStorageService = fileStorageService;
         this.authorRepository = authorRepository;
+        this.tagRepository = tagRepository;
     }
 
     /**
@@ -466,5 +472,60 @@ public class BookService {
             .distinct()
             .limit(15)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Add tags to a book.
+     *
+     * @param bookId the book ID.
+     * @param tagIds the list of tag IDs to add.
+     * @return the updated book DTO.
+     */
+    public BookDTO addTagsToBook(Long bookId, List<Long> tagIds) {
+        LOG.debug("Request to add tags {} to book {}", tagIds, bookId);
+
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BadRequestAlertException("Book not found", "book", "idnotfound"));
+
+        for (Long tagId : tagIds) {
+            Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new BadRequestAlertException("Tag not found with id: " + tagId, "tag", "tagnotfound"));
+
+            // Validate tag is active
+            if (tag.getActive() == null || !tag.getActive()) {
+                throw new BadRequestAlertException("Cannot assign inactive tag with id: " + tagId, "tag", "taginactive");
+            }
+
+            // Add tag to book if not already present
+            book.addTag(tag);
+        }
+
+        book = bookRepository.save(book);
+        return bookMapper.toDto(book);
+    }
+
+    /**
+     * Remove tags from a book.
+     *
+     * @param bookId the book ID.
+     * @param tagIds the list of tag IDs to remove.
+     * @return the updated book DTO.
+     */
+    public BookDTO removeTagsFromBook(Long bookId, List<Long> tagIds) {
+        LOG.debug("Request to remove tags {} from book {}", tagIds, bookId);
+
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BadRequestAlertException("Book not found", "book", "idnotfound"));
+
+        for (Long tagId : tagIds) {
+            Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new BadRequestAlertException("Tag not found with id: " + tagId, "tag", "tagnotfound"));
+
+            // Remove tag from book
+            book.removeTag(tag);
+        }
+
+        book = bookRepository.save(book);
+        return bookMapper.toDto(book);
     }
 }
