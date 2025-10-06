@@ -11,10 +11,10 @@ import com.oussamabenberkane.espritlivre.service.specs.TagSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -48,7 +48,6 @@ public class TagService {
      * @param tagDTO the entity to save.
      * @return the persisted entity.
      */
-    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO save(TagDTO tagDTO) {
         LOG.debug("Request to save Tag : {}", tagDTO);
 
@@ -81,7 +80,6 @@ public class TagService {
      * @param tagDTO the entity to save.
      * @return the persisted entity.
      */
-    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO update(TagDTO tagDTO) {
         LOG.debug("Request to update Tag : {}", tagDTO);
 
@@ -119,57 +117,39 @@ public class TagService {
     /**
      * Get all the tags.
      *
-     * @param pageable the pagination information.
      * @return the list of entities.
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "tags-all", unless = "#result == null")
-    public Page<TagDTO> findAll(Pageable pageable) {
+    public List<TagDTO> findAll() {
         LOG.debug("Request to get all Tags");
-        return tagRepository.findAll(pageable).map(tagMapper::toDto);
+        return tagRepository.findAll().stream()
+            .map(tagMapper::toDto)
+            .collect(Collectors.toList());
     }
 
     /**
-     * Get all active tags by type.
+     * Get all tags with filters and pagination.
      *
      * @param pageable the pagination information.
      * @param type the tag type to filter by.
-     * @return the list of entities.
+     * @param search the search term for tag names.
+     * @return the page of entities.
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "tags-by-type", key = "#type + '-' + #pageable.pageNumber + '-' + #pageable.pageSize", unless = "#result == null")
-    public Page<TagDTO> findAll(Pageable pageable, TagType type) {
-        LOG.debug("Request to get all Tags with type: {}", type);
+    public Page<TagDTO> findAllWithFilters(Pageable pageable, TagType type, String search) {
+        LOG.debug("Request to get all Tags with type: {} and search: {}", type, search);
 
-        Specification<Tag> spec = Specification.where(TagSpecifications.isActive());
+        Specification<Tag> spec = Specification.where(null);
 
         if (type != null) {
             spec = spec.and(TagSpecifications.hasType(type));
+        }
+
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and(TagSpecifications.searchByName(search));
         }
 
         return tagRepository.findAll(spec, pageable).map(tagMapper::toDto);
-    }
-
-    /**
-     * Get all active tags by type (no pagination).
-     *
-     * @param type the tag type to filter by.
-     * @return the list of entities.
-     */
-    @Transactional(readOnly = true)
-    @Cacheable(value = "tags-by-type", key = "'list-' + #type", unless = "#result == null")
-    public List<TagDTO> findAllByType(TagType type) {
-        LOG.debug("Request to get all Tags with type: {}", type);
-
-        Specification<Tag> spec = Specification.where(TagSpecifications.isActive());
-
-        if (type != null) {
-            spec = spec.and(TagSpecifications.hasType(type));
-        }
-
-        return tagRepository.findAll(spec).stream()
-            .map(tagMapper::toDto)
-            .toList();
     }
 
     /**
@@ -198,7 +178,6 @@ public class TagService {
      *
      * @param id the id of the entity.
      */
-    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public void delete(Long id) {
         LOG.debug("Request to delete Tag : {}", id);
 
@@ -224,7 +203,6 @@ public class TagService {
      * @param bookIds the list of book IDs to add.
      * @return the updated tag DTO.
      */
-    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO addBooksToTag(Long tagId, List<Long> bookIds) {
         LOG.debug("Request to add books {} to tag {}", bookIds, tagId);
 
@@ -255,7 +233,6 @@ public class TagService {
      * @param bookIds the list of book IDs to remove.
      * @return the updated tag DTO.
      */
-    @CacheEvict(value = {"tags-by-type", "tags-all"}, allEntries = true)
     public TagDTO removeBooksFromTag(Long tagId, List<Long> bookIds) {
         LOG.debug("Request to remove books {} from tag {}", bookIds, tagId);
 

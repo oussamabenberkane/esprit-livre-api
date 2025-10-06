@@ -15,4 +15,17 @@ public class TagSpecifications {
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.equal(root.get("active"), true);
     }
+
+    public static Specification<Tag> searchByName(String search) {
+        return (root, query, criteriaBuilder) -> {
+            if (search == null || search.trim().isEmpty()) {
+                return null;
+            }
+            String searchPattern = "%" + search.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("nameEn")), searchPattern),
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("nameFr")), searchPattern)
+            );
+        };
+    }
 }

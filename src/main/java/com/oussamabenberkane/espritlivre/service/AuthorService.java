@@ -4,6 +4,7 @@ import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
 import com.oussamabenberkane.espritlivre.service.dto.AuthorDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.AuthorMapper;
+import com.oussamabenberkane.espritlivre.service.specs.AuthorSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,11 +44,6 @@ public class AuthorService {
      */
     public AuthorDTO save(AuthorDTO authorDTO) {
         LOG.debug("Request to save Author : {}", authorDTO);
-
-        // Validate required fields
-        if (authorDTO.getName() == null || authorDTO.getName().trim().isEmpty()) {
-            throw new BadRequestAlertException("Author name is required", "author", "namerequired");
-        }
 
         Author author = authorMapper.toEntity(authorDTO);
         author = authorRepository.save(author);
@@ -83,15 +80,23 @@ public class AuthorService {
     }
 
     /**
-     * Get all the authors.
+     * Get all authors with filters and pagination.
      *
      * @param pageable the pagination information.
-     * @return the list of entities.
+     * @param search the search term for author name.
+     * @return the page of entities.
      */
     @Transactional(readOnly = true)
-    public Page<AuthorDTO> findAll(Pageable pageable) {
-        LOG.debug("Request to get all Authors");
-        return authorRepository.findAll(pageable).map(authorMapper::toDto);
+    public Page<AuthorDTO> findAllWithFilters(Pageable pageable, String search) {
+        LOG.debug("Request to get all Authors with search: {}", search);
+
+        Specification<Author> spec = Specification.where(null);
+
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and(AuthorSpecifications.searchByName(search));
+        }
+
+        return authorRepository.findAll(spec, pageable).map(authorMapper::toDto);
     }
 
     /**
@@ -151,13 +156,15 @@ public class AuthorService {
      * @return the author entity.
      */
     @Transactional
-    public Author findOrCreateByName(String name) {
+    public AuthorDTO findOrCreateByName(String name) {
         LOG.debug("Request to find or create Author by name: {}", name);
-        return authorRepository.findByNameIgnoreCase(name)
-            .orElseGet(() -> {
-                Author newAuthor = new Author();
-                newAuthor.setName(name);
-                return authorRepository.save(newAuthor);
-            });
+        return authorMapper.toDto(
+            authorRepository.findByNameIgnoreCase(name)
+                .orElseGet(() -> {
+                    Author newAuthor = new Author();
+                    newAuthor.setName(name);
+                    return authorRepository.save(newAuthor);
+                })
+        );
     }
 }

@@ -65,7 +65,10 @@ public class AuthorResource {
         if (authorDTO.getId() != null) {
             throw new BadRequestAlertException("A new author cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        authorDTO = authorService.save(authorDTO);
+        if (authorDTO.getName() == null || authorDTO.getName().trim().isEmpty()) {
+            throw new BadRequestAlertException("Author name is required", "author", "namerequired");
+        }
+        authorDTO = authorService.findOrCreateByName(authorDTO.getName());
         return ResponseEntity.created(new URI("/api/authors/" + authorDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, authorDTO.getId().toString()))
             .body(authorDTO);
@@ -106,15 +109,19 @@ public class AuthorResource {
     }
 
     /**
-     * {@code GET  /authors} : get all the authors.
+     * {@code GET  /authors} : get all the authors with pagination and search.
      *
      * @param pageable the pagination information.
+     * @param search the search term for author name (optional).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of authors in body.
      */
     @GetMapping("")
-    public ResponseEntity<List<AuthorDTO>> getAllAuthors(@ParameterObject Pageable pageable) {
-        LOG.debug("REST request to get a page of Authors");
-        Page<AuthorDTO> page = authorService.findAll(pageable);
+    public ResponseEntity<List<AuthorDTO>> getAllAuthors(
+        @ParameterObject Pageable pageable,
+        @RequestParam(name = "search", required = false) String search
+    ) {
+        LOG.debug("REST request to get a page of Authors with search: {}", search);
+        Page<AuthorDTO> page = authorService.findAllWithFilters(pageable, search);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

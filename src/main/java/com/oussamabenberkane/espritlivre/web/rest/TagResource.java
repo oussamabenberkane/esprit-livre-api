@@ -101,18 +101,23 @@ public class TagResource {
     }
 
     /**
-     * {@code GET  /tags} : get all active tags by type.
+     * {@code GET  /tags} : get all active tags with pagination and search.
      *
-     * @param type the tag type (required).
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of tags in body.
+     * @param pageable the pagination information.
+     * @param type the tag type filter (optional).
+     * @param search the search term for tag names (optional).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the page of tags in body.
      */
     @GetMapping("")
     public ResponseEntity<List<TagDTO>> getAllTags(
-        @RequestParam(name = "type") TagType type
+        Pageable pageable,
+        @RequestParam(name = "type", required = false) TagType type,
+        @RequestParam(name = "search", required = false) String search
     ) {
-        LOG.debug("REST request to get all Tags with type: {}", type);
-        List<TagDTO> tags = tagService.findAllByType(type);
-        return ResponseEntity.ok().body(tags);
+        LOG.debug("REST request to get all Tags with type: {}, search: {}", type, search);
+        Page<TagDTO> page = tagService.findAllWithFilters(pageable, type, search);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**
