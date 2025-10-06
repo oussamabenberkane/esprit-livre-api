@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2931cb85-dfda-4e85-b592-a03699c24ae1",
+		"_postman_id": "7de0e6ea-7ea2-42e9-b242-9546f47db450",
 		"name": "Esprit Livre API",
 		"description": "Esprit Livre bookstore API with OAuth2 authentication",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -166,12 +166,12 @@
 								},
 								{
 									"key": "username",
-									"value": "yani",
+									"value": "user",
 									"type": "text"
 								},
 								{
 									"key": "password",
-									"value": "yani",
+									"value": "user",
 									"type": "text"
 								},
 								{
@@ -220,33 +220,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/account",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"account"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update User Profile",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"id\": \"c4af4e2f-b432-4c3b-8405-cca86cd5b97b\",\n    \"login\": \"user\",\n    \"firstName\": \"Oussama\",\n    \"lastName\": \"Benberkane\",\n    \"email\": \"oussamabenberkane.pro@gmail.com\",\n    \"langKey\": \"fr\",\n    \"imageUrl\": null,\n    \"phone\": \"+213549697533\",\n    \"wilaya\": \"Bejaia\",\n    \"city\": \"Akbou\",\n    \"streetAddress\": \"Sidi Ali\",\n    \"postalCode\": \"06001\",\n    \"defaultShippingMethod\": \"HOME_DELIVERY\",\n    \"defaultShippingProvider\": \"YALIDINE\"\n}"
-						},
 						"url": {
 							"raw": "{{base_url}}/api/account",
 							"host": [
@@ -369,6 +342,33 @@
 					"response": []
 				},
 				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"c4af4e2f-b432-4c3b-8405-cca86cd5b97b\",\n    \"login\": \"user\",\n    \"firstName\": \"Oussama\",\n    \"lastName\": \"Benberkane\",\n    \"email\": \"oussamabenberkane.pro@gmail.com\",\n    \"langKey\": \"fr\",\n    \"imageUrl\": null,\n    \"phone\": \"+213549697533\",\n    \"wilaya\": \"Bejaia\",\n    \"city\": \"Akbou\",\n    \"streetAddress\": \"Sidi Ali\",\n    \"postalCode\": \"06001\",\n    \"defaultShippingMethod\": \"HOME_DELIVERY\",\n    \"defaultShippingProvider\": \"YALIDINE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/account",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"account"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Verify Email Change",
 					"request": {
 						"method": "GET",
@@ -419,12 +419,114 @@
 			"name": "Books",
 			"item": [
 				{
+					"name": "Create Book (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "book",
+									"value": "{\n  \"title\": \"Sample Book Title\",\n  \"price\": 1500.00,\n  \"author\": {\n    \"id\": 1\n  },\n  \"stockQuantity\": 50,\n  \"description\": \"A wonderful book about...\"\n}",
+									"description": "Book data as JSON",
+									"type": "text",
+									"contentType": "application/json"
+								},
+								{
+									"key": "coverImage",
+									"description": "Book cover image (JPEG, PNG, or WebP, max 10MB, 300x400 to 2000x3000 pixels)",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/books",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books"
+							]
+						},
+						"description": "Create a new book with cover image. Required: title, price, coverImage. Optional: author, stockQuantity (defaults to 1), description. Image constraints: JPEG/PNG/WebP, max 10MB, 300x400 to 2000x3000 pixels."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Book (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "book",
+									"value": "{\n  \"id\": 1,\n  \"title\": \"Updated Book Title\",\n  \"price\": 1800.00,\n  \"author\": {\n    \"id\": 2\n  },\n  \"stockQuantity\": 75,\n  \"description\": \"Updated description...\"\n}",
+									"description": "Book data as JSON (must include id)",
+									"type": "text",
+									"contentType": "application/json"
+								},
+								{
+									"key": "coverImage",
+									"description": "New book cover image (optional - if not provided, keeps existing cover)",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/books/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Update an existing active book. Required: id, title, price. Optional: author, stockQuantity, description, coverImage. If coverImage is provided, replaces the old one. Only works for active books."
+					},
+					"response": []
+				},
+				{
 					"name": "Get All Books (with filters)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/books?search=fran&page=0&size=20",
+							"raw": "{{base_url}}/api/books?page=0&size=20",
 							"host": [
 								"{{base_url}}"
 							],
@@ -466,7 +568,8 @@
 								{
 									"key": "search",
 									"value": "fran",
-									"description": "Search in title, author, tags"
+									"description": "Search in title, author, tags",
+									"disabled": true
 								},
 								{
 									"key": "page",
@@ -706,35 +809,6 @@
 						"description": "Get all books liked by current user with optional filters"
 					},
 					"response": []
-				},
-				{
-					"name": "Get All Likes (Old - Not Recommended)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/likes?page=0&size=20",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"likes"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "0"
-								},
-								{
-									"key": "size",
-									"value": "20"
-								}
-							]
-						},
-						"description": "Legacy endpoint - use 'Get Liked Books' instead"
-					},
-					"response": []
 				}
 			]
 		},
@@ -744,9 +818,6 @@
 				{
 					"name": "Create Order (Guest or Authenticated)",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -756,7 +827,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+213549697533\",\n  \"email\": \"customer@example.com\",\n  \"fullName\": \"Guest Customer\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"123 Rue de la Liberté\",\n  \"postalCode\": \"06001\",\n  \"shippingMethod\": \"HOME_DELIVERY\",\n  \"shippingProvider\": \"YALIDINE\",\n  \"totalAmount\": 1500.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    },\n    {\n      \"bookId\": 2,\n      \"quantity\": 1,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 500.00\n    }\n  ]\n}"
+							"raw": "{\n  \"phone\": \"+213549697533\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"totalAmount\": 1500.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    },\n    {\n      \"bookId\": 2,\n      \"quantity\": 1,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 500.00\n    }\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders",
@@ -849,7 +920,7 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "1"
+									"value": "5"
 								}
 							]
 						},
@@ -994,7 +1065,7 @@
 		},
 		{
 			"key": "client_secret",
-			"value": "GClkRcZ7OYmB8aDInuIqFsVdPm8BwugS",
+			"value": "web_app",
 			"type": "string"
 		},
 		{

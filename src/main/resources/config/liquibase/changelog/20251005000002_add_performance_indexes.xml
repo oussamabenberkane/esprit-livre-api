@@ -44,9 +44,6 @@
             <column name="name"/>
         </createIndex>
 
-        <!-- Composite index for user likes (covered by unique constraint already) -->
-        <!-- idx_like_user_book already exists via unique constraint in 20251005000000 -->
-
     </changeSet>
 
 </databaseChangeLog>

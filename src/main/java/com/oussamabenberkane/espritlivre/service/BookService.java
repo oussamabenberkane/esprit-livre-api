@@ -1,12 +1,16 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
+import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.LikeRepository;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookMapper;
+import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -49,10 +53,78 @@ public class BookService {
 
     private final LikeRepository likeRepository;
 
-    public BookService(BookRepository bookRepository, BookMapper bookMapper, LikeRepository likeRepository) {
+    private final FileStorageService fileStorageService;
+
+    private final AuthorRepository authorRepository;
+
+    public BookService(
+        BookRepository bookRepository,
+        BookMapper bookMapper,
+        LikeRepository likeRepository,
+        FileStorageService fileStorageService,
+        AuthorRepository authorRepository
+    ) {
         this.bookRepository = bookRepository;
         this.bookMapper = bookMapper;
         this.likeRepository = likeRepository;
+        this.fileStorageService = fileStorageService;
+        this.authorRepository = authorRepository;
+    }
+
+    /**
+     * Create a new book with cover image.
+     *
+     * @param bookDTO the book data.
+     * @param coverImage the cover image file.
+     * @return the persisted entity.
+     */
+    public BookDTO createBookWithCover(BookDTO bookDTO, MultipartFile coverImage) {
+        LOG.debug("Request to create Book with cover: {}", bookDTO);
+
+        // Validate required fields
+        if (bookDTO.getTitle() == null || bookDTO.getTitle().trim().isEmpty()) {
+            throw new BadRequestAlertException("Title is required", "book", "titlerequired");
+        }
+
+        if (bookDTO.getPrice() == null) {
+            throw new BadRequestAlertException("Price is required", "book", "pricerequired");
+        }
+
+        if (bookDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestAlertException("Price must be greater than 0", "book", "invalidprice");
+        }
+
+        // Set defaults
+        if (bookDTO.getStockQuantity() == null) {
+            bookDTO.setStockQuantity(1);
+        }
+
+        bookDTO.setActive(true);
+        bookDTO.setCreatedAt(ZonedDateTime.now());
+
+        // Handle author if provided
+        if (bookDTO.getAuthor() != null && bookDTO.getAuthor().getId() != null) {
+            Author author = authorRepository.findById(bookDTO.getAuthor().getId())
+                .orElseThrow(() -> new BadRequestAlertException("Author not found", "book", "authornotfound"));
+        }
+
+        // Create and save the book first to get an ID
+        Book book = bookMapper.toEntity(bookDTO);
+        book = bookRepository.save(book);
+
+        // Store the cover image with the book ID
+        try {
+            String coverImageUrl = fileStorageService.storeBookCover(coverImage, book.getId());
+            book.setCoverImageUrl(coverImageUrl);
+            book = bookRepository.save(book);
+        } catch (Exception e) {
+            // If file storage fails, delete the book and throw exception
+            bookRepository.delete(book);
+            LOG.error("Failed to store cover image for book", e);
+            throw new BadRequestAlertException("Failed to store cover image: " + e.getMessage(), "book", "filestoragefailed");
+        }
+
+        return bookMapper.toDto(book);
     }
 
     /**
@@ -66,6 +138,84 @@ public class BookService {
         Book book = bookMapper.toEntity(bookDTO);
         book = bookRepository.save(book);
         return bookMapper.toDto(book);
+    }
+
+    /**
+     * Update an existing book with optional cover image.
+     *
+     * @param bookDTO the book data to update.
+     * @param coverImage the cover image file (optional).
+     * @return the persisted entity.
+     */
+    public BookDTO updateBookWithCover(BookDTO bookDTO, MultipartFile coverImage) {
+        LOG.debug("Request to update Book with cover: {}", bookDTO);
+
+        // Validate required fields
+        if (bookDTO.getId() == null) {
+            throw new BadRequestAlertException("Invalid id", "book", "idnull");
+        }
+
+        if (bookDTO.getTitle() == null || bookDTO.getTitle().trim().isEmpty()) {
+            throw new BadRequestAlertException("Title is required", "book", "titlerequired");
+        }
+
+        if (bookDTO.getPrice() == null) {
+            throw new BadRequestAlertException("Price is required", "book", "pricerequired");
+        }
+
+        if (bookDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestAlertException("Price must be greater than 0", "book", "invalidprice");
+        }
+
+        // Find existing book
+        Book existingBook = bookRepository.findById(bookDTO.getId())
+            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "book", "idnotfound"));
+
+        // Validate that the book is active
+        if (existingBook.getActive() == null || !existingBook.getActive()) {
+            throw new BadRequestAlertException("Cannot update inactive book", "book", "bookinactive");
+        }
+
+        // Handle author if provided
+        if (bookDTO.getAuthor() != null && bookDTO.getAuthor().getId() != null) {
+            Author author = authorRepository.findById(bookDTO.getAuthor().getId())
+                .orElseThrow(() -> new BadRequestAlertException("Author not found", "book", "authornotfound"));
+            existingBook.setAuthor(author);
+        } else {
+            // Author can be removed
+            existingBook.setAuthor(null);
+        }
+
+        // Update fields
+        existingBook.setTitle(bookDTO.getTitle());
+        existingBook.setPrice(bookDTO.getPrice());
+        existingBook.setStockQuantity(bookDTO.getStockQuantity() != null ? bookDTO.getStockQuantity() : 1);
+        existingBook.setDescription(bookDTO.getDescription());
+        existingBook.setUpdatedAt(ZonedDateTime.now());
+
+        // Handle cover image if provided
+        if (coverImage != null && !coverImage.isEmpty()) {
+            String oldCoverImageUrl = existingBook.getCoverImageUrl();
+
+            try {
+                // Store new cover image
+                String newCoverImageUrl = fileStorageService.storeBookCover(coverImage, existingBook.getId());
+                existingBook.setCoverImageUrl(newCoverImageUrl);
+
+                // Delete old cover image if it exists and is different
+                if (oldCoverImageUrl != null && !oldCoverImageUrl.equals(newCoverImageUrl)) {
+                    fileStorageService.deleteBookCover(oldCoverImageUrl);
+                }
+            } catch (Exception e) {
+                LOG.error("Failed to store new cover image for book", e);
+                throw new BadRequestAlertException("Failed to store cover image: " + e.getMessage(), "book", "filestoragefailed");
+            }
+        }
+        // If no cover image provided, keep existing cover
+
+        // Save updated book
+        Book updatedBook = bookRepository.save(existingBook);
+        return bookMapper.toDto(updatedBook);
     }
 
     /**

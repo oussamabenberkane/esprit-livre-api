@@ -60,45 +60,56 @@ public class BookResource {
     }
 
     /**
-     * {@code POST  /books} : Create a new book.
+     * {@code POST  /books} : Create a new book with cover image.
      *
-     * @param bookDTO the bookDTO to create.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new bookDTO, or with status {@code 400 (Bad Request)} if the book has already an ID.
+     * @param bookDTO the bookDTO to create (as JSON part).
+     * @param coverImage the book cover image file.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new bookDTO, or with status {@code 400 (Bad Request)} if validation fails.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("")
+    @PostMapping(value = "", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<BookDTO> createBook(@Valid @RequestBody BookDTO bookDTO) throws URISyntaxException {
-        LOG.debug("REST request to save Book : {}", bookDTO);
+    public ResponseEntity<BookDTO> createBook(
+        @RequestPart("book") @Valid BookDTO bookDTO,
+        @RequestPart("coverImage") @NotNull org.springframework.web.multipart.MultipartFile coverImage
+    ) throws URISyntaxException {
+        LOG.debug("REST request to create Book : {}", bookDTO);
+
         if (bookDTO.getId() != null) {
             throw new BadRequestAlertException("A new book cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        bookDTO = bookService.save(bookDTO);
-        return ResponseEntity.created(new URI("/api/books/" + bookDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, bookDTO.getId().toString()))
-            .body(bookDTO);
+
+        BookDTO result = bookService.createBookWithCover(bookDTO, coverImage);
+
+        return ResponseEntity.created(new URI("/api/books/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
-     * {@code PUT  /books/:id} : Updates an existing book.
+     * {@code PUT  /books/:id} : Update an existing book with optional cover image.
      *
-     * @param id the id of the bookDTO to save.
-     * @param bookDTO the bookDTO to update.
+     * @param id the id of the bookDTO to update.
+     * @param bookDTO the bookDTO to update (as JSON part).
+     * @param coverImage the book cover image file (optional).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated bookDTO,
      * or with status {@code 400 (Bad Request)} if the bookDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the bookDTO couldn't be updated.
+     * or with status {@code 404 (Not Found)} if the book does not exist.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<BookDTO> updateBook(
         @PathVariable(value = "id", required = false) final Long id,
-        @Valid @RequestBody BookDTO bookDTO
+        @RequestPart("book") @Valid BookDTO bookDTO,
+        @RequestPart(value = "coverImage", required = false) org.springframework.web.multipart.MultipartFile coverImage
     ) throws URISyntaxException {
         LOG.debug("REST request to update Book : {}, {}", id, bookDTO);
+
         if (bookDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
+
         if (!Objects.equals(id, bookDTO.getId())) {
             throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
         }
@@ -107,10 +118,11 @@ public class BookResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        bookDTO = bookService.update(bookDTO);
+        BookDTO result = bookService.updateBookWithCover(bookDTO, coverImage);
+
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, bookDTO.getId().toString()))
-            .body(bookDTO);
+            .body(result);
     }
 
     @GetMapping("")
