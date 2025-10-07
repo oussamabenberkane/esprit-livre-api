@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7de0e6ea-7ea2-42e9-b242-9546f47db450",
+		"_postman_id": "2763cd99-1ec7-400e-ab82-60bd022257b2",
 		"name": "Esprit Livre API",
 		"description": "Esprit Livre bookstore API with OAuth2 authentication",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -250,7 +250,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Yani\",\n  \"lastName\": \"Ferhaten\",\n  \"phone\": \"+213549697533\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"Ighrem\",\n  \"postalCode\": \"06001\",\n  \"defaultShippingMethod\": \"SHIPPING_PROVIDER\",\n  \"defaultShippingProvider\": \"ZR\",\n  \"langKey\": \"fr\"\n}"
+							"raw": "{\n  \"firstName\": \"Lhadi\",\n  \"lastName\": \"Tkt\",\n  \"phone\": \"+213549697533\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Bejaia\",\n  \"streetAddress\": \"Cite Aouchiche\",\n  \"postalCode\": \"00000\",\n  \"defaultShippingMethod\": \"SHIPPING_PROVIDER\",\n  \"defaultShippingProvider\": \"YALIDINE\",\n  \"langKey\": \"fr\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/app-users/register",
@@ -439,9 +439,9 @@
 								{
 									"key": "book",
 									"value": "{\n  \"title\": \"Sample Book Title\",\n  \"price\": 1500.00,\n  \"author\": {\n    \"id\": 1\n  },\n  \"stockQuantity\": 50,\n  \"description\": \"A wonderful book about...\"\n}",
+									"contentType": "application/json",
 									"description": "Book data as JSON",
-									"type": "text",
-									"contentType": "application/json"
+									"type": "text"
 								},
 								{
 									"key": "coverImage",
@@ -486,9 +486,9 @@
 								{
 									"key": "book",
 									"value": "{\n  \"id\": 1,\n  \"title\": \"Updated Book Title\",\n  \"price\": 1800.00,\n  \"author\": {\n    \"id\": 2\n  },\n  \"stockQuantity\": 75,\n  \"description\": \"Updated description...\"\n}",
+									"contentType": "application/json",
 									"description": "Book data as JSON (must include id)",
-									"type": "text",
-									"contentType": "application/json"
+									"type": "text"
 								},
 								{
 									"key": "coverImage",
@@ -808,6 +808,24 @@
 							]
 						},
 						"description": "Update a tag. All fields can be changed including type."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Tags",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tags",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags"
+							]
+						}
 					},
 					"response": []
 				},
@@ -1493,7 +1511,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "{{el_user_access_token}}",
+				"value": "{{el_admin_access_token}}",
 				"type": "string"
 			}
 		]
@@ -1503,6 +1521,7 @@
 			"listen": "prerequest",
 			"script": {
 				"type": "text/javascript",
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -1512,6 +1531,7 @@
 			"listen": "test",
 			"script": {
 				"type": "text/javascript",
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -1521,43 +1541,35 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:8080",
-			"type": "string"
+			"value": "http://localhost:8080"
 		},
 		{
 			"key": "keycloak_url",
-			"value": "http://localhost:9080",
-			"type": "string"
+			"value": "http://localhost:9080"
 		},
 		{
 			"key": "realm",
-			"value": "jhipster",
-			"type": "string"
+			"value": "jhipster"
 		},
 		{
 			"key": "client_id",
-			"value": "web_app",
-			"type": "string"
+			"value": "web_app"
 		},
 		{
 			"key": "client_secret",
-			"value": "web_app",
-			"type": "string"
+			"value": "web_app"
 		},
 		{
 			"key": "access_token",
-			"value": "",
-			"type": "string"
+			"value": ""
 		},
 		{
 			"key": "el_admin_access_token",
-			"value": "",
-			"type": "string"
+			"value": ""
 		},
 		{
 			"key": "el_user_access_token",
-			"value": "",
-			"type": "string"
+			"value": ""
 		}
 	]
 }
