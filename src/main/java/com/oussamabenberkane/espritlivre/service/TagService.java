@@ -9,8 +9,10 @@ import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.TagMapper;
 import com.oussamabenberkane.espritlivre.service.specs.TagSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -29,6 +31,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class TagService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TagService.class);
+
+    // Predefined color palette for ETIQUETTE tags (blue-themed with complementary colors)
+    private static final List<String> COLOR_PALETTE = Arrays.asList(
+        "#4A90E2", // Soft Blue
+        "#5B9BD5", // Sky Blue
+        "#2E5C8A", // Deep Blue
+        "#7FB3D5", // Light Blue
+        "#34495E", // Dark Slate Blue
+        "#3498DB", // Bright Blue
+        "#2980B9", // Ocean Blue
+        "#1ABC9C", // Turquoise
+        "#16A085", // Teal
+        "#5DADE2"  // Azure Blue
+    );
+
+    private final Random random = new Random();
 
     private final TagRepository tagRepository;
 
@@ -69,6 +87,11 @@ public class TagService {
             tagDTO.setActive(true);
         }
 
+        // Assign random color to ETIQUETTE tags
+        if (tagDTO.getType() == TagType.ETIQUETTE) {
+            tagDTO.setColorHex(getRandomColor());
+        }
+
         Tag tag = tagMapper.toEntity(tagDTO);
         tag = tagRepository.save(tag);
         return tagMapper.toDto(tag);
@@ -104,10 +127,14 @@ public class TagService {
             throw new BadRequestAlertException("Tag type is required", "tag", "typerequired");
         }
 
+        // Prevent changing tag type
+        if (!existingTag.getType().equals(tagDTO.getType())) {
+            throw new BadRequestAlertException("Tag type cannot be changed", "tag", "typeimmutable");
+        }
+
         // Update fields
         existingTag.setNameEn(tagDTO.getNameEn());
         existingTag.setNameFr(tagDTO.getNameFr());
-        existingTag.setType(tagDTO.getType());
         existingTag.setActive(tagDTO.getActive() != null ? tagDTO.getActive() : true);
 
         Tag updatedTag = tagRepository.save(existingTag);
@@ -249,5 +276,38 @@ public class TagService {
 
         tag = tagRepository.save(tag);
         return tagMapper.toDto(tag);
+    }
+
+    /**
+     * Change the color of an ETIQUETTE tag to a random color from the palette.
+     *
+     * @param tagId the tag ID.
+     * @return the updated tag DTO.
+     */
+    public TagDTO changeColor(Long tagId) {
+        LOG.debug("Request to change color for tag {}", tagId);
+
+        Tag tag = tagRepository.findById(tagId)
+            .orElseThrow(() -> new BadRequestAlertException("Tag not found", "tag", "idnotfound"));
+
+        // Validate that the tag is of type ETIQUETTE
+        if (tag.getType() != TagType.ETIQUETTE) {
+            throw new BadRequestAlertException("Only ETIQUETTE tags can have their color changed", "tag", "invalidtagtype");
+        }
+
+        // Assign a new random color
+        tag.setColorHex(getRandomColor());
+        tag = tagRepository.save(tag);
+
+        return tagMapper.toDto(tag);
+    }
+
+    /**
+     * Get a random color from the predefined color palette.
+     *
+     * @return a random color hex string.
+     */
+    private String getRandomColor() {
+        return COLOR_PALETTE.get(random.nextInt(COLOR_PALETTE.size()));
     }
 }

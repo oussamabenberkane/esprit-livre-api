@@ -30,5 +30,6 @@
     <include file="config/liquibase/changelog/20251005000000_add_unique_constraint_like_user_book.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251005000001_update_order_add_address_fields.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251005000002_add_performance_indexes.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251012000000_add_color_hex_to_tag.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

@@ -39,6 +39,9 @@ public class Tag implements Serializable {
     @Column(name = "active")
     private Boolean active;
 
+    @Column(name = "color_hex", length = 7)
+    private String colorHex;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "rel_tag__book", joinColumns = @JoinColumn(name = "tag_id"), inverseJoinColumns = @JoinColumn(name = "book_id"))
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -112,6 +115,19 @@ public class Tag implements Serializable {
         this.active = active;
     }
 
+    public String getColorHex() {
+        return this.colorHex;
+    }
+
+    public Tag colorHex(String colorHex) {
+        this.setColorHex(colorHex);
+        return this;
+    }
+
+    public void setColorHex(String colorHex) {
+        this.colorHex = colorHex;
+    }
+
     public Set<Book> getBooks() {
         return this.books;
     }
@@ -163,6 +179,7 @@ public class Tag implements Serializable {
             ", nameFr='" + getNameFr() + "'" +
             ", type='" + getType() + "'" +
             ", active='" + getActive() + "'" +
+            ", colorHex='" + getColorHex() + "'" +
             "}";
     }
 }

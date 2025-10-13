@@ -22,6 +22,8 @@ public class TagDTO implements Serializable {
 
     private Boolean active;
 
+    private String colorHex;
+
     public Long getId() {
         return id;
     }
@@ -62,6 +64,14 @@ public class TagDTO implements Serializable {
         this.active = active;
     }
 
+    public String getColorHex() {
+        return colorHex;
+    }
+
+    public void setColorHex(String colorHex) {
+        this.colorHex = colorHex;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -91,6 +101,7 @@ public class TagDTO implements Serializable {
             ", nameFr='" + getNameFr() + "'" +
             ", type='" + getType() + "'" +
             ", active='" + getActive() + "'" +
+            ", colorHex='" + getColorHex() + "'" +
             "}";
     }
 }

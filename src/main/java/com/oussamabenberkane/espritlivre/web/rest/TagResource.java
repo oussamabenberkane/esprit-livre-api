@@ -188,4 +188,20 @@ public class TagResource {
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .body(result);
     }
+
+    /**
+     * {@code POST  /tags/:id/change-color} : Change the color of an ETIQUETTE tag.
+     *
+     * @param id the id of the tag.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO.
+     */
+    @PostMapping("/{id}/change-color")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<TagDTO> changeTagColor(@PathVariable("id") Long id) {
+        LOG.debug("REST request to change color for Tag : {}", id);
+        TagDTO result = tagService.changeColor(id);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
 }
