@@ -40,7 +40,8 @@ public class BookPack implements Serializable {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "cover_url")
+    @NotNull
+    @Column(name = "cover_url", nullable = false)
     private String coverUrl;
 
     @NotNull

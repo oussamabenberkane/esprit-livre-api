@@ -21,6 +21,7 @@ public class BookPackDTO implements Serializable {
 
     private String description;
 
+    @NotNull
     private String coverUrl;
 
     @NotNull

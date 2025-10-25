@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -52,60 +53,68 @@ public class AuthorResource {
     }
 
     /**
-     * {@code POST  /authors} : Create a new author.
+     * {@code POST  /authors} : Create a new author with profile picture.
      *
-     * @param authorDTO the authorDTO to create.
+     * @param authorDTO the author data.
+     * @param profilePicture the author profile picture file (required).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new authorDTO, or with status {@code 400 (Bad Request)} if the author has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("")
+    @PostMapping(value = "", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<AuthorDTO> createAuthor(@Valid @RequestBody AuthorDTO authorDTO) throws URISyntaxException {
-        LOG.debug("REST request to save Author : {}", authorDTO);
+    public ResponseEntity<AuthorDTO> createAuthor(
+        @RequestPart("author") @Valid AuthorDTO authorDTO,
+        @RequestPart("profilePicture") @NotNull MultipartFile profilePicture
+    ) throws URISyntaxException {
+        LOG.debug("REST request to save Author with profile picture : {}", authorDTO);
+
         if (authorDTO.getId() != null) {
             throw new BadRequestAlertException("A new author cannot already have an ID", ENTITY_NAME, "idexists");
         }
         if (authorDTO.getName() == null || authorDTO.getName().trim().isEmpty()) {
-            throw new BadRequestAlertException("Author name is required", "author", "namerequired");
+            throw new BadRequestAlertException("Author name is required", ENTITY_NAME, "namerequired");
         }
-        authorDTO = authorService.findOrCreateByName(authorDTO.getName());
-        return ResponseEntity.created(new URI("/api/authors/" + authorDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, authorDTO.getId().toString()))
-            .body(authorDTO);
+
+        AuthorDTO result = authorService.saveWithPicture(authorDTO, profilePicture, false);
+        return ResponseEntity.created(new URI("/api/authors/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
-     * {@code PUT  /authors/:id} : Updates an existing author.
+     * {@code PUT  /authors/:id} : Updates an existing author with optional profile picture.
      *
-     * @param id the id of the authorDTO to save.
-     * @param authorDTO the authorDTO to update.
+     * @param id the id of the author to update.
+     * @param authorDTO the author data.
+     * @param profilePicture the author profile picture file (optional for updates).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated authorDTO,
      * or with status {@code 400 (Bad Request)} if the authorDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the authorDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<AuthorDTO> updateAuthor(
         @PathVariable(value = "id", required = false) final Long id,
-        @Valid @RequestBody AuthorDTO authorDTO
+        @RequestPart("author") @Valid AuthorDTO authorDTO,
+        @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture
     ) throws URISyntaxException {
         LOG.debug("REST request to update Author : {}, {}", id, authorDTO);
+
         if (authorDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
         if (!Objects.equals(id, authorDTO.getId())) {
             throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
         }
-
         if (!authorRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        authorDTO = authorService.update(authorDTO);
+        AuthorDTO result = authorService.saveWithPicture(authorDTO, profilePicture, true);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, authorDTO.getId().toString()))
-            .body(authorDTO);
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**

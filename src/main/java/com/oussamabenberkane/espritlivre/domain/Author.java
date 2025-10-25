@@ -30,6 +30,10 @@ public class Author extends AbstractAuditingEntity<Long> implements Serializable
     @Column(name = "name", nullable = false)
     private String name;
 
+    @NotNull
+    @Column(name = "profile_picture_url", nullable = false)
+    private String profilePictureUrl;
+
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "author")
     @JsonIgnoreProperties(value = { "author", "tags" }, allowSetters = true)
     private Set<Book> books = new HashSet<>();
@@ -60,6 +64,19 @@ public class Author extends AbstractAuditingEntity<Long> implements Serializable
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getProfilePictureUrl() {
+        return this.profilePictureUrl;
+    }
+
+    public Author profilePictureUrl(String profilePictureUrl) {
+        this.setProfilePictureUrl(profilePictureUrl);
+        return this;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     public Set<Book> getBooks() {
@@ -118,6 +135,7 @@ public class Author extends AbstractAuditingEntity<Long> implements Serializable
         return "Author{" +
             "id=" + getId() +
             ", name='" + getName() + "'" +
+            ", profilePictureUrl='" + getProfilePictureUrl() + "'" +
             "}";
     }
 }

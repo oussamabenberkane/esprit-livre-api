@@ -6,6 +6,7 @@ import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.TagService;
 import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,55 +51,64 @@ public class TagResource {
     }
 
     /**
-     * {@code POST  /tags} : Create a new tag.
+     * {@code POST  /tags} : Create a new tag with optional image.
      *
-     * @param tagDTO the tagDTO to create.
+     * @param tagDTO the tag data.
+     * @param image the category image file (required for CATEGORY tags).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new tagDTO, or with status {@code 400 (Bad Request)} if the tag has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("")
+    @PostMapping(value = "", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<TagDTO> createTag(@RequestBody TagDTO tagDTO) throws URISyntaxException {
-        LOG.debug("REST request to save Tag : {}", tagDTO);
+    public ResponseEntity<TagDTO> createTag(
+        @RequestPart("tag") @Valid TagDTO tagDTO,
+        @RequestPart(value = "image", required = false) MultipartFile image
+    ) throws URISyntaxException {
+        LOG.debug("REST request to save Tag with image : {}", tagDTO);
+
         if (tagDTO.getId() != null) {
             throw new BadRequestAlertException("A new tag cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        tagDTO = tagService.save(tagDTO);
-        return ResponseEntity.created(new URI("/api/tags/" + tagDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, tagDTO.getId().toString()))
-            .body(tagDTO);
+
+        TagDTO result = tagService.saveWithImage(tagDTO, image, false);
+        return ResponseEntity.created(new URI("/api/tags/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
-     * {@code PUT  /tags/:id} : Updates an existing tag.
+     * {@code PUT  /tags/:id} : Updates an existing tag with optional image.
      *
-     * @param id the id of the tagDTO to save.
-     * @param tagDTO the tagDTO to update.
+     * @param id the id of the tag to update.
+     * @param tagDTO the tag data.
+     * @param image the category image file (optional for updates).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO,
      * or with status {@code 400 (Bad Request)} if the tagDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the tagDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<TagDTO> updateTag(@PathVariable(value = "id", required = false) final Long id, @RequestBody TagDTO tagDTO)
-        throws URISyntaxException {
+    public ResponseEntity<TagDTO> updateTag(
+        @PathVariable(value = "id", required = false) final Long id,
+        @RequestPart("tag") @Valid TagDTO tagDTO,
+        @RequestPart(value = "image", required = false) MultipartFile image
+    ) throws URISyntaxException {
         LOG.debug("REST request to update Tag : {}, {}", id, tagDTO);
+
         if (tagDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
         if (!Objects.equals(id, tagDTO.getId())) {
             throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
         }
-
         if (!tagRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        tagDTO = tagService.update(tagDTO);
+        TagDTO result = tagService.saveWithImage(tagDTO, image, true);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, tagDTO.getId().toString()))
-            .body(tagDTO);
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
