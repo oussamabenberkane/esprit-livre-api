@@ -78,6 +78,8 @@ public class FileStorageService {
         return "/media/books/" + filename;
     }
 
+
+
     /**
      * Delete a book cover image.
      *
@@ -101,6 +103,8 @@ public class FileStorageService {
             LOG.error("Failed to delete book cover: {}", coverImageUrl, e);
         }
     }
+
+
 
     /**
      * Validate the uploaded file.

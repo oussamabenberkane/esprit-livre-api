@@ -26,6 +26,18 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
     @Query("select jhiLike from Like jhiLike where jhiLike.book.id = :bookId and jhiLike.user.login = ?#{authentication.name}")
     Optional<Like> findByBookIdAndCurrentUser(@Param("bookId") Long bookId);
 
+    /**
+     * Count likes for multiple books in a single query
+     */
+    @Query("select l.book.id, count(l) from Like l where l.book.id in :bookIds group by l.book.id")
+    List<Object[]> countByBookIds(@Param("bookIds") List<Long> bookIds);
+
+    /**
+     * Check which books are liked by current user from a list of book IDs
+     */
+    @Query("select l.book.id from Like l where l.book.id in :bookIds and l.user.login = ?#{authentication.name}")
+    List<Long> findBookIdsLikedByCurrentUser(@Param("bookIds") List<Long> bookIds);
+
     default Optional<Like> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }

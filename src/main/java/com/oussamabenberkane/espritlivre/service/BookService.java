@@ -46,6 +46,9 @@ public class BookService {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookService.class);
 
+    private static final int MAX_SUGGESTIONS_PER_CATEGORY = 5;
+    private static final int MAX_TOTAL_SUGGESTIONS = 15;
+
     private final BookRepository bookRepository;
 
     @PersistenceContext
@@ -84,6 +87,7 @@ public class BookService {
      * @param coverImage the cover image file.
      * @return the persisted entity.
      */
+    @Transactional
     public BookDTO createBookWithCover(BookDTO bookDTO, MultipartFile coverImage) {
         LOG.debug("Request to create Book with cover: {}", bookDTO);
 
@@ -109,14 +113,18 @@ public class BookService {
         bookDTO.setCreatedAt(ZonedDateTime.now());
 
         // Handle author if provided
+        Author author = null;
         if (bookDTO.getAuthor() != null && bookDTO.getAuthor().getId() != null) {
-            Author author = authorRepository.findById(bookDTO.getAuthor().getId())
+            author = authorRepository.findById(bookDTO.getAuthor().getId())
                 .orElseThrow(() -> new BadRequestAlertException("Author not found", "book", "authornotfound"));
         }
 
-        // Create and save the book first to get an ID
+        // Create and persist the book first to get an ID
         Book book = bookMapper.toEntity(bookDTO);
-        book = bookRepository.save(book);
+        if (author != null) {
+            book.setAuthor(author);
+        }
+        book = bookRepository.saveAndFlush(book); // Use saveAndFlush to ensure ID is generated immediately
 
         // Store the cover image with the book ID
         try {
@@ -153,6 +161,7 @@ public class BookService {
      * @param coverImage the cover image file (optional).
      * @return the persisted entity.
      */
+    @Transactional
     public BookDTO updateBookWithCover(BookDTO bookDTO, MultipartFile coverImage) {
         LOG.debug("Request to update Book with cover: {}", bookDTO);
 
@@ -224,19 +233,6 @@ public class BookService {
         return bookMapper.toDto(updatedBook);
     }
 
-    /**
-     * Update a book.
-     *
-     * @param bookDTO the entity to save.
-     * @return the persisted entity.
-     */
-    public BookDTO update(BookDTO bookDTO) {
-        LOG.debug("Request to update Book : {}", bookDTO);
-        Book book = bookMapper.toEntity(bookDTO);
-        book = bookRepository.save(book);
-        return bookMapper.toDto(book);
-    }
-
     @Transactional(readOnly = true)
     public Page<BookDTO> findAll(
         Pageable pageable,
@@ -275,7 +271,40 @@ public class BookService {
         }
 
         Page<Book> books = bookRepository.findAll(spec, pageable);
-        return books.map(bookMapper::toDto);
+
+        // Create DTOs and then batch fetch all like counts
+        Page<BookDTO> bookDTOs = books.map(bookMapper::toDto);
+
+        // Extract book IDs to fetch like counts in batch
+        List<Long> bookIds = bookDTOs.getContent().stream()
+            .map(BookDTO::getId)
+            .collect(Collectors.toList());
+
+        if (!bookIds.isEmpty()) {
+            // Get like counts for all books in a single query
+            List<Object[]> likeCounts = likeRepository.countByBookIds(bookIds);
+            Map<Long, Long> likeCountMap = new HashMap<>();
+            for (Object[] result : likeCounts) {
+                likeCountMap.put((Long) result[0], (Long) result[1]);
+            }
+
+            // Get like status for current user if authenticated
+            Map<Long, Boolean> userLikeStatusMap = new HashMap<>();
+            SecurityUtils.getCurrentUserLogin().ifPresent(login -> {
+                List<Long> userLikedBookIds = likeRepository.findBookIdsLikedByCurrentUser(bookIds);
+                for (Long bookId : userLikedBookIds) {
+                    userLikeStatusMap.put(bookId, true);
+                }
+            });
+
+            // Update DTOs with like information
+            bookDTOs.getContent().forEach(bookDTO -> {
+                bookDTO.setLikeCount(likeCountMap.getOrDefault(bookDTO.getId(), 0L));
+                bookDTO.setIsLikedByCurrentUser(userLikeStatusMap.getOrDefault(bookDTO.getId(), false));
+            });
+        }
+
+        return bookDTOs;
     }
 
     private Specification<Book> buildTagSpecification(Long categoryId, Long mainDisplayId) {
@@ -426,7 +455,7 @@ public class BookService {
 
         List<String> titles = em.createQuery(titleQuery, String.class)
             .setParameter("searchPattern", searchPattern)
-            .setMaxResults(5)
+            .setMaxResults(MAX_SUGGESTIONS_PER_CATEGORY)
             .getResultList();
 
         titles.forEach(title -> suggestions.add(
@@ -443,7 +472,7 @@ public class BookService {
 
         List<String> authors = em.createQuery(authorQuery, String.class)
             .setParameter("searchPattern", searchPattern)
-            .setMaxResults(5)
+            .setMaxResults(MAX_SUGGESTIONS_PER_CATEGORY)
             .getResultList();
 
         authors.forEach(author -> suggestions.add(
@@ -461,7 +490,7 @@ public class BookService {
 
         List<String> categories = em.createQuery(categoryQuery, String.class)
             .setParameter("searchPattern", searchPattern)
-            .setMaxResults(5)
+            .setMaxResults(MAX_SUGGESTIONS_PER_CATEGORY)
             .getResultList();
 
         categories.forEach(category -> suggestions.add(
@@ -470,7 +499,7 @@ public class BookService {
 
         return suggestions.stream()
             .distinct()
-            .limit(15)
+            .limit(MAX_TOTAL_SUGGESTIONS)
             .collect(Collectors.toList());
     }
 
