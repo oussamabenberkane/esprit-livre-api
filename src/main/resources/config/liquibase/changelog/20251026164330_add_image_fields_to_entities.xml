@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Add image URL fields to Author, Tag, and update BookPack cover_url to be required.
+    -->
+    <changeSet id="20251026164330-1" author="jhipster">
+        <!-- Add profile_picture_url to Author table -->
+        <addColumn tableName="author">
+            <column name="profile_picture_url" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Add image_url to Tag table -->
+        <addColumn tableName="tag">
+            <column name="image_url" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Make BookPack cover_url not nullable (after setting default values if needed) -->
+        <addNotNullConstraint tableName="book_pack"
+                              columnName="cover_url"
+                              columnDataType="varchar(255)"
+                              defaultNullValue=""/>
+    </changeSet>
+
+    <changeSet id="20251026164330-2" author="jhipster">
+        <!-- Make Author profile_picture_url not nullable (after setting default values if needed) -->
+        <addNotNullConstraint tableName="author"
+                              columnName="profile_picture_url"
+                              columnDataType="varchar(255)"
+                              defaultNullValue=""/>
+    </changeSet>
+
+</databaseChangeLog>

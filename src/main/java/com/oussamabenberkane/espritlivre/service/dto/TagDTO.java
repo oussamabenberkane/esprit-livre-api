@@ -24,6 +24,8 @@ public class TagDTO implements Serializable {
 
     private String colorHex;
 
+    private String imageUrl;
+
     public Long getId() {
         return id;
     }
@@ -72,6 +74,14 @@ public class TagDTO implements Serializable {
         this.colorHex = colorHex;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -102,6 +112,7 @@ public class TagDTO implements Serializable {
             ", type='" + getType() + "'" +
             ", active='" + getActive() + "'" +
             ", colorHex='" + getColorHex() + "'" +
+            ", imageUrl='" + getImageUrl() + "'" +
             "}";
     }
 }

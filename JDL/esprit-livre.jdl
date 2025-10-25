@@ -30,6 +30,7 @@ application {
 @ChangelogDate("20250926220000")
 entity Author {
   name String required
+  profilePictureUrl String required
 }
 
 @ChangelogDate("20250923205031")
@@ -47,7 +48,7 @@ entity Book {
 entity BookPack {
   title String required unique
   description TextBlob
-  coverUrl String
+  coverUrl String required
   price BigDecimal required min(0)
   createdDate Instant
   lastModifiedDate Instant
@@ -67,7 +68,10 @@ entity Order (jhi_order) {
   fullName String
   phone String required
   email String
-  address String
+  streetAddress String
+  wilaya String required
+  city String required
+  postalCode String
   createdAt ZonedDateTime
   createdBy String
   updatedAt ZonedDateTime
@@ -85,6 +89,8 @@ entity Tag {
   nameFr String
   type TagType
   active Boolean
+  colorHex String maxlength(7)
+  imageUrl String
 }
 
 enum OrderStatus {

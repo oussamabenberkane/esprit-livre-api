@@ -15,6 +15,9 @@ public class AuthorDTO implements Serializable {
     @NotNull
     private String name;
 
+    @NotNull
+    private String profilePictureUrl;
+
     public Long getId() {
         return id;
     }
@@ -29,6 +32,14 @@ public class AuthorDTO implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     @Override
@@ -58,6 +69,7 @@ public class AuthorDTO implements Serializable {
         return "AuthorDTO{" +
             "id=" + getId() +
             ", name='" + getName() + "'" +
+            ", profilePictureUrl='" + getProfilePictureUrl() + "'" +
             "}";
     }
 }

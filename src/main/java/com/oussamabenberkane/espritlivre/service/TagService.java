@@ -9,6 +9,7 @@ import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.TagMapper;
 import com.oussamabenberkane.espritlivre.service.specs.TagSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service Implementation for managing {@link com.oussamabenberkane.espritlivre.domain.Tag}.
@@ -54,10 +56,13 @@ public class TagService {
 
     private final BookRepository bookRepository;
 
-    public TagService(TagRepository tagRepository, TagMapper tagMapper, BookRepository bookRepository) {
+    private final FileStorageService fileStorageService;
+
+    public TagService(TagRepository tagRepository, TagMapper tagMapper, BookRepository bookRepository, FileStorageService fileStorageService) {
         this.tagRepository = tagRepository;
         this.tagMapper = tagMapper;
         this.bookRepository = bookRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -136,9 +141,90 @@ public class TagService {
         existingTag.setNameEn(tagDTO.getNameEn());
         existingTag.setNameFr(tagDTO.getNameFr());
         existingTag.setActive(tagDTO.getActive() != null ? tagDTO.getActive() : true);
+        if (tagDTO.getImageUrl() != null) {
+            existingTag.setImageUrl(tagDTO.getImageUrl());
+        }
+        if (tagDTO.getColorHex() != null) {
+            existingTag.setColorHex(tagDTO.getColorHex());
+        }
 
         Tag updatedTag = tagRepository.save(existingTag);
         return tagMapper.toDto(updatedTag);
+    }
+
+    /**
+     * Save or update tag with optional image (required for CATEGORY tags on create).
+     *
+     * @param tagDTO the tag data.
+     * @param image the category image file (required for CATEGORY tags on create, optional for update).
+     * @param isUpdate whether this is an update operation.
+     * @return the persisted entity.
+     */
+    public TagDTO saveWithImage(TagDTO tagDTO, MultipartFile image, boolean isUpdate) {
+        LOG.debug("Request to save Tag with image : {}", tagDTO);
+
+        Tag tag;
+
+        if (isUpdate) {
+            // Update existing tag
+            if (tagDTO.getId() == null) {
+                throw new BadRequestAlertException("Invalid id", "tag", "idnull");
+            }
+            tag = tagRepository.findById(tagDTO.getId())
+                .orElseThrow(() -> new BadRequestAlertException("Entity not found", "tag", "idnotfound"));
+            tag.setNameEn(tagDTO.getNameEn());
+            tag.setNameFr(tagDTO.getNameFr());
+            tag.setActive(tagDTO.getActive() != null ? tagDTO.getActive() : true);
+            if (tagDTO.getColorHex() != null) {
+                tag.setColorHex(tagDTO.getColorHex());
+            }
+        } else {
+            // Create new tag - image is REQUIRED for CATEGORY tags
+            if (tagDTO.getId() != null) {
+                throw new BadRequestAlertException("A new tag cannot already have an ID", "tag", "idexists");
+            }
+            if (tagDTO.getType() == TagType.CATEGORY && (image == null || image.isEmpty())) {
+                throw new BadRequestAlertException("Image is required for category tags", "tag", "imagerequired");
+            }
+
+            // Set active to true by default
+            if (tagDTO.getActive() == null) {
+                tagDTO.setActive(true);
+            }
+
+            // Assign random color to ETIQUETTE tags
+            if (tagDTO.getType() == TagType.ETIQUETTE) {
+                tagDTO.setColorHex(getRandomColor());
+            }
+
+            tag = tagMapper.toEntity(tagDTO);
+            tag = tagRepository.save(tag);
+        }
+
+        // Handle image if provided (only for CATEGORY tags)
+        if (image != null && !image.isEmpty()) {
+            if (tag.getType() != TagType.CATEGORY) {
+                throw new BadRequestAlertException("Images are only allowed for category tags", "tag", "imagenotallowed");
+            }
+
+            String oldImageUrl = tag.getImageUrl();
+
+            try {
+                String newImageUrl = fileStorageService.storeCategoryImage(image, tag.getId());
+                tag.setImageUrl(newImageUrl);
+
+                // Delete old image if different
+                if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+                    fileStorageService.deleteCategoryImage(oldImageUrl);
+                }
+            } catch (IOException e) {
+                LOG.error("Failed to store category image", e);
+                throw new BadRequestAlertException("Failed to store category image: " + e.getMessage(), "tag", "filestoragefailed");
+            }
+        }
+
+        tag = tagRepository.save(tag);
+        return tagMapper.toDto(tag);
     }
 
     /**

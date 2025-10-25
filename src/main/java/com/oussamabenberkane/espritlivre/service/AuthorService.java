@@ -7,6 +7,7 @@ import com.oussamabenberkane.espritlivre.service.mapper.AuthorMapper;
 import com.oussamabenberkane.espritlivre.service.specs.AuthorSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service Implementation for managing {@link com.oussamabenberkane.espritlivre.domain.Author}.
@@ -31,9 +33,12 @@ public class AuthorService {
 
     private final AuthorMapper authorMapper;
 
-    public AuthorService(AuthorRepository authorRepository, AuthorMapper authorMapper) {
+    private final FileStorageService fileStorageService;
+
+    public AuthorService(AuthorRepository authorRepository, AuthorMapper authorMapper, FileStorageService fileStorageService) {
         this.authorRepository = authorRepository;
         this.authorMapper = authorMapper;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -74,9 +79,67 @@ public class AuthorService {
 
         // Update fields
         existingAuthor.setName(authorDTO.getName());
+        if (authorDTO.getProfilePictureUrl() != null) {
+            existingAuthor.setProfilePictureUrl(authorDTO.getProfilePictureUrl());
+        }
 
         Author updatedAuthor = authorRepository.save(existingAuthor);
         return authorMapper.toDto(updatedAuthor);
+    }
+
+    /**
+     * Save or update author with profile picture.
+     *
+     * @param authorDTO the author data.
+     * @param profilePicture the profile picture file (required for create, optional for update).
+     * @param isUpdate whether this is an update operation.
+     * @return the persisted entity.
+     */
+    public AuthorDTO saveWithPicture(AuthorDTO authorDTO, MultipartFile profilePicture, boolean isUpdate) {
+        LOG.debug("Request to save Author with profile picture : {}", authorDTO);
+
+        Author author;
+
+        if (isUpdate) {
+            // Update existing author
+            if (authorDTO.getId() == null) {
+                throw new BadRequestAlertException("Invalid id", "author", "idnull");
+            }
+            author = authorRepository.findById(authorDTO.getId())
+                .orElseThrow(() -> new BadRequestAlertException("Entity not found", "author", "idnotfound"));
+            author.setName(authorDTO.getName());
+        } else {
+            // Create new author - picture is REQUIRED
+            if (authorDTO.getId() != null) {
+                throw new BadRequestAlertException("A new author cannot already have an ID", "author", "idexists");
+            }
+            if (profilePicture == null || profilePicture.isEmpty()) {
+                throw new BadRequestAlertException("Profile picture is required for new authors", "author", "picturerequired");
+            }
+            author = authorMapper.toEntity(authorDTO);
+            author = authorRepository.save(author);
+        }
+
+        // Handle profile picture if provided
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String oldProfilePictureUrl = author.getProfilePictureUrl();
+
+            try {
+                String newProfilePictureUrl = fileStorageService.storeAuthorPicture(profilePicture, author.getId());
+                author.setProfilePictureUrl(newProfilePictureUrl);
+
+                // Delete old picture if different
+                if (oldProfilePictureUrl != null && !oldProfilePictureUrl.equals(newProfilePictureUrl)) {
+                    fileStorageService.deleteAuthorPicture(oldProfilePictureUrl);
+                }
+            } catch (IOException e) {
+                LOG.error("Failed to store profile picture for author", e);
+                throw new BadRequestAlertException("Failed to store profile picture: " + e.getMessage(), "author", "filestoragefailed");
+            }
+        }
+
+        author = authorRepository.save(author);
+        return authorMapper.toDto(author);
     }
 
     /**

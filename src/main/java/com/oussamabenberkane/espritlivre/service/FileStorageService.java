@@ -24,7 +24,13 @@ public class FileStorageService {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileStorageService.class);
 
-    private static final String UPLOAD_DIR = "src/main/resources/media/books";
+    private static final String MEDIA_ROOT_DIR = "src/main/resources/media";
+    private static final String BOOKS_DIR = MEDIA_ROOT_DIR + "/books";
+    private static final String BOOK_PACKS_DIR = MEDIA_ROOT_DIR + "/book-packs";
+    private static final String AUTHORS_DIR = MEDIA_ROOT_DIR + "/authors";
+    private static final String CATEGORIES_DIR = MEDIA_ROOT_DIR + "/categories";
+    private static final String USERS_DIR = MEDIA_ROOT_DIR + "/users";
+
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
         "image/jpeg",
@@ -50,32 +56,98 @@ public class FileStorageService {
      */
     public String storeBookCover(MultipartFile file, Long bookId) throws IOException {
         LOG.debug("Request to store book cover for book ID: {}", bookId);
+        return storeImage(file, BOOKS_DIR, "cover_" + bookId, "/media/books/", "book");
+    }
 
+    /**
+     * Store a book pack cover image.
+     *
+     * @param file the uploaded file
+     * @param bookPackId the book pack ID
+     * @return the relative URL path to the stored file
+     * @throws IOException if file storage fails
+     */
+    public String storeBookPackCover(MultipartFile file, Long bookPackId) throws IOException {
+        LOG.debug("Request to store book pack cover for book pack ID: {}", bookPackId);
+        return storeImage(file, BOOK_PACKS_DIR, "pack_" + bookPackId, "/media/book-packs/", "bookPack");
+    }
+
+    /**
+     * Store an author profile picture.
+     *
+     * @param file the uploaded file
+     * @param authorId the author ID
+     * @return the relative URL path to the stored file
+     * @throws IOException if file storage fails
+     */
+    public String storeAuthorPicture(MultipartFile file, Long authorId) throws IOException {
+        LOG.debug("Request to store author picture for author ID: {}", authorId);
+        return storeImage(file, AUTHORS_DIR, "author_" + authorId, "/media/authors/", "author");
+    }
+
+    /**
+     * Store a category image.
+     *
+     * @param file the uploaded file
+     * @param tagId the tag ID
+     * @return the relative URL path to the stored file
+     * @throws IOException if file storage fails
+     */
+    public String storeCategoryImage(MultipartFile file, Long tagId) throws IOException {
+        LOG.debug("Request to store category image for tag ID: {}", tagId);
+        return storeImage(file, CATEGORIES_DIR, "category_" + tagId, "/media/categories/", "tag");
+    }
+
+    /**
+     * Store a user profile picture.
+     *
+     * @param file the uploaded file
+     * @param userId the user ID
+     * @return the relative URL path to the stored file
+     * @throws IOException if file storage fails
+     */
+    public String storeUserPicture(MultipartFile file, String userId) throws IOException {
+        LOG.debug("Request to store user picture for user ID: {}", userId);
+        return storeImage(file, USERS_DIR, "user_" + userId, "/media/users/", "user");
+    }
+
+    /**
+     * Generic method to store an image.
+     *
+     * @param file the uploaded file
+     * @param uploadDir the directory to store the file in
+     * @param filenamePrefix the prefix for the filename
+     * @param urlPrefix the URL prefix for the returned path
+     * @param entityName the entity name for error messages
+     * @return the relative URL path to the stored file
+     * @throws IOException if file storage fails
+     */
+    private String storeImage(MultipartFile file, String uploadDir, String filenamePrefix, String urlPrefix, String entityName) throws IOException {
         // Validate file
-        validateFile(file);
+        validateFile(file, entityName);
 
         // Validate image dimensions
-        validateImageDimensions(file);
+        validateImageDimensions(file, entityName);
 
         // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(UPLOAD_DIR);
+        Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Generate filename: cover_{bookId}.{extension}
+        // Generate filename
         String originalFilename = file.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-        String filename = "cover_" + bookId + "." + extension;
+        String extension = getFileExtension(originalFilename, entityName);
+        String filename = filenamePrefix + "." + extension;
 
         // Store file
         Path targetLocation = uploadPath.resolve(filename);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-        LOG.debug("Book cover stored successfully: {}", filename);
+        LOG.debug("Image stored successfully: {}", filename);
 
         // Return relative URL path
-        return "/media/books/" + filename;
+        return urlPrefix + filename;
     }
 
 
@@ -86,21 +158,67 @@ public class FileStorageService {
      * @param coverImageUrl the relative URL path to the cover image
      */
     public void deleteBookCover(String coverImageUrl) {
-        if (coverImageUrl == null || coverImageUrl.isEmpty()) {
+        deleteImage(coverImageUrl, BOOKS_DIR);
+    }
+
+    /**
+     * Delete a book pack cover image.
+     *
+     * @param coverImageUrl the relative URL path to the cover image
+     */
+    public void deleteBookPackCover(String coverImageUrl) {
+        deleteImage(coverImageUrl, BOOK_PACKS_DIR);
+    }
+
+    /**
+     * Delete an author profile picture.
+     *
+     * @param profilePictureUrl the relative URL path to the profile picture
+     */
+    public void deleteAuthorPicture(String profilePictureUrl) {
+        deleteImage(profilePictureUrl, AUTHORS_DIR);
+    }
+
+    /**
+     * Delete a category image.
+     *
+     * @param imageUrl the relative URL path to the category image
+     */
+    public void deleteCategoryImage(String imageUrl) {
+        deleteImage(imageUrl, CATEGORIES_DIR);
+    }
+
+    /**
+     * Delete a user profile picture.
+     *
+     * @param profilePictureUrl the relative URL path to the profile picture
+     */
+    public void deleteUserPicture(String profilePictureUrl) {
+        deleteImage(profilePictureUrl, USERS_DIR);
+    }
+
+    /**
+     * Generic method to delete an image.
+     *
+     * @param imageUrl the relative URL path to the image
+     * @param uploadDir the directory where the file is stored
+     */
+    private void deleteImage(String imageUrl, String uploadDir) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
             return;
         }
 
         try {
             // Extract filename from URL path
-            String filename = coverImageUrl.substring(coverImageUrl.lastIndexOf('/') + 1);
-            Path filePath = Paths.get(UPLOAD_DIR, filename);
+            String filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+            Path filePath = Paths.get(uploadDir, filename);
 
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
-                LOG.debug("Deleted book cover: {}", filename);
+                LOG.debug("Deleted image: {}", filename);
             }
         } catch (IOException e) {
-            LOG.error("Failed to delete book cover: {}", coverImageUrl, e);
+            LOG.error("Failed to delete image: {}", imageUrl, e);
         }
     }
 
@@ -110,17 +228,18 @@ public class FileStorageService {
      * Validate the uploaded file.
      *
      * @param file the file to validate
+     * @param entityName the entity name for error messages
      */
-    private void validateFile(MultipartFile file) {
+    private void validateFile(MultipartFile file, String entityName) {
         if (file == null || file.isEmpty()) {
-            throw new BadRequestAlertException("File is required", "book", "filerequired");
+            throw new BadRequestAlertException("File is required", entityName, "filerequired");
         }
 
         // Validate file size
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new BadRequestAlertException(
                 "File size exceeds maximum limit of 10 MB",
-                "book",
+                entityName,
                 "filesizeexceeded"
             );
         }
@@ -130,17 +249,17 @@ public class FileStorageService {
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
             throw new BadRequestAlertException(
                 "Invalid file type. Only JPEG, PNG, and WebP images are allowed",
-                "book",
+                entityName,
                 "invalidfiletype"
             );
         }
 
         // Validate file extension
-        String extension = getFileExtension(file.getOriginalFilename());
+        String extension = getFileExtension(file.getOriginalFilename(), entityName);
         if (!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
             throw new BadRequestAlertException(
                 "Invalid file extension. Only jpg, jpeg, png, and webp are allowed",
-                "book",
+                entityName,
                 "invalidextension"
             );
         }
@@ -150,15 +269,16 @@ public class FileStorageService {
      * Validate image dimensions.
      *
      * @param file the image file to validate
+     * @param entityName the entity name for error messages
      * @throws IOException if image cannot be read
      */
-    private void validateImageDimensions(MultipartFile file) throws IOException {
+    private void validateImageDimensions(MultipartFile file, String entityName) throws IOException {
         BufferedImage image = ImageIO.read(file.getInputStream());
 
         if (image == null) {
             throw new BadRequestAlertException(
                 "Unable to read image file. File may be corrupted",
-                "book",
+                entityName,
                 "invalidimage"
             );
         }
@@ -169,7 +289,7 @@ public class FileStorageService {
         if (width < MIN_WIDTH || height < MIN_HEIGHT) {
             throw new BadRequestAlertException(
                 String.format("Image dimensions too small. Minimum size is %dx%d pixels", MIN_WIDTH, MIN_HEIGHT),
-                "book",
+                entityName,
                 "imagetoosmall"
             );
         }
@@ -177,7 +297,7 @@ public class FileStorageService {
         if (width > MAX_WIDTH || height > MAX_HEIGHT) {
             throw new BadRequestAlertException(
                 String.format("Image dimensions too large. Maximum size is %dx%d pixels", MAX_WIDTH, MAX_HEIGHT),
-                "book",
+                entityName,
                 "imagetoolarge"
             );
         }
@@ -189,11 +309,12 @@ public class FileStorageService {
      * Get file extension from filename.
      *
      * @param filename the filename
+     * @param entityName the entity name for error messages
      * @return the file extension
      */
-    private String getFileExtension(String filename) {
+    private String getFileExtension(String filename, String entityName) {
         if (filename == null || !filename.contains(".")) {
-            throw new BadRequestAlertException("Invalid filename", "book", "invalidfilename");
+            throw new BadRequestAlertException("Invalid filename", entityName, "invalidfilename");
         }
         return filename.substring(filename.lastIndexOf('.') + 1);
     }

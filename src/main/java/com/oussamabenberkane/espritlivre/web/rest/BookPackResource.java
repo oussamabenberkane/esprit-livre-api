@@ -6,12 +6,14 @@ import com.oussamabenberkane.espritlivre.service.BookPackService;
 import com.oussamabenberkane.espritlivre.service.dto.BookPackDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -49,57 +51,64 @@ public class BookPackResource {
     }
 
     /**
-     * {@code POST  /book-packs} : Create a new bookPack.
+     * {@code POST  /book-packs} : Create a new bookPack with cover image.
      *
-     * @param bookPackDTO the bookPackDTO to create.
+     * @param bookPackDTO the book pack data.
+     * @param coverImage the cover image file (required).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new bookPackDTO, or with status {@code 400 (Bad Request)} if the bookPack has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("")
+    @PostMapping(value = "", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<BookPackDTO> createBookPack(@Valid @RequestBody BookPackDTO bookPackDTO) throws URISyntaxException {
-        LOG.debug("REST request to save BookPack : {}", bookPackDTO);
+    public ResponseEntity<BookPackDTO> createBookPack(
+        @RequestPart("bookPack") @Valid BookPackDTO bookPackDTO,
+        @RequestPart("coverImage") @NotNull MultipartFile coverImage
+    ) throws URISyntaxException {
+        LOG.debug("REST request to save BookPack with cover image : {}", bookPackDTO);
+
         if (bookPackDTO.getId() != null) {
             throw new BadRequestAlertException("A new bookPack cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        bookPackDTO = bookPackService.save(bookPackDTO);
-        return ResponseEntity.created(new URI("/api/book-packs/" + bookPackDTO.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, bookPackDTO.getId().toString()))
-            .body(bookPackDTO);
+
+        BookPackDTO result = bookPackService.saveWithCover(bookPackDTO, coverImage, false);
+        return ResponseEntity.created(new URI("/api/book-packs/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
-     * {@code PUT  /book-packs/:id} : Updates an existing bookPack.
+     * {@code PUT  /book-packs/:id} : Updates an existing bookPack with optional cover image.
      *
-     * @param id the id of the bookPackDTO to save.
-     * @param bookPackDTO the bookPackDTO to update.
+     * @param id the id of the book pack to update.
+     * @param bookPackDTO the book pack data.
+     * @param coverImage the cover image file (optional for updates).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated bookPackDTO,
-     * or with status {@code 400 (Bad Request)} if the bookPackDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the bookPackDTO couldn't be updated.
+     * or with status {@code 400 (Bad Request)} if the bookPackDTO is not valid.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<BookPackDTO> updateBookPack(
         @PathVariable(value = "id", required = false) final Long id,
-        @Valid @RequestBody BookPackDTO bookPackDTO
+        @RequestPart("bookPack") @Valid BookPackDTO bookPackDTO,
+        @RequestPart(value = "coverImage", required = false) MultipartFile coverImage
     ) throws URISyntaxException {
         LOG.debug("REST request to update BookPack : {}, {}", id, bookPackDTO);
+
         if (bookPackDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
         if (!Objects.equals(id, bookPackDTO.getId())) {
             throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
         }
-
         if (!bookPackRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        bookPackDTO = bookPackService.update(bookPackDTO);
+        BookPackDTO result = bookPackService.saveWithCover(bookPackDTO, coverImage, true);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, bookPackDTO.getId().toString()))
-            .body(bookPackDTO);
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
