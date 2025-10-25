@@ -2,10 +2,13 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.Book;
+import com.oussamabenberkane.espritlivre.domain.BookPack;
 import com.oussamabenberkane.espritlivre.domain.Order;
 import com.oussamabenberkane.espritlivre.domain.OrderItem;
 import com.oussamabenberkane.espritlivre.domain.User;
+import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
+import com.oussamabenberkane.espritlivre.repository.BookPackRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.OrderRepository;
 import com.oussamabenberkane.espritlivre.repository.UserRepository;
@@ -50,6 +53,8 @@ public class OrderService {
 
     private final BookRepository bookRepository;
 
+    private final BookPackRepository bookPackRepository;
+
     private final MailService mailService;
 
     private final ApplicationProperties applicationProperties;
@@ -60,6 +65,7 @@ public class OrderService {
         UniqueIdGeneratorService uniqueIdGeneratorService,
         UserRepository userRepository,
         BookRepository bookRepository,
+        BookPackRepository bookPackRepository,
         MailService mailService,
         ApplicationProperties applicationProperties
     ) {
@@ -68,6 +74,7 @@ public class OrderService {
         this.uniqueIdGeneratorService = uniqueIdGeneratorService;
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
+        this.bookPackRepository = bookPackRepository;
         this.mailService = mailService;
         this.applicationProperties = applicationProperties;
     }
@@ -269,20 +276,53 @@ public class OrderService {
             // Decrement stock using batch update
             LOG.debug("Order status changed to DELIVERED, decrementing stock for order items");
             for (OrderItem item : existingOrder.getOrderItems()) {
-                int updated = bookRepository.decrementStock(item.getBook().getId(), item.getQuantity());
-                if (updated == 0) {
-                    LOG.warn("Insufficient stock for book {} during order delivery. Required: {}",
-                        item.getBook().getId(), item.getQuantity());
-                } else {
-                    LOG.debug("Decremented stock for book {} by {}", item.getBook().getId(), item.getQuantity());
+                if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
+                    // Handle individual book stock
+                    int updated = bookRepository.decrementStock(item.getBook().getId(), item.getQuantity());
+                    if (updated == 0) {
+                        LOG.warn("Insufficient stock for book {} during order delivery. Required: {}",
+                            item.getBook().getId(), item.getQuantity());
+                    } else {
+                        LOG.debug("Decremented stock for book {} by {}", item.getBook().getId(), item.getQuantity());
+                    }
+                } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
+                    // Handle book pack - decrement stock for all books in the pack
+                    BookPack bookPack = bookPackRepository.findOneWithEagerRelationships(item.getBookPack().getId())
+                        .orElse(item.getBookPack());
+                    LOG.debug("Decrementing stock for book pack: {} (contains {} books)",
+                        bookPack.getTitle(), bookPack.getBooks().size());
+                    for (Book book : bookPack.getBooks()) {
+                        int updated = bookRepository.decrementStock(book.getId(), item.getQuantity());
+                        if (updated == 0) {
+                            LOG.warn("Insufficient stock for book {} (from pack {}) during order delivery. Required: {}",
+                                book.getId(), bookPack.getTitle(), item.getQuantity());
+                        } else {
+                            LOG.debug("Decremented stock for book {} (from pack {}) by {}",
+                                book.getId(), bookPack.getTitle(), item.getQuantity());
+                        }
+                    }
                 }
             }
         } else if (oldStatus == OrderStatus.DELIVERED && orderDTO.getStatus() != OrderStatus.DELIVERED) {
             // Restore stock when moving from DELIVERED to another status
             LOG.debug("Order status changed from DELIVERED, restoring stock for order items");
             for (OrderItem item : existingOrder.getOrderItems()) {
-                bookRepository.incrementStock(item.getBook().getId(), item.getQuantity());
-                LOG.debug("Restored stock for book {} by {}", item.getBook().getId(), item.getQuantity());
+                if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
+                    // Restore individual book stock
+                    bookRepository.incrementStock(item.getBook().getId(), item.getQuantity());
+                    LOG.debug("Restored stock for book {} by {}", item.getBook().getId(), item.getQuantity());
+                } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
+                    // Restore stock for all books in the pack
+                    BookPack bookPack = bookPackRepository.findOneWithEagerRelationships(item.getBookPack().getId())
+                        .orElse(item.getBookPack());
+                    LOG.debug("Restoring stock for book pack: {} (contains {} books)",
+                        bookPack.getTitle(), bookPack.getBooks().size());
+                    for (Book book : bookPack.getBooks()) {
+                        bookRepository.incrementStock(book.getId(), item.getQuantity());
+                        LOG.debug("Restored stock for book {} (from pack {}) by {}",
+                            book.getId(), bookPack.getTitle(), item.getQuantity());
+                    }
+                }
             }
         }
 

@@ -24,7 +24,7 @@ application {
     websocket spring-websocket
   }
 
-  entities Author, Book, Like, Order, OrderItem, Tag
+  entities Author, Book, BookPack, Like, Order, OrderItem, Tag
 }
 
 @ChangelogDate("20250926220000")
@@ -42,6 +42,15 @@ entity Book {
   active Boolean
   createdAt ZonedDateTime
   updatedAt ZonedDateTime
+}
+@ChangelogDate("20251025000000")
+entity BookPack {
+  title String required unique
+  description TextBlob
+  coverUrl String
+  price BigDecimal required min(0)
+  createdDate Instant
+  lastModifiedDate Instant
 }
 @ChangelogDate("20250923211624")
 entity Like (jhi_like) {
@@ -63,11 +72,12 @@ entity Order (jhi_order) {
   createdBy String
   updatedAt ZonedDateTime
 }
-@ChangelogDate("20250923212846")
+@ChangelogDate("20251025000001")
 entity OrderItem {
   quantity Integer
   unitPrice BigDecimal
   totalPrice BigDecimal
+  itemType OrderItemType
 }
 @ChangelogDate("20250923211229")
 entity Tag {
@@ -97,6 +107,10 @@ enum TagType {
   CATEGORY,
   MAIN_DISPLAY
 }
+enum OrderItemType {
+  BOOK,
+  PACK
+}
 
 relationship ManyToOne {
   Book{author} to Author
@@ -104,12 +118,14 @@ relationship ManyToOne {
   Order{user} to User
   OrderItem{order} to Order
   OrderItem{book} to Book
+  OrderItem{bookPack} to BookPack
 }
 relationship ManyToMany {
   Tag{book} to Book
+  BookPack{books} to Book
 }
 
-dto Author, Book, Like, Order, OrderItem, Tag with mapstruct
-paginate Author, Book, Like, Order, OrderItem, Tag with pagination
-service Author, Book, Like, Order, OrderItem, Tag with serviceClass
-search Author, Book, Like, Order, OrderItem, Tag with no
+dto Author, Book, BookPack, Like, Order, OrderItem, Tag with mapstruct
+paginate Author, Book, BookPack, Like, Order, OrderItem, Tag with pagination
+service Author, Book, BookPack, Like, Order, OrderItem, Tag with serviceClass
+search Author, Book, BookPack, Like, Order, OrderItem, Tag with no

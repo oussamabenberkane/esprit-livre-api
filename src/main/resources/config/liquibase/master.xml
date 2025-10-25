@@ -18,12 +18,15 @@
     <include file="config/liquibase/changelog/20250923212539_added_entity_Order.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250923212846_added_entity_OrderItem.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250926220000_added_entity_Author.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251025000000_added_entity_BookPack.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251025000000_added_entity_BookPack_sequence.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
     <include file="config/liquibase/changelog/20250923211229_added_entity_constraints_Tag.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250923211624_added_entity_constraints_Like.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250923212539_added_entity_constraints_Order.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250923212846_added_entity_constraints_OrderItem.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250926220001_added_entity_constraints_Author.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251025000000_added_entity_constraints_BookPack.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <include file="config/liquibase/changelog/20250926220002_update_book_author_relationship.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251004132406_add_user_app_fields.xml" relativeToChangelogFile="false"/>
@@ -32,5 +35,6 @@
     <include file="config/liquibase/changelog/20251005000002_add_performance_indexes.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251012000000_add_color_hex_to_tag.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251025150129_add_index_order_unique_id.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251025000001_update_order_item_for_book_packs.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

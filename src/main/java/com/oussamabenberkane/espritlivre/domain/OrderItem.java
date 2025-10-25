@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -33,6 +34,10 @@ public class OrderItem implements Serializable {
     @Column(name = "total_price", precision = 21, scale = 2)
     private BigDecimal totalPrice;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_type")
+    private OrderItemType itemType;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "user", "orderItems" }, allowSetters = true)
     private Order order;
@@ -40,6 +45,10 @@ public class OrderItem implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "tags" }, allowSetters = true)
     private Book book;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
+    private BookPack bookPack;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -121,6 +130,32 @@ public class OrderItem implements Serializable {
         return this;
     }
 
+    public OrderItemType getItemType() {
+        return this.itemType;
+    }
+
+    public OrderItem itemType(OrderItemType itemType) {
+        this.setItemType(itemType);
+        return this;
+    }
+
+    public void setItemType(OrderItemType itemType) {
+        this.itemType = itemType;
+    }
+
+    public BookPack getBookPack() {
+        return this.bookPack;
+    }
+
+    public void setBookPack(BookPack bookPack) {
+        this.bookPack = bookPack;
+    }
+
+    public OrderItem bookPack(BookPack bookPack) {
+        this.setBookPack(bookPack);
+        return this;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
@@ -148,6 +183,7 @@ public class OrderItem implements Serializable {
             ", quantity=" + getQuantity() +
             ", unitPrice=" + getUnitPrice() +
             ", totalPrice=" + getTotalPrice() +
+            ", itemType='" + getItemType() + "'" +
             "}";
     }
 }

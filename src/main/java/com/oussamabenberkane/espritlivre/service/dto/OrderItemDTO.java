@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -23,17 +24,25 @@ public class OrderItemDTO implements Serializable {
 
     private BigDecimal totalPrice;
 
+    private OrderItemType itemType;
+
     private OrderDTO order;
 
     @JsonIgnore
     private BookDTO book;
 
-    @NotNull
     private Long bookId;
 
     private String bookTitle;
 
     private String bookAuthor;
+
+    @JsonIgnore
+    private BookPackDTO bookPack;
+
+    private Long bookPackId;
+
+    private String bookPackTitle;
 
     public Long getId() {
         return id;
@@ -107,6 +116,38 @@ public class OrderItemDTO implements Serializable {
         this.bookAuthor = bookAuthor;
     }
 
+    public OrderItemType getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(OrderItemType itemType) {
+        this.itemType = itemType;
+    }
+
+    public BookPackDTO getBookPack() {
+        return bookPack;
+    }
+
+    public void setBookPack(BookPackDTO bookPack) {
+        this.bookPack = bookPack;
+    }
+
+    public Long getBookPackId() {
+        return bookPackId;
+    }
+
+    public void setBookPackId(Long bookPackId) {
+        this.bookPackId = bookPackId;
+    }
+
+    public String getBookPackTitle() {
+        return bookPackTitle;
+    }
+
+    public void setBookPackTitle(String bookPackTitle) {
+        this.bookPackTitle = bookPackTitle;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -136,11 +177,15 @@ public class OrderItemDTO implements Serializable {
             ", quantity=" + getQuantity() +
             ", unitPrice=" + getUnitPrice() +
             ", totalPrice=" + getTotalPrice() +
+            ", itemType='" + getItemType() + "'" +
             ", order=" + getOrder() +
             ", book=" + getBook() +
             ", bookId=" + getBookId() +
             ", bookTitle='" + getBookTitle() + "'" +
             ", bookAuthor='" + getBookAuthor() + "'" +
+            ", bookPack=" + getBookPack() +
+            ", bookPackId=" + getBookPackId() +
+            ", bookPackTitle='" + getBookPackTitle() + "'" +
             "}";
     }
 }
