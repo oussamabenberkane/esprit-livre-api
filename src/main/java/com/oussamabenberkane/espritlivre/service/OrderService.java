@@ -38,6 +38,7 @@ import org.springframework.util.StringUtils;
 public class OrderService {
 
     private static final Logger LOG = LoggerFactory.getLogger(OrderService.class);
+    private static final String ANONYMOUS_USER = "anonymousUser";
 
     private final OrderRepository orderRepository;
 
@@ -93,7 +94,7 @@ public class OrderService {
         // Handle user (authenticated or guest)
         String currentUserLogin = SecurityUtils.getCurrentUserLogin().get();
         User user = null;
-        if (currentUserLogin.equals("anonymousUser")) {
+        if (currentUserLogin.equals(ANONYMOUS_USER)) {
             order.setCreatedBy("guest");
         } else {
             user = userRepository.findOneByLogin(currentUserLogin)
@@ -174,6 +175,30 @@ public class OrderService {
         return StringUtils.hasText(providedValue) ? providedValue : userValue;
     }
 
+    private Specification<Order> buildOrderSpecification(
+        OrderStatus status,
+        ZonedDateTime dateFrom,
+        ZonedDateTime dateTo,
+        BigDecimal minAmount,
+        BigDecimal maxAmount
+    ) {
+        Specification<Order> spec = Specification.where(null);
+
+        if (status != null) {
+            spec = spec.and(OrderSpecifications.hasStatus(status));
+        }
+
+        if (dateFrom != null || dateTo != null) {
+            spec = spec.and(OrderSpecifications.createdBetween(dateFrom, dateTo));
+        }
+
+        if (minAmount != null || maxAmount != null) {
+            spec = spec.and(OrderSpecifications.totalAmountBetween(minAmount, maxAmount));
+        }
+
+        return spec;
+    }
+
     /**
      * Update a order (Admin only).
      * Cannot update: id, uniqueId, createdAt, createdBy.
@@ -221,7 +246,8 @@ public class OrderService {
             // Add new items
             Set<OrderItem> newOrderItems = new HashSet<>();
             for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
-                Book book = bookRepository.findById(itemDTO.getBookId())
+                // Use pessimistic lock for consistency
+                Book book = bookRepository.findByIdWithLock(itemDTO.getBookId())
                     .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
 
                 OrderItem orderItem = new OrderItem();
@@ -238,20 +264,25 @@ public class OrderService {
             existingOrder.setOrderItems(newOrderItems);
         }
 
-        // Stock decrement logic: when status changes to DELIVERED
+        // Stock management: decrement when changing to DELIVERED, restore when changing from DELIVERED
         if (orderDTO.getStatus() == OrderStatus.DELIVERED && oldStatus != OrderStatus.DELIVERED) {
+            // Decrement stock using batch update
             LOG.debug("Order status changed to DELIVERED, decrementing stock for order items");
             for (OrderItem item : existingOrder.getOrderItems()) {
-                Book book = item.getBook();
-                Integer currentStock = book.getStockQuantity();
-                if (currentStock != null && currentStock >= item.getQuantity()) {
-                    book.setStockQuantity(currentStock - item.getQuantity());
-                    bookRepository.save(book);
-                    LOG.debug("Decremented stock for book {}: {} -> {}", book.getId(), currentStock, book.getStockQuantity());
+                int updated = bookRepository.decrementStock(item.getBook().getId(), item.getQuantity());
+                if (updated == 0) {
+                    LOG.warn("Insufficient stock for book {} during order delivery. Required: {}",
+                        item.getBook().getId(), item.getQuantity());
                 } else {
-                    LOG.warn("Insufficient stock for book {} during order delivery. Current: {}, Required: {}",
-                        book.getId(), currentStock, item.getQuantity());
+                    LOG.debug("Decremented stock for book {} by {}", item.getBook().getId(), item.getQuantity());
                 }
+            }
+        } else if (oldStatus == OrderStatus.DELIVERED && orderDTO.getStatus() != OrderStatus.DELIVERED) {
+            // Restore stock when moving from DELIVERED to another status
+            LOG.debug("Order status changed from DELIVERED, restoring stock for order items");
+            for (OrderItem item : existingOrder.getOrderItems()) {
+                bookRepository.incrementStock(item.getBook().getId(), item.getQuantity());
+                LOG.debug("Restored stock for book {} by {}", item.getBook().getId(), item.getQuantity());
             }
         }
 
@@ -282,20 +313,7 @@ public class OrderService {
         LOG.debug("Request to get all Orders with filters - status: {}, dateRange: [{}, {}], amountRange: [{}, {}]",
             status, dateFrom, dateTo, minAmount, maxAmount);
 
-        Specification<Order> spec = Specification.where(null);
-
-        if (status != null) {
-            spec = spec.and(OrderSpecifications.hasStatus(status));
-        }
-
-        if (dateFrom != null || dateTo != null) {
-            spec = spec.and(OrderSpecifications.createdBetween(dateFrom, dateTo));
-        }
-
-        if (minAmount != null || maxAmount != null) {
-            spec = spec.and(OrderSpecifications.totalAmountBetween(minAmount, maxAmount));
-        }
-
+        Specification<Order> spec = buildOrderSpecification(status, dateFrom, dateTo, minAmount, maxAmount);
         return orderRepository.findAll(spec, pageable).map(orderMapper::toDto);
     }
 
@@ -321,20 +339,7 @@ public class OrderService {
     ) {
         LOG.debug("Request to get orders for current user with filters");
 
-        Specification<Order> spec = Specification.where(null);
-
-        if (status != null) {
-            spec = spec.and(OrderSpecifications.hasStatus(status));
-        }
-
-        if (dateFrom != null || dateTo != null) {
-            spec = spec.and(OrderSpecifications.createdBetween(dateFrom, dateTo));
-        }
-
-        if (minAmount != null || maxAmount != null) {
-            spec = spec.and(OrderSpecifications.totalAmountBetween(minAmount, maxAmount));
-        }
-
+        Specification<Order> spec = buildOrderSpecification(status, dateFrom, dateTo, minAmount, maxAmount);
         return orderRepository.findByCurrentUser(spec, pageable).map(orderMapper::toDto);
     }
 

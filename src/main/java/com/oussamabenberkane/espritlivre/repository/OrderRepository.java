@@ -42,7 +42,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Query("select jhiOrder from Order jhiOrder left join fetch jhiOrder.user where jhiOrder.id =:id")
     Optional<Order> findOneWithToOneRelationships(@Param("id") Long id);
 
-    @Query("select jhiOrder from Order jhiOrder where jhiOrder.user.login = ?#{authentication.name}")
+    @Query("select distinct jhiOrder from Order jhiOrder left join fetch jhiOrder.user where jhiOrder.user.login = ?#{authentication.name}")
     Page<Order> findByCurrentUser(Specification<Order> spec, Pageable pageable);
 
     @Query("select jhiOrder from Order jhiOrder where jhiOrder.id = :id and jhiOrder.user.login = ?#{authentication.name}")
