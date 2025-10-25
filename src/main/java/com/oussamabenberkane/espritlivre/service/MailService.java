@@ -277,4 +277,42 @@ public class MailService {
             LOG.error("Unexpected error while sending priority email to '{}'. Error: {}", to, e.getMessage(), e);
         }
     }
+
+    @Async
+    public void sendContactFormNotificationToAdmin(String name, String email, String subject, String message) {
+        LOG.debug("Sending contact form notification to admin from: {}", email);
+
+        String adminEmail = applicationProperties.getAdminEmail();
+        if (adminEmail == null || adminEmail.isEmpty()) {
+            LOG.warn("Admin email not configured, skipping contact form notification from: {}", email);
+            return;
+        }
+
+        // Use French locale for admin emails
+        Locale locale = Locale.forLanguageTag("fr");
+
+        Context context = new Context(locale);
+
+        // Format submission date and time
+        Instant now = Instant.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault());
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
+
+        // Set contact form information
+        context.setVariable("contactName", name);
+        context.setVariable("contactEmail", email);
+        context.setVariable("contactSubject", subject);
+        context.setVariable("contactMessage", message);
+        context.setVariable("submissionDate", dateFormatter.format(now));
+        context.setVariable("submissionTime", timeFormatter.format(now));
+
+        String content = templateEngine.process("mail/contactFormSubmission", context);
+        String emailSubject = "Nouveau message du formulaire de contact - " + subject;
+
+        // Send to all admin emails
+        String[] adminEmails = {"oussamabenberkane.pro@gmail.com", "contact@espritlivre.com"};
+        for (String recipientEmail : adminEmails) {
+            sendEmailWithPriority(recipientEmail, emailSubject, content, false, true, 3);
+        }
+    }
 }

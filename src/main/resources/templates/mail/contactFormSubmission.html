@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Contact Form Submission</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            padding: 40px 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1e40af;
+        }
+        .message {
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: #555555;
+        }
+        .contact-details {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .detail-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #1e40af;
+            min-width: 120px;
+        }
+        .detail-value {
+            color: #333333;
+            flex: 1;
+        }
+        .message-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .message-box h3 {
+            margin: 0 0 15px 0;
+            color: #1e40af;
+            font-size: 16px;
+        }
+        .message-content {
+            color: #333333;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .timestamp {
+            background-color: #f8fafc;
+            border-radius: 4px;
+            padding: 15px 20px;
+            margin: 25px 0;
+            font-size: 14px;
+            color: #64748b;
+            text-align: center;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #f59e0b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .subject-badge {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Esprit Livre</h1>
+        </div>
+
+        <div class="email-body">
+            <div class="greeting">
+                <span>Nouveau message du formulaire de contact</span>
+                <span class="badge">NOUVEAU</span>
+            </div>
+
+            <div class="message">
+                <p>Un visiteur a soumis un message via le formulaire de contact du service client. Voici les détails :</p>
+            </div>
+
+            <div class="contact-details">
+                <div class="detail-row">
+                    <div class="detail-label">Nom :</div>
+                    <div class="detail-value" th:text="${contactName}">John Doe</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Email :</div>
+                    <div class="detail-value">
+                        <a th:href="'mailto:' + ${contactEmail}" th:text="${contactEmail}">email@example.com</a>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Sujet :</div>
+                    <div class="detail-value">
+                        <span class="subject-badge" th:text="${contactSubject}">Commande</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="message-box">
+                <h3>💬 Message :</h3>
+                <div class="message-content" th:text="${contactMessage}">
+                    Message content goes here...
+                </div>
+            </div>
+
+            <div class="timestamp">
+                ⏰ Reçu le <span th:text="${submissionDate}">17/10/2025</span> à <span th:text="${submissionTime}">14:30</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                <strong>Esprit Livre</strong><br/>
+                Système de notification du service client
+            </p>
+            <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+                Ce message a été envoyé automatiquement depuis le formulaire de contact du site web.
+            </p>
+            <p style="font-size: 12px; color: #94a3b8;">
+                © 2025 Esprit Livre. Tous droits réservés.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

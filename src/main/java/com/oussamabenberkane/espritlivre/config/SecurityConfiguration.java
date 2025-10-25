@@ -62,6 +62,7 @@ public class SecurityConfiguration {
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders"))
+                    .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact"))
             )
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
@@ -81,6 +82,8 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/top")).permitAll()
                     // Public order creation (guest checkout)
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders")).permitAll()
+                    // Public email sending (customer service)
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact")).permitAll()
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).authenticated()
                     .requestMatchers(mvc.pattern("/websocket/**")).authenticated()
