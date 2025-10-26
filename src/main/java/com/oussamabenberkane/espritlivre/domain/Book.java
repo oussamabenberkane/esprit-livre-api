@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
@@ -52,6 +53,10 @@ public class Book implements Serializable {
 
     @Column(name = "active")
     private Boolean active;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "language")
+    private Language language;
 
     @Column(name = "created_at")
     private ZonedDateTime createdAt;
@@ -170,6 +175,19 @@ public class Book implements Serializable {
         this.active = active;
     }
 
+    public Language getLanguage() {
+        return this.language;
+    }
+
+    public Book language(Language language) {
+        this.setLanguage(language);
+        return this;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
+    }
+
     public ZonedDateTime getCreatedAt() {
         return this.createdAt;
     }
@@ -258,6 +276,7 @@ public class Book implements Serializable {
             ", coverImageUrl='" + getCoverImageUrl() + "'" +
             ", description='" + getDescription() + "'" +
             ", active='" + getActive() + "'" +
+            ", language='" + getLanguage() + "'" +
             ", createdAt='" + getCreatedAt() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +
             "}";

@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
+import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -31,6 +32,8 @@ public class BookDTO implements Serializable {
     private String description;
 
     private Boolean active;
+
+    private Language language;
 
     private ZonedDateTime createdAt;
 
@@ -106,6 +109,14 @@ public class BookDTO implements Serializable {
         this.active = active;
     }
 
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
+    }
+
     public ZonedDateTime getCreatedAt() {
         return createdAt;
     }
@@ -179,6 +190,7 @@ public class BookDTO implements Serializable {
             ", coverImageUrl='" + getCoverImageUrl() + "'" +
             ", description='" + getDescription() + "'" +
             ", active='" + getActive() + "'" +
+            ", language='" + getLanguage() + "'" +
             ", createdAt='" + getCreatedAt() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +
             ", tags=" + getTags() +
