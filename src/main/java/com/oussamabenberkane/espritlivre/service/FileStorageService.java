@@ -3,12 +3,15 @@ package com.oussamabenberkane.espritlivre.service;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -317,5 +320,71 @@ public class FileStorageService {
             throw new BadRequestAlertException("Invalid filename", entityName, "invalidfilename");
         }
         return filename.substring(filename.lastIndexOf('.') + 1);
+    }
+
+    /**
+     * Load an image file as a Resource.
+     *
+     * @param imageUrl the relative URL path to the image (e.g., "/media/books/cover_123.jpg")
+     * @return the image file as a Resource
+     * @throws IOException if the file cannot be found or read
+     */
+    public Resource loadImageAsResource(String imageUrl) throws IOException {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            throw new IOException("Image URL is null or empty");
+        }
+
+        try {
+            // Extract filename from URL path
+            String filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+
+            // Determine the directory based on the URL prefix
+            String directory;
+            if (imageUrl.startsWith("/media/books/")) {
+                directory = BOOKS_DIR;
+            } else if (imageUrl.startsWith("/media/book-packs/")) {
+                directory = BOOK_PACKS_DIR;
+            } else if (imageUrl.startsWith("/media/authors/")) {
+                directory = AUTHORS_DIR;
+            } else if (imageUrl.startsWith("/media/categories/")) {
+                directory = CATEGORIES_DIR;
+            } else if (imageUrl.startsWith("/media/users/")) {
+                directory = USERS_DIR;
+            } else {
+                throw new IOException("Invalid image URL: " + imageUrl);
+            }
+
+            Path filePath = Paths.get(directory).resolve(filename).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                LOG.debug("Image loaded successfully: {}", filename);
+                return resource;
+            } else {
+                throw new IOException("Image not found or not readable: " + imageUrl);
+            }
+        } catch (MalformedURLException e) {
+            throw new IOException("Malformed URL: " + imageUrl, e);
+        }
+    }
+
+    /**
+     * Get the content type for an image file based on its extension.
+     *
+     * @param filename the filename
+     * @return the content type (e.g., "image/jpeg", "image/png")
+     */
+    public String getImageContentType(String filename) {
+        if (filename == null) {
+            return "application/octet-stream";
+        }
+
+        String extension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+        return switch (extension) {
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "webp" -> "image/webp";
+            default -> "application/octet-stream";
+        };
     }
 }

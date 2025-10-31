@@ -3,10 +3,12 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import com.oussamabenberkane.espritlivre.repository.TagRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
+import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.TagService;
 import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -14,11 +16,14 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -45,9 +50,12 @@ public class TagResource {
 
     private final TagRepository tagRepository;
 
-    public TagResource(TagService tagService, TagRepository tagRepository) {
+    private final FileStorageService fileStorageService;
+
+    public TagResource(TagService tagService, TagRepository tagRepository, FileStorageService fileStorageService) {
         this.tagService = tagService;
         this.tagRepository = tagRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -142,6 +150,54 @@ public class TagResource {
         LOG.debug("REST request to get Tag : {}", id);
         Optional<TagDTO> tagDTO = tagService.findOne(id);
         return ResponseUtil.wrapOrNotFound(tagDTO);
+    }
+
+    /**
+     * {@code GET  /tags/:id/image} : get the image for the "id" tag (category).
+     * This endpoint is publicly accessible without authentication.
+     *
+     * @param id the id of the tag.
+     * @param placeholder optional parameter to return a placeholder image if the image is not found.
+     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/{id}/image")
+    public ResponseEntity<Resource> getTagImage(
+        @PathVariable("id") Long id,
+        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
+    ) {
+        LOG.debug("REST request to get Tag image : {}", id);
+
+        Optional<TagDTO> tagDTO = tagService.findOne(id);
+        if (tagDTO.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String imageUrl = tagDTO.get().getImageUrl();
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Resource resource = fileStorageService.loadImageAsResource(imageUrl);
+            String contentType = fileStorageService.getImageContentType(imageUrl);
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load tag image: {}", imageUrl, e);
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**

@@ -3,16 +3,19 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.AuthorService;
+import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.dto.AuthorDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +23,9 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -47,9 +52,12 @@ public class AuthorResource {
 
     private final AuthorRepository authorRepository;
 
-    public AuthorResource(AuthorService authorService, AuthorRepository authorRepository) {
+    private final FileStorageService fileStorageService;
+
+    public AuthorResource(AuthorService authorService, AuthorRepository authorRepository, FileStorageService fileStorageService) {
         this.authorService = authorService;
         this.authorRepository = authorRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -158,6 +166,54 @@ public class AuthorResource {
         LOG.debug("REST request to get Author : {}", id);
         Optional<AuthorDTO> authorDTO = authorService.findOne(id);
         return ResponseUtil.wrapOrNotFound(authorDTO);
+    }
+
+    /**
+     * {@code GET  /authors/:id/picture} : get the profile picture for the "id" author.
+     * This endpoint is publicly accessible without authentication.
+     *
+     * @param id the id of the author.
+     * @param placeholder optional parameter to return a placeholder image if the picture is not found.
+     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/{id}/picture")
+    public ResponseEntity<Resource> getAuthorPicture(
+        @PathVariable("id") Long id,
+        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
+    ) {
+        LOG.debug("REST request to get Author picture : {}", id);
+
+        Optional<AuthorDTO> authorDTO = authorService.findOne(id);
+        if (authorDTO.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String profilePictureUrl = authorDTO.get().getProfilePictureUrl();
+        if (profilePictureUrl == null || profilePictureUrl.isEmpty()) {
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Resource resource = fileStorageService.loadImageAsResource(profilePictureUrl);
+            String contentType = fileStorageService.getImageContentType(profilePictureUrl);
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load author picture: {}", profilePictureUrl, e);
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**

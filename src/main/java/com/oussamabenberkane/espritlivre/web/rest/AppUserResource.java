@@ -2,12 +2,18 @@ package com.oussamabenberkane.espritlivre.web.rest;
 
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.AppUserService;
+import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
 import com.oussamabenberkane.espritlivre.service.dto.EmailChangeDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +29,11 @@ public class AppUserResource {
 
     private final AppUserService appUserService;
 
-    public AppUserResource(AppUserService appUserService) {
+    private final FileStorageService fileStorageService;
+
+    public AppUserResource(AppUserService appUserService, FileStorageService fileStorageService) {
         this.appUserService = appUserService;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -115,5 +124,53 @@ public class AppUserResource {
 
         appUserService.deleteUserAccount();
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * {@code GET  /app-users/{id}/picture} : get the profile picture for the "id" user.
+     * This endpoint is publicly accessible without authentication.
+     *
+     * @param id the id of the user.
+     * @param placeholder optional parameter to return a placeholder image if the picture is not found.
+     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/{id}/picture")
+    public ResponseEntity<Resource> getUserPicture(
+        @PathVariable("id") String id,
+        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
+    ) {
+        LOG.debug("REST request to get User picture : {}", id);
+
+        AppUserDTO userDTO = appUserService.getAppUserProfile(id);
+        if (userDTO == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String imageUrl = userDTO.getImageUrl();
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Resource resource = fileStorageService.loadImageAsResource(imageUrl);
+            String contentType = fileStorageService.getImageContentType(imageUrl);
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load user picture: {}", imageUrl, e);
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
     }
 }

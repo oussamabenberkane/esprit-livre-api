@@ -3,6 +3,7 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.BookService;
+import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,9 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -53,10 +59,13 @@ public class BookResource {
 
     private final ValidationService validationService;
 
-    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService) {
+    private final FileStorageService fileStorageService;
+
+    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService, FileStorageService fileStorageService) {
         this.bookService = bookService;
         this.bookRepository = bookRepository;
         this.validationService = validationService;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -195,6 +204,54 @@ public class BookResource {
         LOG.debug("REST request to get Book : {}", id);
         Optional<BookDTO> bookDTO = bookService.findOne(id);
         return ResponseUtil.wrapOrNotFound(bookDTO);
+    }
+
+    /**
+     * {@code GET  /books/:id/cover} : get the cover image for the "id" book.
+     * This endpoint is publicly accessible without authentication.
+     *
+     * @param id the id of the book.
+     * @param placeholder optional parameter to return a placeholder image if the cover is not found.
+     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/{id}/cover")
+    public ResponseEntity<Resource> getBookCover(
+        @PathVariable("id") Long id,
+        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
+    ) {
+        LOG.debug("REST request to get Book cover : {}", id);
+
+        Optional<BookDTO> bookDTO = bookService.findOne(id);
+        if (bookDTO.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String coverImageUrl = bookDTO.get().getCoverImageUrl();
+        if (coverImageUrl == null || coverImageUrl.isEmpty()) {
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Resource resource = fileStorageService.loadImageAsResource(coverImageUrl);
+            String contentType = fileStorageService.getImageContentType(coverImageUrl);
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load book cover image: {}", coverImageUrl, e);
+            if (placeholder) {
+                // TODO: Return placeholder image when implemented
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**
