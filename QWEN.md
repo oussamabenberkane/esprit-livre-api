@@ -169,7 +169,7 @@ The `/src/main/resources/config/` directory contains various application.yml fil
 ### Security
 - OAuth2 with Keycloak server on port 9080
 - JWT tokens for authentication
-- Client ID: web_app, Client Secret: GClkRcZ7OYmB8aDInuIqFsVdPm8BwugS
+- Client ID: web_app, Client Secret: ASoXbE72eEiIpZmvGBObIpN2dNhiyM26
 
 ### Caching
 - Hazelcast configured for second-level Hibernate cache

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./mvnw:*)"
+      "Bash(./mvnw:*)",
+      "Bash(docker ps:*)"
     ],
     "deny": [],
     "ask": []

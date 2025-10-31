@@ -63,7 +63,7 @@ com.oussamabenberkane.espritlivre/
 ### OAuth2 Setup
 - **Provider**: Keycloak (default) or configurable (Okta, Auth0)
 - **Development URL**: http://localhost:9080/realms/jhipster
-- **Client**: web_app/web_app
+- **Client**: web_app/ASoXbE72eEiIpZmvGBObIpN2dNhiyM26
 - **Required roles**: ROLE_ADMIN, ROLE_USER
 
 ## Development Workflows

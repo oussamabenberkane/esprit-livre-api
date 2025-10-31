@@ -438,9 +438,9 @@
 							"formdata": [
 								{
 									"key": "book",
-									"value": "{\n  \"title\": \"Sample Book Title\",\n  \"price\": 1500.00,\n  \"author\": {\n    \"id\": 1\n  },\n  \"stockQuantity\": 50,\n  \"description\": \"A wonderful book about...\"\n}",
+									"value": "{\n  \"title\": \"Sample Book Title\",\n  \"price\": 1500.00,\n  \"author\": {\n    \"id\": 1\n  },\n  \"stockQuantity\": 50,\n  \"description\": \"A wonderful book about literature and culture.\",\n  \"language\": \"FRENCH\",\n  \"active\": true\n}",
 									"contentType": "application/json",
-									"description": "Book data as JSON",
+									"description": "Book data as JSON. Languages: FRENCH, ARABIC, ENGLISH",
 									"type": "text"
 								},
 								{
@@ -485,9 +485,9 @@
 							"formdata": [
 								{
 									"key": "book",
-									"value": "{\n  \"id\": 1,\n  \"title\": \"Updated Book Title\",\n  \"price\": 1800.00,\n  \"author\": {\n    \"id\": 2\n  },\n  \"stockQuantity\": 75,\n  \"description\": \"Updated description...\"\n}",
+									"value": "{\n  \"id\": 1,\n  \"title\": \"Updated Book Title\",\n  \"price\": 1800.00,\n  \"author\": {\n    \"id\": 2\n  },\n  \"stockQuantity\": 75,\n  \"description\": \"Updated description with more details about the book's content.\",\n  \"language\": \"ARABIC\",\n  \"active\": true\n}",
 									"contentType": "application/json",
-									"description": "Book data as JSON (must include id)",
+									"description": "Book data as JSON (must include id). Languages: FRENCH, ARABIC, ENGLISH",
 									"type": "text"
 								},
 								{
@@ -722,6 +722,79 @@
 						"description": "Remove tags from a book. Provide an array of tag IDs."
 					},
 					"response": []
+				},
+				{
+					"name": "Delete Book - Soft Delete (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Soft delete a book (sets active=false). The book will not be visible in public listings but data is preserved."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Book Forever - Hard Delete (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books/:id/forever",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"books",
+								":id",
+								"forever"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Permanently delete a book from the database. This action cannot be undone. Use with caution!"
+					},
+					"response": []
 				}
 			]
 		},
@@ -742,15 +815,25 @@
 							]
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"nameEn\": \"Mystery\",\n  \"nameFr\": \"Mystère\",\n  \"type\": \"CATEGORY\"\n}"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "tag",
+									"value": "{\n  \"nameEn\": \"Mystery\",\n  \"nameFr\": \"Mystère\",\n  \"type\": \"CATEGORY\",\n  \"color\": \"#3498db\"\n}",
+									"contentType": "application/json",
+									"description": "Tag data as JSON. Types: CATEGORY, ETIQUETTE, MAIN_DISPLAY",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"description": "Tag image (JPEG, PNG, or WebP, optional)",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/tags",
@@ -762,7 +845,7 @@
 								"tags"
 							]
 						},
-						"description": "Create a new tag. Required: nameEn, nameFr, type. Active defaults to true."
+						"description": "Create a new tag with optional image. Required: nameEn, nameFr, type. Optional: color (for ETIQUETTE), image, active (defaults to true). Tag types: CATEGORY, ETIQUETTE, MAIN_DISPLAY."
 					},
 					"response": []
 				},
@@ -780,15 +863,25 @@
 							]
 						},
 						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id\": 1,\n  \"nameEn\": \"Updated Fiction\",\n  \"nameFr\": \"Fiction Mise à Jour\",\n  \"type\": \"CATEGORY\",\n  \"active\": true\n}"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "tag",
+									"value": "{\n  \"id\": 1,\n  \"nameEn\": \"Updated Fiction\",\n  \"nameFr\": \"Fiction Mise à Jour\",\n  \"type\": \"CATEGORY\",\n  \"color\": \"#e74c3c\",\n  \"active\": true\n}",
+									"contentType": "application/json",
+									"description": "Tag data as JSON (must include id)",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"description": "New tag image (optional - if not provided, keeps existing image)",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/tags/:id",
@@ -807,7 +900,7 @@
 								}
 							]
 						},
-						"description": "Update a tag. All fields can be changed including type."
+						"description": "Update a tag with optional new image. All fields can be changed including type. Required: id, nameEn, nameFr, type. Optional: color, image, active."
 					},
 					"response": []
 				},
@@ -1008,14 +1101,9 @@
 						"description": "Remove books from a tag. Provide an array of book IDs."
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "Authors",
-			"item": [
+				},
 				{
-					"name": "Create Author (Admin Only)",
+					"name": "Change Tag Color (Admin Only)",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -1036,7 +1124,68 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"Yasmina Khadra\"\n}"
+							"raw": "\"#FF5733\""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tags/:id/change-color",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tags",
+								":id",
+								"change-color"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Change the color of an ETIQUETTE tag. Provide a hex color code as a string (e.g., \"#FF5733\"). Only works for tags with type=ETIQUETTE."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authors",
+			"item": [
+				{
+					"name": "Create Author (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "author",
+									"value": "{\n  \"name\": \"Yasmina Khadra\",\n  \"biography\": \"Renowned Algerian author known for his compelling narratives.\"\n}",
+									"contentType": "application/json",
+									"description": "Author data as JSON",
+									"type": "text"
+								},
+								{
+									"key": "profilePicture",
+									"description": "Author profile picture (JPEG, PNG, or WebP, optional)",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/authors",
@@ -1048,7 +1197,7 @@
 								"authors"
 							]
 						},
-						"description": "Create a new author. Required: name."
+						"description": "Create a new author with optional profile picture. Required: name. Optional: biography, profilePicture."
 					},
 					"response": []
 				},
@@ -1066,15 +1215,25 @@
 							]
 						},
 						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
+						"header": [],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id\": 1,\n  \"name\": \"Updated Author Name\"\n}"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "author",
+									"value": "{\n  \"id\": 1,\n  \"name\": \"Updated Author Name\",\n  \"biography\": \"Updated biography for the author.\"\n}",
+									"contentType": "application/json",
+									"description": "Author data as JSON (must include id)",
+									"type": "text"
+								},
+								{
+									"key": "profilePicture",
+									"description": "New profile picture (optional - if not provided, keeps existing picture)",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
 						},
 						"url": {
 							"raw": "{{base_url}}/api/authors/:id",
@@ -1093,7 +1252,7 @@
 								}
 							]
 						},
-						"description": "Update an author's name."
+						"description": "Update an author with optional new profile picture. Required: id, name. Optional: biography, profilePicture."
 					},
 					"response": []
 				},
@@ -1307,6 +1466,463 @@
 			]
 		},
 		{
+			"name": "Book Packs",
+			"item": [
+				{
+					"name": "Create Book Pack (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "bookPack",
+									"value": "{\n  \"title\": \"Fantasy Collection\",\n  \"description\": \"A collection of the best fantasy books\",\n  \"price\": 2500.00,\n  \"books\": [\n    {\"id\": 1},\n    {\"id\": 2}\n  ]\n}",
+									"contentType": "application/json",
+									"description": "Book pack data as JSON (must include at least 2 books)",
+									"type": "text"
+								},
+								{
+									"key": "coverImage",
+									"description": "Book pack cover image (JPEG, PNG, or WebP)",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/book-packs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"book-packs"
+							]
+						},
+						"description": "Create a new book pack with cover image. Required: title, price, coverImage, books (minimum 2). Books must be provided as array of book objects with id field."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Book Pack (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "bookPack",
+									"value": "{\n  \"id\": 1,\n  \"title\": \"Updated Fantasy Collection\",\n  \"description\": \"An updated collection\",\n  \"price\": 2800.00,\n  \"books\": [\n    {\"id\": 1},\n    {\"id\": 2},\n    {\"id\": 3}\n  ]\n}",
+									"contentType": "application/json",
+									"description": "Book pack data as JSON (must include id and at least 2 books)",
+									"type": "text"
+								},
+								{
+									"key": "coverImage",
+									"description": "New cover image (optional - if not provided, keeps existing cover)",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/book-packs/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"book-packs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Update an existing book pack. Required: id, title, price, books (minimum 2). Optional: description, coverImage."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Book Packs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/book-packs?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"book-packs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Book Pack by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/book-packs/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"book-packs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Book Pack (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{el_admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/book-packs/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"book-packs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Delete a book pack. Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order Items",
+			"item": [
+				{
+					"name": "Create Order Item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 2,\n  \"unitPrice\": 500.00,\n  \"totalPrice\": 1000.00,\n  \"book\": {\n    \"id\": 1\n  },\n  \"order\": {\n    \"id\": 1\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/order-items",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"order-items"
+							]
+						},
+						"description": "Create a new order item. Required: quantity, unitPrice, totalPrice, book, order."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Item",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"quantity\": 3,\n  \"unitPrice\": 500.00,\n  \"totalPrice\": 1500.00,\n  \"book\": {\n    \"id\": 1\n  },\n  \"order\": {\n    \"id\": 1\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/order-items/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"order-items",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Update an existing order item."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Order Items",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/order-items?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"order-items"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Item by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/order-items/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"order-items",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Order Item",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/order-items/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"order-items",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Contact",
+			"item": [
+				{
+					"name": "Submit Contact Form",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"subject\": \"Question about book availability\",\n  \"message\": \"Hello, I would like to know if you have the book 'XYZ' in stock. Thank you.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/contact",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"contact"
+							]
+						},
+						"description": "Submit a contact form. Public endpoint. Required: name, email, subject, message."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Public Users",
+			"item": [
+				{
+					"name": "Get All Users (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users?page=0&size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get all public user information (paginated). Public endpoint."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Logout",
+			"item": [
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"logout"
+							]
+						},
+						"description": "Logout and get OAuth2 provider logout URL. Authenticated users only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth Info",
+			"item": [
+				{
+					"name": "Get Auth Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth-info",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth-info"
+							]
+						},
+						"description": "Get OIDC provider information (issuer, clientId). Public endpoint."
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Orders",
 			"item": [
 				{
@@ -1321,7 +1937,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phone\": \"+213549697533\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"totalAmount\": 1500.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    },\n    {\n      \"bookId\": 2,\n      \"quantity\": 1,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 500.00\n    }\n  ]\n}"
+							"raw": "{\n  \"fullName\": \"Oussama Benberkane\",\n  \"phone\": \"+213549697533\",\n  \"email\": \"customer@example.com\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"Cite Aouchiche\",\n  \"postalCode\": \"06001\",\n  \"shippingMethod\": \"SHIPPING_PROVIDER\",\n  \"shippingProvider\": \"YALIDINE\",\n  \"totalAmount\": 1800.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    },\n    {\n      \"bookId\": 2,\n      \"quantity\": 1,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 500.00\n    }\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders",
@@ -1333,7 +1949,7 @@
 								"orders"
 							]
 						},
-						"description": "Public endpoint - Guest checkout supported. For authenticated users, city/wilaya/phone will auto-fill from profile if not provided. Stock is validated before order creation."
+						"description": "Public endpoint - Guest checkout supported. For authenticated users, city/wilaya/phone will auto-fill from profile if not provided. Stock is validated before order creation. Required: phone, wilaya, city, totalAmount, shippingCost, orderItems. Optional: fullName, email, streetAddress, postalCode. ShippingMethod: SHIPPING_PROVIDER, HOME_DELIVERY. ShippingProvider: YALIDINE, ZR, PICK_UP."
 					},
 					"response": []
 				},
@@ -1444,7 +2060,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"id\": 1,\n  \"status\": \"DELIVERED\",\n  \"phone\": \"+213549697533\",\n  \"email\": \"customer@example.com\",\n  \"fullName\": \"Updated Customer Name\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"Updated Address\",\n  \"postalCode\": \"06001\",\n  \"shippingMethod\": \"SHIPPING_PROVIDER\",\n  \"shippingProvider\": \"ZR\",\n  \"totalAmount\": 1500.00,\n  \"shippingCost\": 300.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1000.00\n    }\n  ]\n}"
+							"raw": "{\n  \"id\": 1,\n  \"status\": \"DELIVERED\",\n  \"fullName\": \"Updated Customer Name\",\n  \"phone\": \"+213549697533\",\n  \"email\": \"customer@example.com\",\n  \"wilaya\": \"Bejaia\",\n  \"city\": \"Akbou\",\n  \"streetAddress\": \"Updated Address, Bloc A\",\n  \"postalCode\": \"06001\",\n  \"shippingMethod\": \"SHIPPING_PROVIDER\",\n  \"shippingProvider\": \"ZR\",\n  \"totalAmount\": 1800.00,\n  \"shippingCost\": 400.00,\n  \"orderItems\": [\n    {\n      \"bookId\": 1,\n      \"quantity\": 3,\n      \"unitPrice\": 500.00,\n      \"totalPrice\": 1500.00\n    }\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/orders/:id",
@@ -1463,7 +2079,7 @@
 								}
 							]
 						},
-						"description": "Admin only. Cannot update: id, uniqueId, createdAt, createdBy. When status changes to DELIVERED, book stock is automatically decremented."
+						"description": "Admin only. Cannot update: id, uniqueId, createdAt, createdBy. When status changes to DELIVERED, book stock is automatically decremented. OrderStatus: PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED. ShippingMethod: SHIPPING_PROVIDER, HOME_DELIVERY. ShippingProvider: YALIDINE, ZR, PICK_UP."
 					},
 					"response": []
 				},
