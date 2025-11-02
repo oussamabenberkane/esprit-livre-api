@@ -2,10 +2,12 @@ package com.oussamabenberkane.espritlivre.web.rest;
 
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
+import com.oussamabenberkane.espritlivre.service.BookPackService;
 import com.oussamabenberkane.espritlivre.service.BookService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
+import com.oussamabenberkane.espritlivre.service.dto.BookPackDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookSuggestionDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
@@ -61,11 +63,14 @@ public class BookResource {
 
     private final FileStorageService fileStorageService;
 
-    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService, FileStorageService fileStorageService) {
+    private final BookPackService bookPackService;
+
+    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService, FileStorageService fileStorageService, BookPackService bookPackService) {
         this.bookService = bookService;
         this.bookRepository = bookRepository;
         this.validationService = validationService;
         this.fileStorageService = fileStorageService;
+        this.bookPackService = bookPackService;
     }
 
     /**
@@ -325,5 +330,27 @@ public class BookResource {
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .body(result);
+    }
+
+    /**
+     * {@code GET  /books/:id/recommendations} : get recommended book packs for the "id" book.
+     *
+     * @param id the id of the book to get recommendations for.
+     * @param pageable the pagination information (default limit 5).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of book packs in body.
+     */
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<List<BookPackDTO>> getBookRecommendations(
+        @PathVariable("id") Long id,
+        @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to get recommendations for Book : {}", id);
+
+        // Default to 5 recommendations if not specified
+        Pageable limitedPageable = pageable.isPaged() ? pageable : Pageable.ofSize(5);
+
+        Page<BookPackDTO> page = bookPackService.findRecommendationsForBook(id, limitedPageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 }

@@ -8,12 +8,14 @@ import com.oussamabenberkane.espritlivre.service.dto.BookPackDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookPackMapper;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -279,5 +281,51 @@ public class BookPackService {
     public void delete(Long id) {
         LOG.debug("Request to delete BookPack : {}", id);
         bookPackRepository.deleteById(id);
+    }
+
+    /**
+     * Get book pack recommendations for a book (packs that contain the book).
+     *
+     * @param bookId the id of the book.
+     * @param pageable the pagination information.
+     * @return the list of book packs containing the book.
+     */
+    @Transactional(readOnly = true)
+    public Page<BookPackDTO> findRecommendationsForBook(Long bookId, Pageable pageable) {
+        LOG.debug("Request to get BookPack recommendations for Book : {}", bookId);
+
+        // Verify the book exists
+        if (!bookRepository.existsById(bookId)) {
+            throw new BadRequestAlertException("Book not found", "book", "idnotfound");
+        }
+
+        // First, get the page of BookPack IDs (without eager loading)
+        Page<BookPack> page = bookPackRepository.findByBookId(bookId, pageable);
+
+        // If no results, return empty page
+        if (page.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        // Extract IDs from the page
+        List<Long> ids = page.getContent().stream()
+            .map(BookPack::getId)
+            .collect(Collectors.toList());
+
+        // Fetch the BookPacks with eager-loaded books
+        List<BookPack> bookPacksWithBooks = bookPackRepository.findByIdsWithEagerRelationships(ids);
+
+        // Convert to DTOs maintaining the original order
+        List<BookPackDTO> dtos = ids.stream()
+            .map(id -> bookPacksWithBooks.stream()
+                .filter(bp -> bp.getId().equals(id))
+                .findFirst()
+                .map(bookPackMapper::toDto)
+                .orElse(null)
+            )
+            .filter(dto -> dto != null)
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 }

@@ -73,6 +73,7 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/suggestions")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*/recommendations")).permitAll()
                     // Public tag endpoints
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*")).permitAll()
@@ -84,6 +85,10 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders")).permitAll()
                     // Public email sending (customer service)
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact")).permitAll()
+                    // Public images
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*/cover")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/*/picture")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*/image")).permitAll()
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).authenticated()
                     .requestMatchers(mvc.pattern("/websocket/**")).authenticated()

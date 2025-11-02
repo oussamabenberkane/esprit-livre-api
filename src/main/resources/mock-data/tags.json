@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "nameEn": "Fiction",
+    "nameFr": "Fiction",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#8B4789",
+    "imageUrl": "/media/categories/category_1.jpg"
+  },
+  {
+    "id": 2,
+    "nameEn": "Philosophy",
+    "nameFr": "Philosophie",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#2C5F8D",
+    "imageUrl": "/media/categories/category_2.jpg"
+  },
+  {
+    "id": 3,
+    "nameEn": "Classic",
+    "nameFr": "Classique",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#8B7355",
+    "imageUrl": "/media/categories/category_3.jpg"
+  },
+  {
+    "id": 4,
+    "nameEn": "Adventure",
+    "nameFr": "Aventure",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#D97642",
+    "imageUrl": "/media/categories/category_4.jpg"
+  },
+  {
+    "id": 5,
+    "nameEn": "Romance",
+    "nameFr": "Romance",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#E94B7E",
+    "imageUrl": "/media/categories/category_5.jpg"
+  },
+  {
+    "id": 6,
+    "nameEn": "Drama",
+    "nameFr": "Drame",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#7D3C5D",
+    "imageUrl": "/media/categories/category_6.jpg"
+  },
+  {
+    "id": 7,
+    "nameEn": "Science Fiction",
+    "nameFr": "Science-Fiction",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#4A90E2",
+    "imageUrl": "/media/categories/category_7.jpg"
+  },
+  {
+    "id": 8,
+    "nameEn": "Historical",
+    "nameFr": "Historique",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#8B6914",
+    "imageUrl": "/media/categories/category_8.jpg"
+  },
+  {
+    "id": 9,
+    "nameEn": "Children's Literature",
+    "nameFr": "Littérature Jeunesse",
+    "type": "CATEGORY",
+    "active": true,
+    "colorHex": "#F7B731",
+    "imageUrl": "/media/categories/category_9.jpg"
+  },
+  {
+    "id": 11,
+    "nameEn": "Bestseller",
+    "nameFr": "Meilleures Ventes",
+    "type": "ETIQUETTE",
+    "active": true,
+    "colorHex": "#FFD700",
+    "imageUrl": "/media/categories/category_11.jpg"
+  },
+  {
+    "id": 12,
+    "nameEn": "New Release",
+    "nameFr": "Nouveauté",
+    "type": "ETIQUETTE",
+    "active": true,
+    "colorHex": "#32CD32",
+    "imageUrl": "/media/categories/category_12.jpg"
+  },
+  {
+    "id": 14,
+    "nameEn": "Staff Pick",
+    "nameFr": "Choix du Personnel",
+    "type": "ETIQUETTE",
+    "active": true,
+    "colorHex": "#9B59B6",
+    "imageUrl": "/media/categories/category_14.jpg"
+  },
+  {
+    "id": 15,
+    "nameEn": "Award Winner",
+    "nameFr": "Prix Littéraire",
+    "type": "ETIQUETTE",
+    "active": true,
+    "colorHex": "#E74C3C",
+    "imageUrl": "/media/categories/category_15.jpg"
+  },
+  {
+    "id": 16,
+    "nameEn": "On Sale",
+    "nameFr": "En Promotion",
+    "type": "ETIQUETTE",
+    "active": true,
+    "colorHex": "#FF6347",
+    "imageUrl": "/media/categories/category_16.jpg"
+  },
+  {
+    "id": 18,
+    "nameEn": "Featured",
+    "nameFr": "À la Une",
+    "type": "MAIN_DISPLAY",
+    "active": true,
+    "colorHex": "#E67E22",
+    "imageUrl": "/media/categories/category_18.jpg"
+  },
+  {
+    "id": 19,
+    "nameEn": "Popular",
+    "nameFr": "Populaire",
+    "type": "MAIN_DISPLAY",
+    "active": true,
+    "colorHex": "#3498DB",
+    "imageUrl": "/media/categories/category_19.jpg"
+  },
+  {
+    "id": 20,
+    "nameEn": "Recommended",
+    "nameFr": "Recommandé",
+    "type": "MAIN_DISPLAY",
+    "active": true,
+    "colorHex": "#1ABC9C",
+    "imageUrl": "/media/categories/category_20.jpg"
+  },
+  {
+    "id": 21,
+    "nameEn": "Trending",
+    "nameFr": "Tendance",
+    "type": "MAIN_DISPLAY",
+    "active": true,
+    "colorHex": "#F39C12",
+    "imageUrl": "/media/categories/category_21.jpg"
+  },
+  {
+    "id": 22,
+    "nameEn": "Must Read",
+    "nameFr": "À Lire Absolument",
+    "type": "MAIN_DISPLAY",
+    "active": true,
+    "colorHex": "#C0392B",
+    "imageUrl": "/media/categories/category_22.jpg"
+  },
+  {
+    "id": 23,
+    "nameEn": "Editor's Choice",
+    "nameFr": "Choix de l'Éditeur",
+    "type": "MAIN_DISPLAY",
+    "active": true,
+    "colorHex": "#8E44AD",
+    "imageUrl": "/media/categories/category_23.jpg"
+  }
+]

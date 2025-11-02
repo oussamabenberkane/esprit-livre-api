@@ -29,6 +29,8 @@ public interface BookMapper extends EntityMapper<BookDTO, Book> {
     @Mapping(target = "nameEn", source = "nameEn")
     @Mapping(target = "nameFr", source = "nameFr")
     @Mapping(target = "type", source = "type")
+    @Mapping(target = "colorHex", source = "colorHex")
+    @Mapping(target = "imageUrl", source = "imageUrl")
     @Mapping(target = "active", source = "active")
     TagDTO toDtoTagFull(Tag tag);
 
