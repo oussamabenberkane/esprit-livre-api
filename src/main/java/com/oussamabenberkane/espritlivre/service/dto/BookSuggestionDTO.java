@@ -13,11 +13,19 @@ public class BookSuggestionDTO {
     @NotNull
     private SuggestionType type;
 
+    private Long id;
+
     public BookSuggestionDTO() {}
 
     public BookSuggestionDTO(String suggestion, SuggestionType type) {
         this.suggestion = suggestion;
         this.type = type;
+    }
+
+    public BookSuggestionDTO(String suggestion, SuggestionType type, Long id) {
+        this.suggestion = suggestion;
+        this.type = type;
+        this.id = id;
     }
 
     public String getSuggestion() {
@@ -34,6 +42,14 @@ public class BookSuggestionDTO {
 
     public void setType(SuggestionType type) {
         this.type = type;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     /**
@@ -53,13 +69,15 @@ public class BookSuggestionDTO {
         BookSuggestionDTO that = (BookSuggestionDTO) o;
 
         if (!suggestion.equals(that.suggestion)) return false;
-        return type == that.type;
+        if (type != that.type) return false;
+        return id != null ? id.equals(that.id) : that.id == null;
     }
 
     @Override
     public int hashCode() {
         int result = suggestion.hashCode();
         result = 31 * result + type.hashCode();
+        result = 31 * result + (id != null ? id.hashCode() : 0);
         return result;
     }
 
@@ -68,6 +86,7 @@ public class BookSuggestionDTO {
         return "BookSuggestionDTO{" +
             "suggestion='" + suggestion + '\'' +
             ", type=" + type +
+            ", id=" + id +
             '}';
     }
 }

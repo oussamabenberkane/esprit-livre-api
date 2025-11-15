@@ -74,6 +74,9 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/suggestions")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*/recommendations")).permitAll()
+                    // Public book pack browsing endpoints
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/book-packs")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/book-packs/*")).permitAll()
                     // Public tag endpoints
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*")).permitAll()

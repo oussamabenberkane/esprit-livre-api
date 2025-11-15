@@ -43,7 +43,7 @@ public class AppUserResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
      */
     @PostMapping("/register")
-    @PreAuthorize("isAuthenticated()")
+    //@PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> registerAppUser(@Valid @RequestBody AppUserDTO appUserDTO) {
         LOG.debug("REST request to register app user : {}", appUserDTO);
 
@@ -57,7 +57,7 @@ public class AppUserResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the user profile in body.
      */
     @GetMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
+    //@PreAuthorize("isAuthenticated()")
     public ResponseEntity<AppUserDTO> getProfile() {
         LOG.debug("REST request to get current user profile");
 
@@ -75,7 +75,7 @@ public class AppUserResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
      */
     @PutMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
+    //@PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> updateProfile(@Valid @RequestBody AppUserDTO appUserDTO) {
         LOG.debug("REST request to update user profile : {}", appUserDTO);
 
@@ -90,7 +90,7 @@ public class AppUserResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
      */
     @PostMapping("/change-email")
-    @PreAuthorize("isAuthenticated()")
+    //@PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> changeEmail(@Valid @RequestBody EmailChangeDTO emailChangeDTO) {
         LOG.debug("REST request to change email to: {}", emailChangeDTO.getNewEmail());
 
@@ -118,7 +118,7 @@ public class AppUserResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/account")
-    @PreAuthorize("isAuthenticated()")
+    //@PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteAccount() {
         LOG.debug("REST request to delete user account");
 

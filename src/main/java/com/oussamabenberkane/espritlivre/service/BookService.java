@@ -447,54 +447,54 @@ public class BookService {
 
         // Get book title suggestions
         String titleQuery = """
-            SELECT DISTINCT b.title
+            SELECT DISTINCT b.id, b.title
             FROM Book b
             WHERE LOWER(b.title) LIKE :searchPattern
             ORDER BY b.title
             """;
 
-        List<String> titles = em.createQuery(titleQuery, String.class)
+        List<Object[]> titles = em.createQuery(titleQuery, Object[].class)
             .setParameter("searchPattern", searchPattern)
             .setMaxResults(MAX_SUGGESTIONS_PER_CATEGORY)
             .getResultList();
 
-        titles.forEach(title -> suggestions.add(
-            new BookSuggestionDTO(title, BookSuggestionDTO.SuggestionType.BOOK_TITLE)
+        titles.forEach(result -> suggestions.add(
+            new BookSuggestionDTO((String) result[1], BookSuggestionDTO.SuggestionType.BOOK_TITLE, (Long) result[0])
         ));
 
         // Get author suggestions
         String authorQuery = """
-            SELECT DISTINCT a.name
+            SELECT DISTINCT a.id, a.name
             FROM Author a
             WHERE LOWER(a.name) LIKE :searchPattern
             ORDER BY a.name
             """;
 
-        List<String> authors = em.createQuery(authorQuery, String.class)
+        List<Object[]> authors = em.createQuery(authorQuery, Object[].class)
             .setParameter("searchPattern", searchPattern)
             .setMaxResults(MAX_SUGGESTIONS_PER_CATEGORY)
             .getResultList();
 
-        authors.forEach(author -> suggestions.add(
-            new BookSuggestionDTO(author, BookSuggestionDTO.SuggestionType.AUTHOR)
+        authors.forEach(result -> suggestions.add(
+            new BookSuggestionDTO((String) result[1], BookSuggestionDTO.SuggestionType.AUTHOR, (Long) result[0])
         ));
 
         // Get category suggestions (from tags)
         String categoryQuery = """
-            SELECT DISTINCT t.nameEn
+            SELECT DISTINCT t.id, t.nameEn
             FROM Tag t
             WHERE (LOWER(t.nameEn) LIKE :searchPattern OR LOWER(t.nameFr) LIKE :searchPattern)
             AND t.type = com.oussamabenberkane.espritlivre.domain.enumeration.TagType.CATEGORY
             ORDER BY t.nameEn
             """;
 
-        List<String> categories = em.createQuery(categoryQuery, String.class)
+        List<Object[]> categories = em.createQuery(categoryQuery, Object[].class)
             .setParameter("searchPattern", searchPattern)
             .setMaxResults(MAX_SUGGESTIONS_PER_CATEGORY)
             .getResultList();
 
-        categories.forEach(category -> suggestions.add(
-            new BookSuggestionDTO(category, BookSuggestionDTO.SuggestionType.CATEGORY)
+        categories.forEach(result -> suggestions.add(
+            new BookSuggestionDTO((String) result[1], BookSuggestionDTO.SuggestionType.CATEGORY, (Long) result[0])
         ));
 
         return suggestions.stream()
