@@ -15,12 +15,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BookPackRepository extends JpaRepository<BookPack, Long> {
     @Query(
-        value = "select distinct bookPack from BookPack bookPack left join fetch bookPack.books",
+        value = "select distinct bookPack from BookPack bookPack",
         countQuery = "select count(distinct bookPack) from BookPack bookPack"
     )
     Page<BookPack> findAllWithEagerRelationships(Pageable pageable);
 
-    @Query("select bookPack from BookPack bookPack left join fetch bookPack.books where bookPack.id = :id")
+    @Query("select bookPack from BookPack bookPack where bookPack.id in :ids")
+    List<BookPack> findAllByIdsWithEagerRelationships(@Param("ids") List<Long> ids);
+
+    @Query("select bookPack from BookPack bookPack where bookPack.id = :id")
     Optional<BookPack> findOneWithEagerRelationships(@Param("id") Long id);
 
     @Query(
@@ -29,6 +32,6 @@ public interface BookPackRepository extends JpaRepository<BookPack, Long> {
     )
     Page<BookPack> findByBookId(@Param("bookId") Long bookId, Pageable pageable);
 
-    @Query("select bookPack from BookPack bookPack left join fetch bookPack.books where bookPack.id in :ids")
+    @Query("select bookPack from BookPack bookPack where bookPack.id in :ids")
     List<BookPack> findByIdsWithEagerRelationships(@Param("ids") List<Long> ids);
 }

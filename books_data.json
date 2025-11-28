@@ -1,0 +1,840 @@
+{
+    "content": [
+        {
+            "id": 13,
+            "title": "La Naus\u00c3\u00a9e",
+            "author": {
+                "id": 3,
+                "name": "Simone de Beauvoir",
+                "profilePictureUrl": null
+            },
+            "price": 1300.0,
+            "stockQuantity": 38,
+            "coverImageUrl": "/media/books/cover_13.jpg",
+            "description": "Roman philosophique existentialiste pr\u00c3\u00a9sentant le journal intime d'Antoine Roquentin confront\u00c3\u00a9 \u00c3\u00a0 l'absurdit\u00c3\u00a9 et \u00c3\u00a0 la contingence de l'existence.",
+            "active": true,
+            "language": "EN",
+            "createdAt": "2025-10-07T19:54:54.846742+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 14,
+            "title": "Notre-Dame de Paris",
+            "author": {
+                "id": 4,
+                "name": "Antoine de Saint-Exup\u00c3\u00a9ry",
+                "profilePictureUrl": null
+            },
+            "price": 1750.0,
+            "stockQuantity": 50,
+            "coverImageUrl": "/media/books/cover_14.jpg",
+            "description": "Roman gothique se d\u00c3\u00a9roulant dans le Paris m\u00c3\u00a9di\u00c3\u00a9val, centr\u00c3\u00a9 sur les amours impossibles de Quasimodo pour la belle Esmeralda.",
+            "active": true,
+            "language": "AR",
+            "createdAt": "2025-10-07T19:55:12.984985+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 15,
+            "title": "La Peste",
+            "author": {
+                "id": 5,
+                "name": "Alexandre Dumas",
+                "profilePictureUrl": null
+            },
+            "price": 1250.0,
+            "stockQuantity": 65,
+            "coverImageUrl": "/media/books/cover_15.png",
+            "description": "All\u00c3\u00a9gorie de la condition humaine face \u00c3\u00a0 l'absurde, racontant la lutte des habitants d'Oran contre une \u00c3\u00a9pid\u00c3\u00a9mie de peste bubonique.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:55:48.556551+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 1,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 16,
+            "title": "Les Trois Mousquetaires",
+            "author": {
+                "id": 1,
+                "name": "Victor Hugo",
+                "profilePictureUrl": null
+            },
+            "price": 1800.0,
+            "stockQuantity": 48,
+            "coverImageUrl": "/media/books/cover_16.png",
+            "description": "Roman de cape et d'\u00c3\u00a9p\u00c3\u00a9e suivant les aventures de d'Artagnan et ses trois amis mousquetaires au service du roi Louis XIII.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:56:12.711526+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 18,
+            "title": "L'Assommoir",
+            "author": {
+                "id": 2,
+                "name": "Albert Camus",
+                "profilePictureUrl": null
+            },
+            "price": 1550.0,
+            "stockQuantity": 32,
+            "coverImageUrl": "/media/books/cover_18.jpg",
+            "description": "Roman naturaliste d\u00c3\u00a9crivant la descente aux enfers de Gervaise, blanchisseuse parisienne, victime de l'alcoolisme et de la mis\u00c3\u00a8re.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:57:26.507524+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 6,
+            "title": "Le Petit Prince",
+            "author": {
+                "id": 4,
+                "name": "Antoine de Saint-Exup\u00c3\u00a9ry",
+                "profilePictureUrl": null
+            },
+            "price": 950.0,
+            "stockQuantity": 0,
+            "coverImageUrl": "/media/books/cover_6.png",
+            "description": "Conte philosophique et po\u00c3\u00a9tique racontant les aventures d'un petit prince voyageant de plan\u00c3\u00a8te en plan\u00c3\u00a8te, \u00c3\u00a0 la d\u00c3\u00a9couverte de la nature humaine.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:49:41.479792+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 1,
+                    "nameEn": "Fiction",
+                    "nameFr": "Fiction",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B4789",
+                    "imageUrl": "/media/categories/category_1.png"
+                },
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 4,
+                    "nameEn": "Adventure",
+                    "nameFr": "Aventure",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#D97642",
+                    "imageUrl": "/media/categories/category_4.png"
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 9,
+                    "nameEn": "Children's Literature",
+                    "nameFr": "Litt\u00c3\u00a9rature Jeunesse",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#F7B731",
+                    "imageUrl": "/media/categories/category_9.png"
+                },
+                {
+                    "id": 11,
+                    "nameEn": "Bestseller",
+                    "nameFr": "Meilleures Ventes",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#FFD700",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 12,
+                    "nameEn": "New Release",
+                    "nameFr": "Nouveaut\u00c3\u00a9",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#32CD32",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 1,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 17,
+            "title": "Le Tour du monde en quatre-vingts jours",
+            "author": {
+                "id": 2,
+                "name": "Albert Camus",
+                "profilePictureUrl": null
+            },
+            "price": 1150.0,
+            "stockQuantity": 70,
+            "coverImageUrl": "/media/books/cover_17.jpg",
+            "description": "Roman d'aventures relatant le pari audacieux de Phileas Fogg de faire le tour du monde en seulement quatre-vingts jours.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:56:52.198094+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 3,
+            "title": "Les Mis\u00c3\u00a9rables",
+            "author": {
+                "id": 1,
+                "name": "Victor Hugo",
+                "profilePictureUrl": null
+            },
+            "price": 1850.0,
+            "stockQuantity": 45,
+            "coverImageUrl": "/media/books/cover_3.jpg",
+            "description": "Un chef-d'\u00c5\u201cuvre de la litt\u00c3\u00a9rature fran\u00c3\u00a7aise qui raconte l'histoire poignante de Jean Valjean, un ancien for\u00c3\u00a7at en qu\u00c3\u00aate de r\u00c3\u00a9demption dans la France du XIXe si\u00c3\u00a8cle.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-06T20:52:50.00343+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 1,
+                    "nameEn": "Fiction",
+                    "nameFr": "Fiction",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B4789",
+                    "imageUrl": "/media/categories/category_1.png"
+                },
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 3,
+                    "nameEn": "Classic",
+                    "nameFr": "Classique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B7355",
+                    "imageUrl": "/media/categories/category_3.png"
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 5,
+                    "nameEn": "Romance",
+                    "nameFr": "Romance",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#E94B7E",
+                    "imageUrl": "/media/categories/category_5.png"
+                },
+                {
+                    "id": 6,
+                    "nameEn": "Drama",
+                    "nameFr": "Drame",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#7D3C5D",
+                    "imageUrl": "/media/categories/category_6.png"
+                },
+                {
+                    "id": 8,
+                    "nameEn": "Historical",
+                    "nameFr": "Historique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B6914",
+                    "imageUrl": "/media/categories/category_8.png"
+                },
+                {
+                    "id": 11,
+                    "nameEn": "Bestseller",
+                    "nameFr": "Meilleures Ventes",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#FFD700",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 15,
+                    "nameEn": "Award Winner",
+                    "nameFr": "Prix Litt\u00c3\u00a9raire",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#E74C3C",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 4,
+            "title": "L'\u00c3\u2030tranger",
+            "author": {
+                "id": 2,
+                "name": "Albert Camus",
+                "profilePictureUrl": null
+            },
+            "price": 1200.0,
+            "stockQuantity": 60,
+            "coverImageUrl": "/media/books/cover_4.jpg",
+            "description": "Roman existentialiste embl\u00c3\u00a9matique suivant Meursault, un homme confront\u00c3\u00a9 \u00c3\u00a0 l'absurdit\u00c3\u00a9 de l'existence apr\u00c3\u00a8s avoir commis un meurtre apparemment sans motif.",
+            "active": true,
+            "language": "EN",
+            "createdAt": "2025-10-07T19:42:52.427483+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 2,
+                    "nameEn": "Philosophy",
+                    "nameFr": "Philosophie",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#2C5F8D",
+                    "imageUrl": "/media/categories/category_2.png"
+                },
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 6,
+                    "nameEn": "Drama",
+                    "nameFr": "Drame",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#7D3C5D",
+                    "imageUrl": "/media/categories/category_6.png"
+                },
+                {
+                    "id": 14,
+                    "nameEn": "Staff Pick",
+                    "nameFr": "Choix du Personnel",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#9B59B6",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 15,
+                    "nameEn": "Award Winner",
+                    "nameFr": "Prix Litt\u00c3\u00a9raire",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#E74C3C",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 1,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 5,
+            "title": "Le Deuxi\u00c3\u00a8me Sexe",
+            "author": {
+                "id": 3,
+                "name": "Simone de Beauvoir",
+                "profilePictureUrl": null
+            },
+            "price": 2500.0,
+            "stockQuantity": 30,
+            "coverImageUrl": "/media/books/cover_5.jpg",
+            "description": "\u00c5\u2019uvre fondamentale du f\u00c3\u00a9minisme moderne qui analyse la condition f\u00c3\u00a9minine \u00c3\u00a0 travers l'histoire, la biologie, la psychanalyse et le mat\u00c3\u00a9rialisme historique.",
+            "active": true,
+            "language": "EN",
+            "createdAt": "2025-10-07T19:47:18.391657+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 2,
+                    "nameEn": "Philosophy",
+                    "nameFr": "Philosophie",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#2C5F8D",
+                    "imageUrl": "/media/categories/category_2.png"
+                },
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 14,
+                    "nameEn": "Staff Pick",
+                    "nameFr": "Choix du Personnel",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#9B59B6",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 15,
+                    "nameEn": "Award Winner",
+                    "nameFr": "Prix Litt\u00c3\u00a9raire",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#E74C3C",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 8,
+            "title": "Le Comte de Monte-Cristo",
+            "author": {
+                "id": 5,
+                "name": "Alexandre Dumas",
+                "profilePictureUrl": null
+            },
+            "price": 2200.0,
+            "stockQuantity": 40,
+            "coverImageUrl": "/media/books/cover_8.jpg",
+            "description": "Roman d'aventures captivant narrant la vengeance m\u00c3\u00a9thodique d'Edmond Dant\u00c3\u00a8s apr\u00c3\u00a8s avoir \u00c3\u00a9t\u00c3\u00a9 emprisonn\u00c3\u00a9 injustement pendant quatorze ans.",
+            "active": true,
+            "language": "AR",
+            "createdAt": "2025-10-07T19:51:49.752262+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 1,
+                    "nameEn": "Fiction",
+                    "nameFr": "Fiction",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B4789",
+                    "imageUrl": "/media/categories/category_1.png"
+                },
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 3,
+                    "nameEn": "Classic",
+                    "nameFr": "Classique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B7355",
+                    "imageUrl": "/media/categories/category_3.png"
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 4,
+                    "nameEn": "Adventure",
+                    "nameFr": "Aventure",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#D97642",
+                    "imageUrl": "/media/categories/category_4.png"
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 5,
+                    "nameEn": "Romance",
+                    "nameFr": "Romance",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#E94B7E",
+                    "imageUrl": "/media/categories/category_5.png"
+                },
+                {
+                    "id": 8,
+                    "nameEn": "Historical",
+                    "nameFr": "Historique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B6914",
+                    "imageUrl": "/media/categories/category_8.png"
+                },
+                {
+                    "id": 11,
+                    "nameEn": "Bestseller",
+                    "nameFr": "Meilleures Ventes",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#FFD700",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 15,
+                    "nameEn": "Award Winner",
+                    "nameFr": "Prix Litt\u00c3\u00a9raire",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#E74C3C",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 9,
+            "title": "Germinal",
+            "author": {
+                "id": 6,
+                "name": "\u00c3\u2030mile Zola",
+                "profilePictureUrl": null
+            },
+            "price": 1600.0,
+            "stockQuantity": 35,
+            "coverImageUrl": "/media/books/cover_9.jpg",
+            "description": "Roman naturaliste d\u00c3\u00a9crivant les conditions de vie difficiles des mineurs du nord de la France au XIXe si\u00c3\u00a8cle et leur lutte pour de meilleures conditions.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:52:28.532988+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 3,
+                    "nameEn": "Classic",
+                    "nameFr": "Classique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B7355",
+                    "imageUrl": "/media/categories/category_3.png"
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 6,
+                    "nameEn": "Drama",
+                    "nameFr": "Drame",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#7D3C5D",
+                    "imageUrl": "/media/categories/category_6.png"
+                },
+                {
+                    "id": 8,
+                    "nameEn": "Historical",
+                    "nameFr": "Historique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B6914",
+                    "imageUrl": "/media/categories/category_8.png"
+                },
+                {
+                    "id": 14,
+                    "nameEn": "Staff Pick",
+                    "nameFr": "Choix du Personnel",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#9B59B6",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 15,
+                    "nameEn": "Award Winner",
+                    "nameFr": "Prix Litt\u00c3\u00a9raire",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#E74C3C",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 1,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 10,
+            "title": "\u00c3\u20ac la recherche du temps perdu - Du c\u00c3\u00b4t\u00c3\u00a9 de chez Swann",
+            "author": {
+                "id": 7,
+                "name": "Marcel Proust",
+                "profilePictureUrl": null
+            },
+            "price": 1900.0,
+            "stockQuantity": 25,
+            "coverImageUrl": "/media/books/cover_10.jpg",
+            "description": "Premier volume de la monumentale saga proustienne explorant la m\u00c3\u00a9moire, le temps et la soci\u00c3\u00a9t\u00c3\u00a9 \u00c3\u00a0 travers les souvenirs du narrateur.",
+            "active": true,
+            "language": "EN",
+            "createdAt": "2025-10-07T19:53:07.213517+02:00",
+            "updatedAt": null,
+            "tags": [
+                {
+                    "id": 2,
+                    "nameEn": "Philosophy",
+                    "nameFr": "Philosophie",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#2C5F8D",
+                    "imageUrl": "/media/categories/category_2.png"
+                },
+                {
+                    "id": 18,
+                    "nameEn": "Featured",
+                    "nameFr": "\u00c3\u20ac la Une",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#E67E22",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 3,
+                    "nameEn": "Classic",
+                    "nameFr": "Classique",
+                    "type": "CATEGORY",
+                    "active": true,
+                    "colorHex": "#8B7355",
+                    "imageUrl": "/media/categories/category_3.png"
+                },
+                {
+                    "id": 19,
+                    "nameEn": "Popular",
+                    "nameFr": "Populaire",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#3498DB",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 20,
+                    "nameEn": "Recommended",
+                    "nameFr": "Recommand\u00c3\u00a9",
+                    "type": "MAIN_DISPLAY",
+                    "active": true,
+                    "colorHex": "#1ABC9C",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 14,
+                    "nameEn": "Staff Pick",
+                    "nameFr": "Choix du Personnel",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#9B59B6",
+                    "imageUrl": ""
+                },
+                {
+                    "id": 15,
+                    "nameEn": "Award Winner",
+                    "nameFr": "Prix Litt\u00c3\u00a9raire",
+                    "type": "ETIQUETTE",
+                    "active": true,
+                    "colorHex": "#E74C3C",
+                    "imageUrl": ""
+                }
+            ],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 11,
+            "title": "Vingt mille lieues sous les mers",
+            "author": {
+                "id": 1,
+                "name": "Victor Hugo",
+                "profilePictureUrl": null
+            },
+            "price": 1400.0,
+            "stockQuantity": 55,
+            "coverImageUrl": "/media/books/cover_11.jpg",
+            "description": "Roman d'aventures sous-marines suivant le professeur Aronnax et le myst\u00c3\u00a9rieux capitaine Nemo \u00c3\u00a0 bord du sous-marin Nautilus.",
+            "active": true,
+            "language": "FR",
+            "createdAt": "2025-10-07T19:54:05.401756+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 0,
+            "isLikedByCurrentUser": false
+        },
+        {
+            "id": 12,
+            "title": "Madame Bovary",
+            "author": {
+                "id": 2,
+                "name": "Albert Camus",
+                "profilePictureUrl": null
+            },
+            "price": 1350.0,
+            "stockQuantity": 42,
+            "coverImageUrl": "/media/books/cover_12.jpg",
+            "description": "Roman r\u00c3\u00a9aliste narrant la vie d'Emma Bovary, une femme insatisfaite de sa vie provinciale qui cherche l'accomplissement dans des relations adult\u00c3\u00a8res.",
+            "active": true,
+            "language": "EN",
+            "createdAt": "2025-10-07T19:54:29.468794+02:00",
+            "updatedAt": null,
+            "tags": [],
+            "likeCount": 1,
+            "isLikedByCurrentUser": false
+        }
+    ],
+    "pageable": {
+        "pageNumber": 0,
+        "pageSize": 100,
+        "sort": {
+            "empty": true,
+            "sorted": false,
+            "unsorted": true
+        },
+        "offset": 0,
+        "paged": true,
+        "unpaged": false
+    },
+    "last": true,
+    "totalPages": 1,
+    "totalElements": 15,
+    "size": 100,
+    "number": 0,
+    "sort": {
+        "empty": true,
+        "sorted": false,
+        "unsorted": true
+    },
+    "numberOfElements": 15,
+    "first": true,
+    "empty": false
+}

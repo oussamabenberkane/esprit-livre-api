@@ -3,7 +3,11 @@
     "allow": [
       "Bash(./mvnw:*)",
       "Bash(docker ps:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(timeout 90 bash:*)"
     ],
     "deny": [],
     "ask": []

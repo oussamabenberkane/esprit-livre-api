@@ -36,8 +36,7 @@ public class BookPack implements Serializable {
     @Column(name = "title", nullable = false, unique = true)
     private String title;
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @NotNull

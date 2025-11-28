@@ -4,13 +4,18 @@ import com.oussamabenberkane.espritlivre.repository.BookPackRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.service.BookPackService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
+import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.BookPackDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -52,10 +57,13 @@ public class BookPackResource {
 
     private final FileStorageService fileStorageService;
 
-    public BookPackResource(BookPackService bookPackService, BookPackRepository bookPackRepository, FileStorageService fileStorageService) {
+    private final ValidationService validationService;
+
+    public BookPackResource(BookPackService bookPackService, BookPackRepository bookPackRepository, FileStorageService fileStorageService, ValidationService validationService) {
         this.bookPackService = bookPackService;
         this.bookPackRepository = bookPackRepository;
         this.fileStorageService = fileStorageService;
+        this.validationService = validationService;
     }
 
     /**
@@ -123,12 +131,29 @@ public class BookPackResource {
      * {@code GET  /book-packs} : get all the bookPacks with books.
      *
      * @param pageable the pagination information.
+     * @param search the search term.
+     * @param author the author IDs filter.
+     * @param minPrice the minimum price filter.
+     * @param maxPrice the maximum price filter.
+     * @param categoryId the category tag id filter.
+     * @param mainDisplayId the main display tag id filter.
+     * @param language the language filter.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of bookPacks in body.
      */
     @GetMapping("")
-    public ResponseEntity<Page<BookPackDTO>> getAllBookPacks(@ParameterObject Pageable pageable) {
+    public ResponseEntity<Page<BookPackDTO>> getAllBookPacks(
+        @ParameterObject Pageable pageable,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false) List<Long> author,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal minPrice,
+        @RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
+        @RequestParam(required = false) @Min(1) Long categoryId,
+        @RequestParam(required = false) @Min(1) Long mainDisplayId,
+        @RequestParam(required = false) List<String> language
+    ) {
         LOG.debug("REST request to get a page of BookPacks");
-        Page<BookPackDTO> page = bookPackService.findAll(pageable);
+        validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
+        Page<BookPackDTO> page = bookPackService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
     }

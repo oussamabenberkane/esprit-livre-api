@@ -143,14 +143,15 @@ public class BookResource {
     public ResponseEntity<Page<BookDTO>> getAllBooks(
         @ParameterObject Pageable pageable,
         @RequestParam(required = false) String search,
-        @RequestParam(required = false) String author,
+        @RequestParam(required = false) List<Long> author,
         @RequestParam(required = false) @DecimalMin("0") BigDecimal minPrice,
         @RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
         @RequestParam(required = false) @Min(1) Long categoryId,
-        @RequestParam(required = false) @Min(1) Long mainDisplayId
+        @RequestParam(required = false) @Min(1) Long mainDisplayId,
+        @RequestParam(required = false) List<String> language
     ) {
         validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
-        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId);
+        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
     }
@@ -159,28 +160,15 @@ public class BookResource {
      * {@code GET  /books/liked} : get all books liked by current user.
      *
      * @param pageable the pagination information.
-     * @param search the search term.
-     * @param author the author name filter.
-     * @param minPrice the minimum price filter.
-     * @param maxPrice the maximum price filter.
-     * @param categoryId the category tag id filter.
-     * @param mainDisplayId the main display tag id filter.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the list of liked books.
      */
     @GetMapping("/liked")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<Page<BookDTO>> getLikedBooks(
-        @ParameterObject Pageable pageable,
-        @RequestParam(required = false) String search,
-        @RequestParam(required = false) String author,
-        @RequestParam(required = false) @DecimalMin("0") BigDecimal minPrice,
-        @RequestParam(required = false) @DecimalMin("0") BigDecimal maxPrice,
-        @RequestParam(required = false) @Min(1) Long categoryId,
-        @RequestParam(required = false) @Min(1) Long mainDisplayId
+        @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST request to get liked books");
-        validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
-        Page<BookDTO> page = bookService.findLikedBooksByCurrentUser(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId);
+        Page<BookDTO> page = bookService.findLikedBooksByCurrentUser(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
     }

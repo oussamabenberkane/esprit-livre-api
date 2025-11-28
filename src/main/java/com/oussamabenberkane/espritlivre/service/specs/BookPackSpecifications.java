@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.service.specs;
 
 import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
+import com.oussamabenberkane.espritlivre.domain.BookPack;
 import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
@@ -14,19 +15,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BookSpecifications {
+public class BookPackSpecifications {
 
-    public static Specification<Book> hasAuthor(List<Long> authorIds) {
+    public static Specification<BookPack> hasAuthor(List<Long> authorIds) {
         return (root, query, builder) -> {
             if (authorIds == null || authorIds.isEmpty()) {
                 return builder.conjunction();
             }
-            Join<Book, Author> authorJoin = root.join("author", JoinType.INNER);
+            query.distinct(true);
+            Join<BookPack, Book> bookJoin = root.join("books", JoinType.INNER);
+            Join<Book, Author> authorJoin = bookJoin.join("author", JoinType.INNER);
             return authorJoin.get("id").in(authorIds);
         };
     }
 
-    public static Specification<Book> hasPriceBetween(BigDecimal minPrice, BigDecimal maxPrice) {
+    public static Specification<BookPack> hasPriceBetween(BigDecimal minPrice, BigDecimal maxPrice) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -42,16 +45,16 @@ public class BookSpecifications {
         };
     }
 
-    public static Specification<Book> hasTagOfType(TagType tagType, Long tagId) {
+    public static Specification<BookPack> hasTagOfType(TagType tagType, Long tagId) {
         return (root, query, builder) -> {
             if (tagId == null) {
                 return builder.conjunction();
             }
 
-            // Add distinct to avoid duplicates when joining
             query.distinct(true);
 
-            Join<Book, Tag> tagJoin = root.join("tags", JoinType.INNER);
+            Join<BookPack, Book> bookJoin = root.join("books", JoinType.INNER);
+            Join<Book, Tag> tagJoin = bookJoin.join("tags", JoinType.INNER);
             return builder.and(
                 builder.equal(tagJoin.get("type"), tagType),
                 builder.equal(tagJoin.get("id"), tagId)
@@ -59,15 +62,15 @@ public class BookSpecifications {
         };
     }
 
-    public static Specification<Book> hasCategory(Long categoryId) {
+    public static Specification<BookPack> hasCategory(Long categoryId) {
         return hasTagOfType(TagType.CATEGORY, categoryId);
     }
 
-    public static Specification<Book> hasMainDisplay(Long mainDisplayId) {
+    public static Specification<BookPack> hasMainDisplay(Long mainDisplayId) {
         return hasTagOfType(TagType.MAIN_DISPLAY, mainDisplayId);
     }
 
-    public static Specification<Book> searchByText(String searchTerm) {
+    public static Specification<BookPack> searchByText(String searchTerm) {
         return (root, query, builder) -> {
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
                 return builder.conjunction();
@@ -76,30 +79,28 @@ public class BookSpecifications {
             String searchPattern = "%" + searchTerm.toLowerCase().trim() + "%";
             query.distinct(true);
 
-            // Search in title and author
+            // Search in pack title and description
             Predicate titleMatch = builder.like(builder.lower(root.get("title")), searchPattern);
+            Predicate descriptionMatch = builder.like(builder.lower(root.get("description")), searchPattern);
 
-            // Search in author name
-            Join<Book, Author> authorJoin = root.join("author", JoinType.LEFT);
+            // Search in book titles
+            Join<BookPack, Book> bookJoin = root.join("books", JoinType.LEFT);
+            Predicate bookTitleMatch = builder.like(builder.lower(bookJoin.get("title")), searchPattern);
+
+            // Search in author names
+            Join<Book, Author> authorJoin = bookJoin.join("author", JoinType.LEFT);
             Predicate authorMatch = builder.like(builder.lower(authorJoin.get("name")), searchPattern);
 
-            // Search in tag names (both English and French)
-            Join<Book, Tag> tagJoin = root.join("tags", JoinType.LEFT);
+            // Search in tag names
+            Join<Book, Tag> tagJoin = bookJoin.join("tags", JoinType.LEFT);
             Predicate tagNameEnMatch = builder.like(builder.lower(tagJoin.get("nameEn")), searchPattern);
             Predicate tagNameFrMatch = builder.like(builder.lower(tagJoin.get("nameFr")), searchPattern);
 
-            return builder.or(titleMatch, authorMatch, tagNameEnMatch, tagNameFrMatch);
+            return builder.or(titleMatch, descriptionMatch, bookTitleMatch, authorMatch, tagNameEnMatch, tagNameFrMatch);
         };
     }
 
-    public static Specification<Book> isLikedByCurrentUser() {
-        return (root, query, builder) -> {
-            query.distinct(true);
-            return builder.isNotNull(root.get("id"));
-        };
-    }
-
-    public static Specification<Book> hasLanguage(List<String> languages) {
+    public static Specification<BookPack> hasLanguage(List<String> languages) {
         return (root, query, builder) -> {
             if (languages == null || languages.isEmpty()) {
                 return builder.conjunction();
@@ -121,7 +122,10 @@ public class BookSpecifications {
                 return builder.conjunction();
             }
 
-            return root.get("language").in(languageEnums);
+            query.distinct(true);
+
+            Join<BookPack, Book> bookJoin = root.join("books", JoinType.INNER);
+            return bookJoin.get("language").in(languageEnums);
         };
     }
 }

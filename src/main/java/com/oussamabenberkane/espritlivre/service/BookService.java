@@ -237,14 +237,15 @@ public class BookService {
     public Page<BookDTO> findAll(
         Pageable pageable,
         String search,
-        String author,
+        List<Long> author,
         BigDecimal minPrice,
         BigDecimal maxPrice,
         Long categoryId,
-        Long mainDisplayId
+        Long mainDisplayId,
+        List<String> language
     ) {
-        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}",
-            search, author, minPrice, maxPrice, categoryId, mainDisplayId);
+        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}",
+            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language);
 
         Specification<Book> spec = Specification.where(null);
 
@@ -254,12 +255,17 @@ public class BookService {
         }
 
         // Apply individual filters only if parameters are provided
-        if (StringUtils.hasText(author)) {
+        if (author != null && !author.isEmpty()) {
             spec = spec.and(BookSpecifications.hasAuthor(author));
         }
 
         if (minPrice != null || maxPrice != null) {
             spec = spec.and(BookSpecifications.hasPriceBetween(minPrice, maxPrice));
+        }
+
+        // Language filtering
+        if (language != null && !language.isEmpty()) {
+            spec = spec.and(BookSpecifications.hasLanguage(language));
         }
 
         // Tag filtering - books that have EITHER category OR mainDisplay tag
@@ -380,50 +386,15 @@ public class BookService {
      * Get all books liked by the current authenticated user.
      *
      * @param pageable the pagination information.
-     * @param search the search term.
-     * @param author the author name filter.
-     * @param minPrice the minimum price filter.
-     * @param maxPrice the maximum price filter.
-     * @param categoryId the category tag id filter.
-     * @param mainDisplayId the main display tag id filter.
      * @return the list of liked books.
      */
     @Transactional(readOnly = true)
     public Page<BookDTO> findLikedBooksByCurrentUser(
-        Pageable pageable,
-        String search,
-        String author,
-        BigDecimal minPrice,
-        BigDecimal maxPrice,
-        Long categoryId,
-        Long mainDisplayId
+        Pageable pageable
     ) {
-        LOG.debug("Request to get books liked by current user with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}",
-            search, author, minPrice, maxPrice, categoryId, mainDisplayId);
+        LOG.debug("Request to get books liked by current user");
 
         Specification<Book> spec = BookSpecifications.isLikedByCurrentUser();
-
-        // Apply search filter if provided
-        if (StringUtils.hasText(search)) {
-            spec = spec.and(BookSpecifications.searchByText(search));
-        }
-
-        // Apply individual filters only if parameters are provided
-        if (StringUtils.hasText(author)) {
-            spec = spec.and(BookSpecifications.hasAuthor(author));
-        }
-
-        if (minPrice != null || maxPrice != null) {
-            spec = spec.and(BookSpecifications.hasPriceBetween(minPrice, maxPrice));
-        }
-
-        // Tag filtering - books that have EITHER category OR mainDisplay tag
-        if (categoryId != null || mainDisplayId != null) {
-            Specification<Book> tagSpec = buildTagSpecification(categoryId, mainDisplayId);
-            if (tagSpec != null) {
-                spec = spec.and(tagSpec);
-            }
-        }
 
         return bookRepository.findLikedBooksByCurrentUser(spec, pageable).map(bookMapper::toDto);
     }
