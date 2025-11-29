@@ -7,7 +7,8 @@
       "Bash(docker exec:*)",
       "Bash(curl:*)",
       "Bash(python -m json.tool:*)",
-      "Bash(timeout 90 bash:*)"
+      "Bash(timeout 90 bash:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
