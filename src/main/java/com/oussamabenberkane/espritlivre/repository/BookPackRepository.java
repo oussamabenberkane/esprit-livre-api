@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.repository;
 
+import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.BookPack;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * Spring Data JPA repository for the BookPack entity.
  */
 @Repository
-public interface BookPackRepository extends JpaRepository<BookPack, Long> {
+public interface BookPackRepository extends JpaRepository<BookPack, Long>, JpaSpecificationExecutor<BookPack> {
     @Query(
         value = "select distinct bookPack from BookPack bookPack",
         countQuery = "select count(distinct bookPack) from BookPack bookPack"
