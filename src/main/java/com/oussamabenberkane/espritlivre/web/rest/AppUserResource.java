@@ -5,6 +5,7 @@ import com.oussamabenberkane.espritlivre.service.AppUserService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
 import com.oussamabenberkane.espritlivre.service.dto.EmailChangeDTO;
+import com.oussamabenberkane.espritlivre.service.dto.ProfileUpdateResponseDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -72,15 +73,16 @@ public class AppUserResource {
      * {@code PUT  /app-users/profile} : Update current user profile.
      *
      * @param appUserDTO the updated profile information.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and linked/updated orders counts in body.
      */
     @PutMapping("/profile")
     //@PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> updateProfile(@Valid @RequestBody AppUserDTO appUserDTO) {
+    public ResponseEntity<ProfileUpdateResponseDTO> updateProfile(@Valid @RequestBody AppUserDTO appUserDTO) {
         LOG.debug("REST request to update user profile : {}", appUserDTO);
 
-        appUserService.updateAppUserProfile(appUserDTO);
-        return ResponseEntity.ok().build();
+        int[] counts = appUserService.updateAppUserProfile(appUserDTO);
+        ProfileUpdateResponseDTO response = new ProfileUpdateResponseDTO(counts[0], counts[1]);
+        return ResponseEntity.ok(response);
     }
 
     /**

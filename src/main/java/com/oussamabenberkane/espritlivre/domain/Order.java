@@ -85,6 +85,9 @@ public class Order implements Serializable {
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
 
+    @Column(name = "linked_at")
+    private ZonedDateTime linkedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
@@ -209,7 +212,28 @@ public class Order implements Serializable {
     }
 
     public void setPhone(String phone) {
-        this.phone = phone;
+        this.phone = normalizePhoneNumber(phone);
+    }
+
+    private static String normalizePhoneNumber(String phone) {
+        if (phone == null) {
+            return null;
+        }
+
+        // Remove all whitespace, dashes, parentheses
+        String normalized = phone.replaceAll("[\\s\\-()]", "");
+
+        // Handle two formats:
+        // "0555123456" -> "+213555123456"
+        // "+213555123456" -> "+213555123456"
+        if (normalized.startsWith("0") && normalized.length() == 10) {
+            return "+213" + normalized.substring(1);
+        } else if (normalized.startsWith("+213")) {
+            return normalized;
+        }
+
+        // Return as-is if doesn't match expected formats
+        return normalized;
     }
 
     public String getEmail() {
@@ -314,6 +338,19 @@ public class Order implements Serializable {
 
     public void setUpdatedAt(ZonedDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public ZonedDateTime getLinkedAt() {
+        return this.linkedAt;
+    }
+
+    public Order linkedAt(ZonedDateTime linkedAt) {
+        this.setLinkedAt(linkedAt);
+        return this;
+    }
+
+    public void setLinkedAt(ZonedDateTime linkedAt) {
+        this.linkedAt = linkedAt;
     }
 
     public User getUser() {

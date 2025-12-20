@@ -41,7 +41,12 @@ public class UserService {
 
     private final CacheManager cacheManager;
 
-    public UserService(UserRepository userRepository, AuthorityRepository authorityRepository, ApplicationProperties applicationProperties, CacheManager cacheManager) {
+    public UserService(
+        UserRepository userRepository,
+        AuthorityRepository authorityRepository,
+        ApplicationProperties applicationProperties,
+        CacheManager cacheManager
+    ) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.applicationProperties = applicationProperties;
@@ -174,6 +179,8 @@ public class UserService {
     }
 
     private static User getUser(Map<String, Object> details) {
+        LOG.info("OAuth2 attributes received: {}", details.keySet());
+        LOG.debug("Full OAuth2 attributes: {}", details);
         User user = new User();
         Boolean activated = Boolean.TRUE;
         String sub = String.valueOf(details.get("sub"));
@@ -229,6 +236,11 @@ public class UserService {
         }
         if (details.get("picture") != null) {
             user.setImageUrl((String) details.get("picture"));
+        }
+        if (details.get("phone") != null) {
+            user.setPhone((String) details.get("phone"));
+        } else if (details.get("phone_number") != null) {
+            user.setPhone((String) details.get("phone_number"));
         }
         user.setActivated(activated);
         return user;

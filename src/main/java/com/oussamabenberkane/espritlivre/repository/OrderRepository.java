@@ -55,4 +55,12 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
         List<String> uniqueIds = findUniqueIdsByPrefix(prefix);
         return uniqueIds.isEmpty() ? null : uniqueIds.get(0);
     }
+
+    /**
+     * Find all orders with no user (guest orders) and matching phone number.
+     *
+     * @param phone the normalized phone number to search for
+     * @return list of guest orders with matching phone number
+     */
+    List<Order> findByUserIsNullAndPhone(String phone);
 }

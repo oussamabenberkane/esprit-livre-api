@@ -22,8 +22,11 @@ import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertExceptio
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import org.hibernate.annotations.BatchSize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -80,16 +83,17 @@ public class OrderService {
     }
 
     /**
-     * Save a order.
+     * Create a new order.
      * Auto-sets: uniqueId, status (PENDING), createdAt, createdBy, user (if authenticated).
-     * Validates: required fields (phone, city, wilaya), stock availability.
+     * Validates: required fields (phone, city, wilaya).
+     * Supports: individual books, book packs, or mixed orders.
      * Uses user profile data as fallback for: fullName, phone, email, city, wilaya.
      *
-     * @param orderDTO the entity to save.
+     * @param orderDTO the entity to create.
      * @return the persisted entity.
      */
-    public OrderDTO save(OrderDTO orderDTO) {
-        LOG.debug("Request to save Order : {}", orderDTO);
+    public OrderDTO create(OrderDTO orderDTO) {
+        LOG.debug("Request to create Order : {}", orderDTO);
 
         Order order = new Order();
 
@@ -136,28 +140,41 @@ public class OrderService {
         order.setShippingCost(orderDTO.getShippingCost());
         order.setTotalAmount(orderDTO.getTotalAmount());
 
-        // Process order items with pessimistic locking to prevent race conditions
+        // Process order items - supports both books and book packs
         Set<OrderItem> orderItems = new HashSet<>();
         if (orderDTO.getOrderItems() != null && !orderDTO.getOrderItems().isEmpty()) {
             for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
-                // Validate stock availability with pessimistic write lock
-                Book book = bookRepository.findByIdWithLock(itemDTO.getBookId())
-                    .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
-
-                if (book.getStockQuantity() == null || book.getStockQuantity() < itemDTO.getQuantity()) {
-                    throw new BadRequestAlertException(
-                        "Insufficient stock for book: " + book.getTitle() + " (available: " + book.getStockQuantity() + ", requested: " + itemDTO.getQuantity() + ")",
-                        "orderItem",
-                        "insufficientstock"
-                    );
-                }
-
                 OrderItem orderItem = new OrderItem();
-                orderItem.setBook(book);
+                orderItem.setItemType(itemDTO.getItemType());
                 orderItem.setQuantity(itemDTO.getQuantity());
                 orderItem.setUnitPrice(itemDTO.getUnitPrice());
                 orderItem.setTotalPrice(itemDTO.getTotalPrice());
                 orderItem.setOrder(order);
+
+                // Handle individual book items
+                if (itemDTO.getItemType() == OrderItemType.BOOK && itemDTO.getBookId() != null) {
+                    Book book = bookRepository.findById(itemDTO.getBookId())
+                        .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
+
+                    // Stock availability warning (non-blocking)
+                    if (book.getStockQuantity() == null || book.getStockQuantity() < itemDTO.getQuantity()) {
+                        LOG.warn("Order created with insufficient stock for book: {} (ID: {}). Available: {}, Requested: {}",
+                            book.getTitle(), book.getId(), book.getStockQuantity(), itemDTO.getQuantity());
+                    }
+
+                    orderItem.setBook(book);
+                }
+                // Handle book pack items
+                else if (itemDTO.getItemType() == OrderItemType.PACK && itemDTO.getBookPackId() != null) {
+                    BookPack bookPack = bookPackRepository.findById(itemDTO.getBookPackId())
+                        .orElseThrow(() -> new BadRequestAlertException("Book pack not found", "orderItem", "bookpacknotfound"));
+
+                    orderItem.setBookPack(bookPack);
+                }
+                else {
+                    throw new BadRequestAlertException("Invalid order item: must specify either bookId (for BOOK type) or bookPackId (for PACK type)", "orderItem", "invaliditem");
+                }
+
                 orderItems.add(orderItem);
             }
         }
@@ -423,5 +440,149 @@ public class OrderService {
     public void delete(Long id) {
         LOG.debug("Request to delete Order : {}", id);
         orderRepository.deleteById(id);
+    }
+
+    /**
+     * Normalize phone number to E.164 format for Algeria.
+     * Handles two formats: "0555123456" and "+213555123456".
+     *
+     * @param phone the phone number to normalize
+     * @return normalized phone number in format +213XXXXXXXXX, or null if input is null
+     */
+    public static String normalizePhoneNumber(String phone) {
+        if (phone == null) {
+            return null;
+        }
+
+        // Remove all whitespace, dashes, parentheses
+        String normalized = phone.replaceAll("[\\s\\-()]", "");
+
+        // Handle two formats:
+        // "0555123456" -> "+213555123456"
+        // "+213555123456" -> "+213555123456"
+        if (normalized.startsWith("0") && normalized.length() == 10) {
+            return "+213" + normalized.substring(1);
+        } else if (normalized.startsWith("+213")) {
+            return normalized;
+        }
+
+        // Return as-is if doesn't match expected formats
+        return normalized;
+    }
+
+    /**
+     * Synchronously link guest orders to a user based on matching phone number.
+     * Called when user updates their profile with a phone number.
+     * Finds all orders with no userId but matching phone number and links them to the user.
+     *
+     * @param userId the ID of the user to link orders to
+     * @param phoneNumber the phone number to match against guest orders
+     * @return the number of orders that were linked
+     */
+    public int linkGuestOrdersToUser(String userId, String phoneNumber) {
+        LOG.debug("Request to link guest orders for user {} with phone {}", userId, phoneNumber);
+
+        if (phoneNumber == null || phoneNumber.isEmpty()) {
+            LOG.info("Phone number is empty, skipping order linking");
+            return 0;
+        }
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            LOG.warn("User {} not found, cannot link orders", userId);
+            return 0;
+        }
+
+        User user = userOpt.get();
+
+        try {
+            String normalizedPhone = normalizePhoneNumber(phoneNumber);
+            LOG.debug("Searching for guest orders with normalized phone: {}", normalizedPhone);
+
+            // Find all guest orders with matching phone
+            java.util.List<Order> guestOrders = orderRepository.findByUserIsNullAndPhone(normalizedPhone);
+
+            if (guestOrders.isEmpty()) {
+                LOG.info("No guest orders found for phone: {}", normalizedPhone);
+                return 0;
+            }
+
+            ZonedDateTime now = ZonedDateTime.now();
+            int linkedCount = 0;
+
+            for (Order order : guestOrders) {
+                // Defensive check: skip if already linked
+                if (order.getUser() != null) {
+                    LOG.warn("Order {} already linked to user {}, skipping", order.getId(), order.getUser().getId());
+                    continue;
+                }
+
+                order.setUser(user);
+                order.setLinkedAt(now);
+                orderRepository.save(order);
+                linkedCount++;
+            }
+
+            LOG.info("Linked {} guest orders to user {}", linkedCount, userId);
+            return linkedCount;
+        } catch (Exception e) {
+            LOG.error("Error linking orders for user {}", userId, e);
+            return 0;
+        }
+    }
+
+    /**
+     * Update contact information for all active orders belonging to a user.
+     * Active orders are: PENDING, CONFIRMED, SHIPPED.
+     * Updates: phone, email, fullName, city, wilaya, streetAddress, postalCode.
+     *
+     * @param user the user whose orders should be updated
+     * @return the number of orders that were updated
+     */
+    @Transactional
+    @BatchSize(size = 100)
+    public int updateUserActiveOrdersContactInfo(User user) {
+        LOG.debug("Request to update active orders contact info for user {}", user.getId());
+
+        try {
+            // Find all active orders for this user
+            List<Order> activeOrders = orderRepository.findAll().stream()
+                .filter(order -> order.getUser() != null && order.getUser().getId().equals(user.getId()))
+                .filter(order -> order.getStatus() == OrderStatus.PENDING ||
+                                order.getStatus() == OrderStatus.CONFIRMED ||
+                                order.getStatus() == OrderStatus.SHIPPED)
+                .toList();
+
+            if (activeOrders.isEmpty()) {
+                LOG.info("No active orders found for user {}", user.getId());
+                return 0;
+            }
+
+            // Update all orders in memory
+            for (Order order : activeOrders) {
+                // Update contact information from user profile
+                if (user.getPhone() != null) order.setPhone(user.getPhone());
+                if (user.getEmail() != null) order.setEmail(user.getEmail());
+
+                String fullName = (user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                                 (user.getLastName() != null ? user.getLastName() : "");
+                order.setFullName(fullName.trim());
+
+                if (user.getCity() != null) order.setCity(user.getCity());
+                if (user.getWilaya() != null) order.setWilaya(user.getWilaya());
+                if (user.getStreetAddress() != null) order.setStreetAddress(user.getStreetAddress());
+                if (user.getPostalCode() != null) order.setPostalCode(user.getPostalCode());
+            }
+
+            // Batch save all orders at once
+            orderRepository.saveAll(activeOrders);
+
+            int updatedCount = activeOrders.size();
+            LOG.info("Updated {} active orders for user {}", updatedCount, user.getId());
+            return updatedCount;
+        } catch (Exception e) {
+            LOG.error("Error updating orders for user {}", user.getId(), e);
+            return 0;
+        }
     }
 }

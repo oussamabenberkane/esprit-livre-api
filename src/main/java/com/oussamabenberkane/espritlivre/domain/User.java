@@ -104,6 +104,9 @@ public class User extends AbstractAuditingEntity<String> implements Serializable
     @JsonIgnore
     private String pendingEmail;
 
+    @Column(name = "orders_linked")
+    private Boolean ordersLinked = false;
+
     @JsonIgnore
     @ManyToMany
     @JoinTable(
@@ -266,6 +269,14 @@ public class User extends AbstractAuditingEntity<String> implements Serializable
 
     public void setPendingEmail(String pendingEmail) {
         this.pendingEmail = pendingEmail;
+    }
+
+    public Boolean getOrdersLinked() {
+        return ordersLinked;
+    }
+
+    public void setOrdersLinked(Boolean ordersLinked) {
+        this.ordersLinked = ordersLinked;
     }
 
     @Override

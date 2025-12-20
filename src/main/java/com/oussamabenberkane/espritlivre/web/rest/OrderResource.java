@@ -69,11 +69,11 @@ public class OrderResource {
      */
     @PostMapping("")
     public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderDTO orderDTO) throws URISyntaxException {
-        LOG.debug("REST request to save Order : {}", orderDTO);
+        LOG.debug("REST request to create Order : {}", orderDTO);
         if (orderDTO.getId() != null) {
             throw new BadRequestAlertException("A new order cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        orderDTO = orderService.save(orderDTO);
+        orderDTO = orderService.create(orderDTO);
         return ResponseEntity.created(new URI("/api/orders/" + orderDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, orderDTO.getId().toString()))
             .body(orderDTO);

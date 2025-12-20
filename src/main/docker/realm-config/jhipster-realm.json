@@ -1416,7 +1416,7 @@
       "config": {
         "clientId": "48309858472-ulc9g73dbu58ka3vs7836iqdk15kdmsn.apps.googleusercontent.com",
         "clientSecret": "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",
-        "defaultScope": "openid profile email",
+        "defaultScope": "openid profile email phone",
         "prompt": "select_account",
         "guiOrder": "",
         "hostedDomain": "",
@@ -1473,6 +1473,16 @@
       "config": {
         "claim": "picture",
         "user.attribute": "picture",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "phone_number",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "google-user-attribute-mapper",
+      "config": {
+        "claim": "phone_number",
+        "user.attribute": "phone",
         "syncMode": "INHERIT"
       }
     }

@@ -25,11 +25,13 @@ public class AppUserService {
     private final UserRepository userRepository;
     private final MailService mailService;
     private final CacheManager cacheManager;
+    private final OrderService orderService;
 
-    public AppUserService(UserRepository userRepository, MailService mailService, CacheManager cacheManager) {
+    public AppUserService(UserRepository userRepository, MailService mailService, CacheManager cacheManager, OrderService orderService) {
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.cacheManager = cacheManager;
+        this.orderService = orderService;
     }
 
     public void completeAppUserRegistration(AppUserDTO appUserDTO) {
@@ -69,12 +71,28 @@ public class AppUserService {
         return mapToDTO(user);
     }
 
-    public void updateAppUserProfile(AppUserDTO appUserDTO) {
+    public int[] updateAppUserProfile(AppUserDTO appUserDTO) {
         String login = SecurityUtils.getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "appUser", "notauthenticated"));
 
         User user = userRepository.findOneByLogin(login)
             .orElseThrow(() -> new BadRequestAlertException("User not found", "appUser", "usernotfound"));
+
+        // Track old values to detect changes
+        String oldPhone = user.getPhone();
+        int linkedOrdersCount = 0;
+        int updatedOrdersCount = 0;
+
+        // Check if contact info changed (fields that affect orders)
+        boolean contactInfoChanged =
+            (appUserDTO.getPhone() != null && !Objects.equals(appUserDTO.getPhone(), user.getPhone())) ||
+            (appUserDTO.getEmail() != null && !Objects.equals(appUserDTO.getEmail(), user.getEmail())) ||
+            (appUserDTO.getFirstName() != null && !Objects.equals(appUserDTO.getFirstName(), user.getFirstName())) ||
+            (appUserDTO.getLastName() != null && !Objects.equals(appUserDTO.getLastName(), user.getLastName())) ||
+            (appUserDTO.getCity() != null && !Objects.equals(appUserDTO.getCity(), user.getCity())) ||
+            (appUserDTO.getWilaya() != null && !Objects.equals(appUserDTO.getWilaya(), user.getWilaya())) ||
+            (appUserDTO.getStreetAddress() != null && !Objects.equals(appUserDTO.getStreetAddress(), user.getStreetAddress())) ||
+            (appUserDTO.getPostalCode() != null && !Objects.equals(appUserDTO.getPostalCode(), user.getPostalCode()));
 
         if (appUserDTO.getFirstName() != null) user.setFirstName(appUserDTO.getFirstName());
         if (appUserDTO.getLastName() != null) user.setLastName(appUserDTO.getLastName());
@@ -90,6 +108,26 @@ public class AppUserService {
 
         userRepository.save(user);
         clearUserCaches(user);
+
+        // Update existing active orders if contact info changed
+        if (contactInfoChanged) {
+            LOG.info("Contact info changed for user '{}', updating existing active orders", login);
+            updatedOrdersCount = orderService.updateUserActiveOrdersContactInfo(user);
+        }
+
+        // Check if phone number changed and trigger guest order linking
+        String newPhone = user.getPhone();
+        boolean phoneChanged = !Objects.equals(
+            OrderService.normalizePhoneNumber(oldPhone),
+            OrderService.normalizePhoneNumber(newPhone)
+        );
+
+        if (phoneChanged && newPhone != null && !newPhone.isEmpty()) {
+            LOG.info("Phone number changed for user '{}', linking guest orders", login);
+            linkedOrdersCount = orderService.linkGuestOrdersToUser(user.getId(), newPhone);
+        }
+
+        return new int[] { linkedOrdersCount, updatedOrdersCount };
     }
 
     public void requestEmailChange(String newEmail) {
