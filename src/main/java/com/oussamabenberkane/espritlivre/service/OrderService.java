@@ -80,16 +80,17 @@ public class OrderService {
     }
 
     /**
-     * Save a order.
+     * Create a new order.
      * Auto-sets: uniqueId, status (PENDING), createdAt, createdBy, user (if authenticated).
-     * Validates: required fields (phone, city, wilaya), stock availability.
+     * Validates: required fields (phone, city, wilaya).
+     * Supports: individual books, book packs, or mixed orders.
      * Uses user profile data as fallback for: fullName, phone, email, city, wilaya.
      *
-     * @param orderDTO the entity to save.
+     * @param orderDTO the entity to create.
      * @return the persisted entity.
      */
-    public OrderDTO save(OrderDTO orderDTO) {
-        LOG.debug("Request to save Order : {}", orderDTO);
+    public OrderDTO create(OrderDTO orderDTO) {
+        LOG.debug("Request to create Order : {}", orderDTO);
 
         Order order = new Order();
 
@@ -136,28 +137,41 @@ public class OrderService {
         order.setShippingCost(orderDTO.getShippingCost());
         order.setTotalAmount(orderDTO.getTotalAmount());
 
-        // Process order items with pessimistic locking to prevent race conditions
+        // Process order items - supports both books and book packs
         Set<OrderItem> orderItems = new HashSet<>();
         if (orderDTO.getOrderItems() != null && !orderDTO.getOrderItems().isEmpty()) {
             for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
-                // Validate stock availability with pessimistic write lock
-                Book book = bookRepository.findByIdWithLock(itemDTO.getBookId())
-                    .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
-
-                if (book.getStockQuantity() == null || book.getStockQuantity() < itemDTO.getQuantity()) {
-                    throw new BadRequestAlertException(
-                        "Insufficient stock for book: " + book.getTitle() + " (available: " + book.getStockQuantity() + ", requested: " + itemDTO.getQuantity() + ")",
-                        "orderItem",
-                        "insufficientstock"
-                    );
-                }
-
                 OrderItem orderItem = new OrderItem();
-                orderItem.setBook(book);
+                orderItem.setItemType(itemDTO.getItemType());
                 orderItem.setQuantity(itemDTO.getQuantity());
                 orderItem.setUnitPrice(itemDTO.getUnitPrice());
                 orderItem.setTotalPrice(itemDTO.getTotalPrice());
                 orderItem.setOrder(order);
+
+                // Handle individual book items
+                if (itemDTO.getItemType() == OrderItemType.BOOK && itemDTO.getBookId() != null) {
+                    Book book = bookRepository.findById(itemDTO.getBookId())
+                        .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
+
+                    // Stock availability warning (non-blocking)
+                    if (book.getStockQuantity() == null || book.getStockQuantity() < itemDTO.getQuantity()) {
+                        LOG.warn("Order created with insufficient stock for book: {} (ID: {}). Available: {}, Requested: {}",
+                            book.getTitle(), book.getId(), book.getStockQuantity(), itemDTO.getQuantity());
+                    }
+
+                    orderItem.setBook(book);
+                }
+                // Handle book pack items
+                else if (itemDTO.getItemType() == OrderItemType.PACK && itemDTO.getBookPackId() != null) {
+                    BookPack bookPack = bookPackRepository.findById(itemDTO.getBookPackId())
+                        .orElseThrow(() -> new BadRequestAlertException("Book pack not found", "orderItem", "bookpacknotfound"));
+
+                    orderItem.setBookPack(bookPack);
+                }
+                else {
+                    throw new BadRequestAlertException("Invalid order item: must specify either bookId (for BOOK type) or bookPackId (for PACK type)", "orderItem", "invaliditem");
+                }
+
                 orderItems.add(orderItem);
             }
         }
