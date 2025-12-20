@@ -165,6 +165,7 @@ public class AppUserService {
         dto.setPostalCode(user.getPostalCode());
         dto.setDefaultShippingMethod(user.getDefaultShippingMethod());
         dto.setDefaultShippingProvider(user.getDefaultShippingProvider());
+        dto.setCreatedDate(user.getCreatedDate());
         return dto;
     }
 

@@ -5,6 +5,7 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 
 /**
  * DTO for App User registration and profile management.
@@ -12,6 +13,8 @@ import jakarta.validation.constraints.Size;
 public class AppUserDTO {
 
     private String id;
+
+    private Instant createdDate;
 
     @Size(max = 50)
     private String login;
@@ -164,6 +167,14 @@ public class AppUserDTO {
 
     public void setDefaultShippingProvider(ShippingProvider defaultShippingProvider) {
         this.defaultShippingProvider = defaultShippingProvider;
+    }
+
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
     }
 
     @Override
