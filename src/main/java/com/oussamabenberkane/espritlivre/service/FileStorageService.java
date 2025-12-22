@@ -33,6 +33,7 @@ public class FileStorageService {
     private static final String AUTHORS_DIR = MEDIA_ROOT_DIR + "/authors";
     private static final String CATEGORIES_DIR = MEDIA_ROOT_DIR + "/categories";
     private static final String USERS_DIR = MEDIA_ROOT_DIR + "/users";
+    private static final String DEFAULT_PLACEHOLDER_PATH = MEDIA_ROOT_DIR + "/default.png";
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
@@ -386,5 +387,27 @@ public class FileStorageService {
             case "webp" -> "image/webp";
             default -> "application/octet-stream";
         };
+    }
+
+    /**
+     * Load the default placeholder image as a Resource.
+     *
+     * @return the placeholder image file as a Resource
+     * @throws IOException if the placeholder file cannot be found or read
+     */
+    public Resource loadPlaceholderImage() throws IOException {
+        try {
+            Path filePath = Paths.get(DEFAULT_PLACEHOLDER_PATH).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                LOG.debug("Placeholder image loaded successfully");
+                return resource;
+            } else {
+                throw new IOException("Placeholder image not found or not readable: " + DEFAULT_PLACEHOLDER_PATH);
+            }
+        } catch (MalformedURLException e) {
+            throw new IOException("Malformed placeholder path: " + DEFAULT_PLACEHOLDER_PATH, e);
+        }
     }
 }
