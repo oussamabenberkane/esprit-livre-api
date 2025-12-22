@@ -7,16 +7,12 @@ import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.LikeRepository;
 import com.oussamabenberkane.espritlivre.repository.UserRepository;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
-import com.oussamabenberkane.espritlivre.service.dto.LikeDTO;
 import com.oussamabenberkane.espritlivre.service.dto.LikeToggleResponseDTO;
-import com.oussamabenberkane.espritlivre.service.mapper.LikeMapper;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,15 +27,12 @@ public class LikeService {
 
     private final LikeRepository likeRepository;
 
-    private final LikeMapper likeMapper;
-
     private final UserRepository userRepository;
 
     private final BookRepository bookRepository;
 
-    public LikeService(LikeRepository likeRepository, LikeMapper likeMapper, UserRepository userRepository, BookRepository bookRepository) {
+    public LikeService(LikeRepository likeRepository, UserRepository userRepository, BookRepository bookRepository) {
         this.likeRepository = likeRepository;
-        this.likeMapper = likeMapper;
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
     }

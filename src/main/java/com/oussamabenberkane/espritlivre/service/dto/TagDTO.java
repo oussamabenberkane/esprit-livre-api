@@ -2,9 +2,7 @@ package com.oussamabenberkane.espritlivre.service.dto;
 
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * A DTO for the {@link com.oussamabenberkane.espritlivre.domain.Tag} entity.

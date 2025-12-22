@@ -532,17 +532,22 @@ public class OrderService {
     }
 
     /**
-     * Update contact information for all active orders belonging to a user.
+     * Update phone number for all active orders belonging to a user.
      * Active orders are: PENDING, CONFIRMED, SHIPPED.
-     * Updates: phone, email, fullName, city, wilaya, streetAddress, postalCode.
+     * Only updates the phone number field.
      *
      * @param user the user whose orders should be updated
      * @return the number of orders that were updated
      */
     @Transactional
     @BatchSize(size = 100)
-    public int updateUserActiveOrdersContactInfo(User user) {
-        LOG.debug("Request to update active orders contact info for user {}", user.getId());
+    public int updateUserActiveOrdersPhone(User user) {
+        LOG.debug("Request to update active orders phone for user {}", user.getId());
+
+        if (user.getPhone() == null || user.getPhone().isEmpty()) {
+            LOG.info("User {} has no phone number, skipping order update", user.getId());
+            return 0;
+        }
 
         try {
             // Find all active orders for this user
@@ -558,30 +563,19 @@ public class OrderService {
                 return 0;
             }
 
-            // Update all orders in memory
+            // Update phone number for all orders
             for (Order order : activeOrders) {
-                // Update contact information from user profile
-                if (user.getPhone() != null) order.setPhone(user.getPhone());
-                if (user.getEmail() != null) order.setEmail(user.getEmail());
-
-                String fullName = (user.getFirstName() != null ? user.getFirstName() : "") + " " +
-                                 (user.getLastName() != null ? user.getLastName() : "");
-                order.setFullName(fullName.trim());
-
-                if (user.getCity() != null) order.setCity(user.getCity());
-                if (user.getWilaya() != null) order.setWilaya(user.getWilaya());
-                if (user.getStreetAddress() != null) order.setStreetAddress(user.getStreetAddress());
-                if (user.getPostalCode() != null) order.setPostalCode(user.getPostalCode());
+                order.setPhone(user.getPhone());
             }
 
             // Batch save all orders at once
             orderRepository.saveAll(activeOrders);
 
             int updatedCount = activeOrders.size();
-            LOG.info("Updated {} active orders for user {}", updatedCount, user.getId());
+            LOG.info("Updated phone number for {} active orders for user {}", updatedCount, user.getId());
             return updatedCount;
         } catch (Exception e) {
-            LOG.error("Error updating orders for user {}", user.getId(), e);
+            LOG.error("Error updating orders phone for user {}", user.getId(), e);
             return 0;
         }
     }

@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,7 +15,7 @@ import java.util.Set;
 @Table(name = "author")
 @EntityListeners(AuditingEntityListener.class)
 @SuppressWarnings("common-java:DuplicatedBlocks")
-public class Author extends AbstractAuditingEntity<Long> implements Serializable {
+public class Author extends AbstractAuditingEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

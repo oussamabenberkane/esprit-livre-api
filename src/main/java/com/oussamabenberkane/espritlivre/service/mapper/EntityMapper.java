@@ -1,10 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.mapper;
 
 import java.util.List;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 
 /**
  * Contract for a generic dto to entity mapper.

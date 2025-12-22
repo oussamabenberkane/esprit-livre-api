@@ -1,6 +1,5 @@
 package com.oussamabenberkane.espritlivre.repository;
 
-import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.BookPack;
 import java.util.List;
 import java.util.Optional;
