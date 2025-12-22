@@ -174,30 +174,23 @@ public class BookPackResource {
     /**
      * {@code GET  /book-packs/:id/cover} : get the cover image for the "id" book pack.
      * This endpoint is publicly accessible without authentication.
+     * Returns a default placeholder image if the cover is not found or fails to load.
      *
      * @param id the id of the book pack.
-     * @param placeholder optional parameter to return a placeholder image if the cover is not found.
-     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     * @return the {@link ResponseEntity} with the image file.
      */
     @GetMapping("/{id}/cover")
-    public ResponseEntity<Resource> getBookPackCover(
-        @PathVariable("id") Long id,
-        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
-    ) {
+    public ResponseEntity<Resource> getBookPackCover(@PathVariable("id") Long id) {
         LOG.debug("REST request to get BookPack cover : {}", id);
 
         Optional<BookPackDTO> bookPackDTO = bookPackService.findOne(id);
         if (bookPackDTO.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         String coverImageUrl = bookPackDTO.get().getCoverUrl();
         if (coverImageUrl == null || coverImageUrl.isEmpty()) {
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         try {
@@ -210,11 +203,26 @@ public class BookPackResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load book pack cover image: {}", coverImageUrl, e);
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
+            LOG.error("Failed to load book pack cover image: {}, returning placeholder", coverImageUrl, e);
+            return loadPlaceholder();
+        }
+    }
+
+    /**
+     * Load and return the default placeholder image.
+     *
+     * @return the {@link ResponseEntity} with the placeholder image.
+     */
+    private ResponseEntity<Resource> loadPlaceholder() {
+        try {
+            Resource resource = fileStorageService.loadPlaceholderImage();
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }

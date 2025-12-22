@@ -155,30 +155,23 @@ public class TagResource {
     /**
      * {@code GET  /tags/:id/image} : get the image for the "id" tag (category).
      * This endpoint is publicly accessible without authentication.
+     * Returns a default placeholder image if the image is not found or fails to load.
      *
      * @param id the id of the tag.
-     * @param placeholder optional parameter to return a placeholder image if the image is not found.
-     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     * @return the {@link ResponseEntity} with the image file.
      */
     @GetMapping("/{id}/image")
-    public ResponseEntity<Resource> getTagImage(
-        @PathVariable("id") Long id,
-        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
-    ) {
+    public ResponseEntity<Resource> getTagImage(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Tag image : {}", id);
 
         Optional<TagDTO> tagDTO = tagService.findOne(id);
         if (tagDTO.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         String imageUrl = tagDTO.get().getImageUrl();
         if (imageUrl == null || imageUrl.isEmpty()) {
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         try {
@@ -191,11 +184,26 @@ public class TagResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load tag image: {}", imageUrl, e);
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
+            LOG.error("Failed to load tag image: {}, returning placeholder", imageUrl, e);
+            return loadPlaceholder();
+        }
+    }
+
+    /**
+     * Load and return the default placeholder image.
+     *
+     * @return the {@link ResponseEntity} with the placeholder image.
+     */
+    private ResponseEntity<Resource> loadPlaceholder() {
+        try {
+            Resource resource = fileStorageService.loadPlaceholderImage();
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }

@@ -171,30 +171,23 @@ public class AuthorResource {
     /**
      * {@code GET  /authors/:id/picture} : get the profile picture for the "id" author.
      * This endpoint is publicly accessible without authentication.
+     * Returns a default placeholder image if the picture is not found or fails to load.
      *
      * @param id the id of the author.
-     * @param placeholder optional parameter to return a placeholder image if the picture is not found.
-     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     * @return the {@link ResponseEntity} with the image file.
      */
     @GetMapping("/{id}/picture")
-    public ResponseEntity<Resource> getAuthorPicture(
-        @PathVariable("id") Long id,
-        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
-    ) {
+    public ResponseEntity<Resource> getAuthorPicture(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Author picture : {}", id);
 
         Optional<AuthorDTO> authorDTO = authorService.findOne(id);
         if (authorDTO.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         String profilePictureUrl = authorDTO.get().getProfilePictureUrl();
         if (profilePictureUrl == null || profilePictureUrl.isEmpty()) {
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         try {
@@ -207,11 +200,26 @@ public class AuthorResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load author picture: {}", profilePictureUrl, e);
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
+            LOG.error("Failed to load author picture: {}, returning placeholder", profilePictureUrl, e);
+            return loadPlaceholder();
+        }
+    }
+
+    /**
+     * Load and return the default placeholder image.
+     *
+     * @return the {@link ResponseEntity} with the placeholder image.
+     */
+    private ResponseEntity<Resource> loadPlaceholder() {
+        try {
+            Resource resource = fileStorageService.loadPlaceholderImage();
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }

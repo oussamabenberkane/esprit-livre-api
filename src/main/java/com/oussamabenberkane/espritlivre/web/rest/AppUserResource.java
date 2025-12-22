@@ -130,30 +130,23 @@ public class AppUserResource {
     /**
      * {@code GET  /app-users/{id}/picture} : get the profile picture for the "id" user.
      * This endpoint is publicly accessible without authentication.
+     * Returns a default placeholder image if the picture is not found or fails to load.
      *
      * @param id the id of the user.
-     * @param placeholder optional parameter to return a placeholder image if the picture is not found.
-     * @return the {@link ResponseEntity} with the image file, or with status {@code 404 (Not Found)}.
+     * @return the {@link ResponseEntity} with the image file.
      */
     @GetMapping("/{id}/picture")
-    public ResponseEntity<Resource> getUserPicture(
-        @PathVariable("id") String id,
-        @RequestParam(value = "placeholder", required = false, defaultValue = "false") boolean placeholder
-    ) {
+    public ResponseEntity<Resource> getUserPicture(@PathVariable("id") String id) {
         LOG.debug("REST request to get User picture : {}", id);
 
         AppUserDTO userDTO = appUserService.getAppUserProfile(id);
         if (userDTO == null) {
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         String imageUrl = userDTO.getImageUrl();
         if (imageUrl == null || imageUrl.isEmpty()) {
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.notFound().build();
+            return loadPlaceholder();
         }
 
         try {
@@ -166,11 +159,26 @@ public class AppUserResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load user picture: {}", imageUrl, e);
-            if (placeholder) {
-                // TODO: Return placeholder image when implemented
-                return ResponseEntity.notFound().build();
-            }
+            LOG.error("Failed to load user picture: {}, returning placeholder", imageUrl, e);
+            return loadPlaceholder();
+        }
+    }
+
+    /**
+     * Load and return the default placeholder image.
+     *
+     * @return the {@link ResponseEntity} with the placeholder image.
+     */
+    private ResponseEntity<Resource> loadPlaceholder() {
+        try {
+            Resource resource = fileStorageService.loadPlaceholderImage();
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }
