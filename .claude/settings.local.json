@@ -9,7 +9,8 @@
       "Bash(python -m json.tool:*)",
       "Bash(timeout 90 bash:*)",
       "Bash(test:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

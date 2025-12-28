@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=espritlivre-dev-db
+      - POSTGRES_DB=el-dev-db
       - POSTGRES_PASSWORD=postgres
     ports:
       - "5432:5432"
