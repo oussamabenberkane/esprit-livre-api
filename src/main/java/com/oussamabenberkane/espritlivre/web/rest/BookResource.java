@@ -224,9 +224,15 @@ public class BookResource {
             Resource resource = fileStorageService.loadImageAsResource(coverImageUrl);
             String contentType = fileStorageService.getImageContentType(coverImageUrl);
 
+            // Use file's last modified time as ETag for cache validation
+            long lastModified = resource.lastModified();
+            String eTag = "\"" + lastModified + "\"";
+
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .eTag(eTag)
+                .lastModified(lastModified)
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)).mustRevalidate())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
@@ -243,9 +249,14 @@ public class BookResource {
     private ResponseEntity<Resource> loadPlaceholder() {
         try {
             Resource resource = fileStorageService.loadPlaceholderImage();
+            long lastModified = resource.lastModified();
+            String eTag = "\"placeholder-" + lastModified + "\"";
+
             return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
-                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                .eTag(eTag)
+                .lastModified(lastModified)
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)).mustRevalidate())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
                 .body(resource);
         } catch (IOException e) {
