@@ -3,10 +3,11 @@ package com.oussamabenberkane.espritlivre.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * A Author.
@@ -14,6 +15,7 @@ import java.util.Set;
 @Entity
 @Table(name = "author")
 @EntityListeners(AuditingEntityListener.class)
+@SQLRestriction("active = true")
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class Author extends AbstractAuditingEntity<Long> {
 
@@ -32,6 +34,15 @@ public class Author extends AbstractAuditingEntity<Long> {
     @NotNull
     @Column(name = "profile_picture_url", nullable = false)
     private String profilePictureUrl;
+
+    @Column(name = "active")
+    private Boolean active;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "deleted_by", length = 50)
+    private String deletedBy;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "author")
     @JsonIgnoreProperties(value = { "author", "tags" }, allowSetters = true)
@@ -76,6 +87,45 @@ public class Author extends AbstractAuditingEntity<Long> {
 
     public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public Boolean getActive() {
+        return this.active;
+    }
+
+    public Author active(Boolean active) {
+        this.setActive(active);
+        return this;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public Instant getDeletedAt() {
+        return this.deletedAt;
+    }
+
+    public Author deletedAt(Instant deletedAt) {
+        this.setDeletedAt(deletedAt);
+        return this;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public String getDeletedBy() {
+        return this.deletedBy;
+    }
+
+    public Author deletedBy(String deletedBy) {
+        this.setDeletedBy(deletedBy);
+        return this;
+    }
+
+    public void setDeletedBy(String deletedBy) {
+        this.deletedBy = deletedBy;
     }
 
     public Set<Book> getBooks() {

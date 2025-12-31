@@ -15,6 +15,7 @@ import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertExceptio
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -356,7 +357,7 @@ public class BookService {
     }
 
     /**
-     * Soft delete the book by id (sets active = false).
+     * Soft delete the book by id (sets active = false, deletedAt and deletedBy).
      *
      * @param id the id of the entity.
      */
@@ -364,6 +365,8 @@ public class BookService {
         LOG.debug("Request to soft delete Book : {}", id);
         bookRepository.findById(id).ifPresent(book -> {
             book.setActive(false);
+            book.setDeletedAt(Instant.now());
+            SecurityUtils.getCurrentUserLogin().ifPresent(book::setDeletedBy);
             book.setUpdatedAt(ZonedDateTime.now());
             bookRepository.save(book);
         });

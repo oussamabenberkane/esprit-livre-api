@@ -20,6 +20,7 @@ import com.oussamabenberkane.espritlivre.service.mapper.OrderMapper;
 import com.oussamabenberkane.espritlivre.service.specs.OrderSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -433,12 +434,30 @@ public class OrderService {
     }
 
     /**
-     * Delete the order by id.
+     * Soft delete the order by id (sets active = false, deletedAt and deletedBy).
+     * OrderItems are cascade deleted due to orphanRemoval=true.
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete Order : {}", id);
+        LOG.debug("Request to soft delete Order : {}", id);
+        orderRepository.findById(id).ifPresent(order -> {
+            order.setActive(false);
+            order.setDeletedAt(Instant.now());
+            SecurityUtils.getCurrentUserLogin().ifPresent(order::setDeletedBy);
+            order.setUpdatedAt(ZonedDateTime.now());
+            orderRepository.save(order);
+        });
+    }
+
+    /**
+     * Hard delete the order by id (permanently removes from database).
+     * WARNING: This cannot be undone. Only use after cleanup job.
+     *
+     * @param id the id of the entity.
+     */
+    public void deleteForever(Long id) {
+        LOG.debug("Request to hard delete Order : {}", id);
         orderRepository.deleteById(id);
     }
 

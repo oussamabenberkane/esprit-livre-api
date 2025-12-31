@@ -2,12 +2,14 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.AuthorDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.AuthorMapper;
 import com.oussamabenberkane.espritlivre.service.specs.AuthorSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -175,25 +177,29 @@ public class AuthorService {
     }
 
     /**
-     * Delete the author by id.
+     * Soft delete the author by id (sets active = false, deletedAt and deletedBy).
+     * Relationships with books are preserved.
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete Author : {}", id);
+        LOG.debug("Request to soft delete Author : {}", id);
+        authorRepository.findById(id).ifPresent(author -> {
+            author.setActive(false);
+            author.setDeletedAt(Instant.now());
+            SecurityUtils.getCurrentUserLogin().ifPresent(author::setDeletedBy);
+            authorRepository.save(author);
+        });
+    }
 
-        Author author = authorRepository.findById(id)
-            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "author", "idnotfound"));
-
-        // Check if author has any books
-        if (author.getBooks() != null && !author.getBooks().isEmpty()) {
-            throw new BadRequestAlertException(
-                "Cannot delete author that has books. Remove or reassign books first.",
-                "author",
-                "authorinuse"
-            );
-        }
-
+    /**
+     * Hard delete the author by id (permanently removes from database).
+     * WARNING: This cannot be undone. Only use after cleanup job has nullified FKs.
+     *
+     * @param id the id of the entity.
+     */
+    public void deleteForever(Long id) {
+        LOG.debug("Request to hard delete Author : {}", id);
         authorRepository.deleteById(id);
     }
 

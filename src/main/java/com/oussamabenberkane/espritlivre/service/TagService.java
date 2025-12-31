@@ -5,11 +5,13 @@ import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.TagRepository;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.TagDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.TagMapper;
 import com.oussamabenberkane.espritlivre.service.specs.TagSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -287,25 +289,28 @@ public class TagService {
     }
 
     /**
-     * Delete the tag by id.
+     * Soft delete the tag by id (sets active = false, deletedAt and deletedBy).
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete Tag : {}", id);
+        LOG.debug("Request to soft delete Tag : {}", id);
+        tagRepository.findById(id).ifPresent(tag -> {
+            tag.setActive(false);
+            tag.setDeletedAt(Instant.now());
+            SecurityUtils.getCurrentUserLogin().ifPresent(tag::setDeletedBy);
+            tagRepository.save(tag);
+        });
+    }
 
-        Tag tag = tagRepository.findById(id)
-            .orElseThrow(() -> new BadRequestAlertException("Entity not found", "tag", "idnotfound"));
-
-        // Check if tag is assigned to any books
-        if (tag.getBooks() != null && !tag.getBooks().isEmpty()) {
-            throw new BadRequestAlertException(
-                "Cannot delete tag that is assigned to books. Remove books first.",
-                "tag",
-                "taginuse"
-            );
-        }
-
+    /**
+     * Hard delete the tag by id (permanently removes from database).
+     * WARNING: This cannot be undone.
+     *
+     * @param id the id of the entity.
+     */
+    public void deleteForever(Long id) {
+        LOG.debug("Request to hard delete Tag : {}", id);
         tagRepository.deleteById(id);
     }
 

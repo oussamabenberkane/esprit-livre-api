@@ -38,6 +38,9 @@ public class OrderItem implements Serializable {
     @Column(name = "item_type")
     private OrderItemType itemType;
 
+    @Column(name = "product_title_snapshot")
+    private String productTitleSnapshot;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "user", "orderItems" }, allowSetters = true)
     private Order order;
@@ -141,6 +144,19 @@ public class OrderItem implements Serializable {
 
     public void setItemType(OrderItemType itemType) {
         this.itemType = itemType;
+    }
+
+    public String getProductTitleSnapshot() {
+        return this.productTitleSnapshot;
+    }
+
+    public OrderItem productTitleSnapshot(String productTitleSnapshot) {
+        this.setProductTitleSnapshot(productTitleSnapshot);
+        return this;
+    }
+
+    public void setProductTitleSnapshot(String productTitleSnapshot) {
+        this.productTitleSnapshot = productTitleSnapshot;
     }
 
     public BookPack getBookPack() {

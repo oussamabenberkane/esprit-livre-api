@@ -4,11 +4,13 @@ import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.BookPack;
 import com.oussamabenberkane.espritlivre.repository.BookPackRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.BookPackDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.BookPackMapper;
 import com.oussamabenberkane.espritlivre.service.specs.BookPackSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.io.IOException;
+import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -374,12 +376,28 @@ public class BookPackService {
     }
 
     /**
-     * Delete the bookPack by id.
+     * Soft delete the bookPack by id (sets active = false, deletedAt and deletedBy).
      *
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        LOG.debug("Request to delete BookPack : {}", id);
+        LOG.debug("Request to soft delete BookPack : {}", id);
+        bookPackRepository.findById(id).ifPresent(bookPack -> {
+            bookPack.setActive(false);
+            bookPack.setDeletedAt(Instant.now());
+            SecurityUtils.getCurrentUserLogin().ifPresent(bookPack::setDeletedBy);
+            bookPackRepository.save(bookPack);
+        });
+    }
+
+    /**
+     * Hard delete the bookPack by id (permanently removes from database).
+     * WARNING: This cannot be undone. Only use after cleanup job has nullified FKs.
+     *
+     * @param id the id of the entity.
+     */
+    public void deleteForever(Long id) {
+        LOG.debug("Request to hard delete BookPack : {}", id);
         bookPackRepository.deleteById(id);
     }
 

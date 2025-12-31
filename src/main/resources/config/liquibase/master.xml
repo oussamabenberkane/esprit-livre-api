@@ -39,5 +39,6 @@
     <include file="config/liquibase/changelog/20251026170000_add_language_to_book.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251221000000_add_linked_at_to_order.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251221000001_add_orders_linked_to_user.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20251231000000_add_soft_delete_fields.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

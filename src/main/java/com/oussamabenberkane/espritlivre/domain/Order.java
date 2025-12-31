@@ -8,11 +8,13 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.SQLRestriction;
 
 /**
  * A Order.
@@ -20,6 +22,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Entity
 @Table(name = "jhi_order")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@SQLRestriction("active = true")
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class Order implements Serializable {
 
@@ -87,6 +90,15 @@ public class Order implements Serializable {
 
     @Column(name = "linked_at")
     private ZonedDateTime linkedAt;
+
+    @Column(name = "active")
+    private Boolean active;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "deleted_by", length = 50)
+    private String deletedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -351,6 +363,45 @@ public class Order implements Serializable {
 
     public void setLinkedAt(ZonedDateTime linkedAt) {
         this.linkedAt = linkedAt;
+    }
+
+    public Boolean getActive() {
+        return this.active;
+    }
+
+    public Order active(Boolean active) {
+        this.setActive(active);
+        return this;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public Instant getDeletedAt() {
+        return this.deletedAt;
+    }
+
+    public Order deletedAt(Instant deletedAt) {
+        this.setDeletedAt(deletedAt);
+        return this;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public String getDeletedBy() {
+        return this.deletedBy;
+    }
+
+    public Order deletedBy(String deletedBy) {
+        this.setDeletedBy(deletedBy);
+        return this;
+    }
+
+    public void setDeletedBy(String deletedBy) {
+        this.deletedBy = deletedBy;
     }
 
     public User getUser() {
