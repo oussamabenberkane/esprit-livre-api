@@ -290,21 +290,21 @@ public class FileStorageService {
         int width = image.getWidth();
         int height = image.getHeight();
 
-        if (width < MIN_WIDTH || height < MIN_HEIGHT) {
-            throw new BadRequestAlertException(
-                String.format("Image dimensions too small. Minimum size is %dx%d pixels", MIN_WIDTH, MIN_HEIGHT),
-                entityName,
-                "imagetoosmall"
-            );
-        }
+        // if (width < MIN_WIDTH || height < MIN_HEIGHT) {
+        //     throw new BadRequestAlertException(
+        //         String.format("Image dimensions too small. Minimum size is %dx%d pixels", MIN_WIDTH, MIN_HEIGHT),
+        //         entityName,
+        //         "imagetoosmall"
+        //     );
+        // }
 
-        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-            throw new BadRequestAlertException(
-                String.format("Image dimensions too large. Maximum size is %dx%d pixels", MAX_WIDTH, MAX_HEIGHT),
-                entityName,
-                "imagetoolarge"
-            );
-        }
+        // if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        //     throw new BadRequestAlertException(
+        //         String.format("Image dimensions too large. Maximum size is %dx%d pixels", MAX_WIDTH, MAX_HEIGHT),
+        //         entityName,
+        //         "imagetoolarge"
+        //     );
+        // }
 
         LOG.debug("Image dimensions validated: {}x{}", width, height);
     }
