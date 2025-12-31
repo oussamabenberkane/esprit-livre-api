@@ -1,3 +1,20 @@
 Update phone number of old orders when updating phone: done
 Image placeholders if not exist: done
 add book pack books in order not just pack Id:
+
+
+
+
+
+new todo list : 
+ - check soft/hard delete implementation for books (for soft delete implementation on frontend side > filter the fetched books by active state = true)
+ 
+ - Backend Bug Summary
+The issue is in FileStorageService.java at lines 129-149. The problem is straightforward:
+Line 134 calls validateImageDimensions() which reads the file's InputStream to check image dimensions
+This consumes the InputStream (the stream pointer moves to the end)
+Line 149 tries to read the same InputStream again to save the file
+This fails because the stream is already exhausted and can't be reset
+The Fix: Instead of reading the InputStream twice, read the file bytes once using file.getBytes() and reuse those bytes for both validation and storage. Secondary Issue: The application.yml is missing the multipart configuration - it defaults to 1MB max file size, but your FileStorageService expects 10MB. Your backend team can reference the plan file for the exact code changes needed. The frontend is working correctly and doesn't need any changes.
+
+ - 
