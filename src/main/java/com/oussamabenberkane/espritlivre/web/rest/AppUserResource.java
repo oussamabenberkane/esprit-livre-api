@@ -153,15 +153,11 @@ public class AppUserResource {
             Resource resource = fileStorageService.loadImageAsResource(imageUrl);
             String contentType = fileStorageService.getImageContentType(imageUrl);
 
-            // Use file's last modified time as ETag for cache validation
-            long lastModified = resource.lastModified();
-            String eTag = "\"" + lastModified + "\"";
-
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .eTag(eTag)
-                .lastModified(lastModified)
-                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)).mustRevalidate())
+                .cacheControl(CacheControl.noCache().noStore().mustRevalidate())
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
@@ -178,14 +174,12 @@ public class AppUserResource {
     private ResponseEntity<Resource> loadPlaceholder() {
         try {
             Resource resource = fileStorageService.loadPlaceholderImage();
-            long lastModified = resource.lastModified();
-            String eTag = "\"placeholder-" + lastModified + "\"";
 
             return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
-                .eTag(eTag)
-                .lastModified(lastModified)
-                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)).mustRevalidate())
+                .cacheControl(CacheControl.noCache().noStore().mustRevalidate())
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
                 .body(resource);
         } catch (IOException e) {
