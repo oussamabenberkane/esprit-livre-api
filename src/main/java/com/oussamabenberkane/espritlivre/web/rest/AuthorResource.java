@@ -196,7 +196,6 @@ public class AuthorResource {
 
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .cacheControl(CacheControl.noCache().noStore().mustRevalidate())
                 .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.EXPIRES, "0")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
@@ -217,9 +216,7 @@ public class AuthorResource {
             Resource resource = fileStorageService.loadPlaceholderImage();
 
             return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .cacheControl(CacheControl.noCache().noStore().mustRevalidate())
-                .header(HttpHeaders.PRAGMA, "no-cache")
+                .contentType(MediaType.IMAGE_PNG)                .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.EXPIRES, "0")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
                 .body(resource);

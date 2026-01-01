@@ -199,7 +199,6 @@ public class BookPackResource {
 
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .cacheControl(CacheControl.noCache().noStore().mustRevalidate())
                 .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.EXPIRES, "0")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
@@ -221,7 +220,6 @@ public class BookPackResource {
 
             return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
-                .cacheControl(CacheControl.noCache().noStore().mustRevalidate())
                 .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.EXPIRES, "0")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
