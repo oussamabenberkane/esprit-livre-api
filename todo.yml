@@ -1,19 +1,13 @@
-Update phone number of old orders when updating phone: done
-Image placeholders if not exist: done
-add book pack books in order not just pack Id: done
-
-
-
-
-
-new todo list : 
- - check soft/hard delete implementation for books (for soft delete implementation on frontend side > filter the fetched books by active state = true)
- - image cache problem for books and authors and everything else
+check soft/hard delete implementation for books (for soft delete implementation on frontend side > filter the fetched books by active state = true): done
+ 
+ 
+ 
  - Get users: 
  - Export : Orders, Users
- - search logic for orders
- - recheck your job scheduling for soft deleting a book/author...etc
  - updating and creating an order 
+ - search logic for orders
+ - image cache problem for books and authors and everything else
+ - recheck your job scheduling for soft deleting a book/author...etc
  - 
  
  

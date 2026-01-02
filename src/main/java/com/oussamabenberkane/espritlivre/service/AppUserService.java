@@ -9,6 +9,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -200,5 +202,49 @@ public class AppUserService {
         if (user.getEmail() != null) {
             Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evictIfPresent(user.getEmail());
         }
+    }
+
+    /**
+     * Get all non-admin users with optional filtering and sorting.
+     *
+     * @param active Optional filter for active/inactive users (null = all users)
+     * @param pageable Pagination and sorting information
+     * @return Page of non-admin users
+     */
+    @Transactional(readOnly = true)
+    public Page<AppUserDTO> getAllNonAdminUsers(Boolean active, Pageable pageable) {
+        LOG.debug("Request to get all non-admin users with active filter: {}", active);
+
+        Page<User> users;
+        if (active != null) {
+            users = userRepository.findAllByActivatedAndAuthoritiesNotContaining(active, "ROLE_ADMIN", pageable);
+        } else {
+            users = userRepository.findAllByAuthoritiesNotContaining("ROLE_ADMIN", pageable);
+        }
+
+        return users.map(this::mapToDTO);
+    }
+
+    /**
+     * Toggle user activation status (admin only).
+     *
+     * @param userId The ID of the user to toggle
+     */
+    public void toggleUserActivation(String userId) {
+        LOG.debug("Request to toggle activation for user ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BadRequestAlertException("User not found", "appUser", "usernotfound"));
+
+        // Prevent toggling admin users
+        if (user.getAuthorities().stream().anyMatch(auth -> "ROLE_ADMIN".equals(auth.getName()))) {
+            throw new BadRequestAlertException("Cannot toggle admin user activation", "appUser", "cannotmodifyadmin");
+        }
+
+        user.setActivated(!user.getActivated());
+        userRepository.save(user);
+        clearUserCaches(user);
+
+        LOG.info("User '{}' activation toggled to: {}", user.getLogin(), user.getActivated());
     }
 }

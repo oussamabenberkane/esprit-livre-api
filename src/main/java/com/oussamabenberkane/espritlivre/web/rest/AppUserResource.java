@@ -12,10 +12,13 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -34,6 +37,38 @@ public class AppUserResource {
     public AppUserResource(AppUserService appUserService, FileStorageService fileStorageService) {
         this.appUserService = appUserService;
         this.fileStorageService = fileStorageService;
+    }
+
+    /**
+     * {@code GET  /app-users} : Get all non-admin users (admin only).
+     *
+     * @param active Optional filter for active/inactive users (null = all users).
+     * @param pageable Pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of users in body.
+     */
+    @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<Page<AppUserDTO>> getAllUsers(
+        @RequestParam(required = false) Boolean active,
+        Pageable pageable
+    ) {
+        LOG.debug("REST request to get all non-admin users with active filter: {}", active);
+        Page<AppUserDTO> page = appUserService.getAllNonAdminUsers(active, pageable);
+        return ResponseEntity.ok(page);
+    }
+
+    /**
+     * {@code PATCH  /app-users/{id}/toggle} : Toggle user activation status (admin only).
+     *
+     * @param id the id of the user to toggle.
+     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     */
+    @PatchMapping("/{id}/toggle")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<Void> toggleUserActivation(@PathVariable String id) {
+        LOG.debug("REST request to toggle user activation for ID: {}", id);
+        appUserService.toggleUserActivation(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

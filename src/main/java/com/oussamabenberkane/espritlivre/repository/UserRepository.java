@@ -6,6 +6,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -27,4 +29,18 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findOneByEmailIgnoreCase(String email);
 
     Page<User> findAllByIdNotNullAndActivatedIsTrue(Pageable pageable);
+
+    @EntityGraph(attributePaths = "authorities")
+    @Query("SELECT u FROM User u WHERE u.id IS NOT NULL AND NOT EXISTS " +
+           "(SELECT a FROM u.authorities a WHERE a.name = :excludedAuthority)")
+    Page<User> findAllByAuthoritiesNotContaining(@Param("excludedAuthority") String excludedAuthority, Pageable pageable);
+
+    @EntityGraph(attributePaths = "authorities")
+    @Query("SELECT u FROM User u WHERE u.id IS NOT NULL AND u.activated = :activated AND NOT EXISTS " +
+           "(SELECT a FROM u.authorities a WHERE a.name = :excludedAuthority)")
+    Page<User> findAllByActivatedAndAuthoritiesNotContaining(
+        @Param("activated") Boolean activated,
+        @Param("excludedAuthority") String excludedAuthority,
+        Pageable pageable
+    );
 }
