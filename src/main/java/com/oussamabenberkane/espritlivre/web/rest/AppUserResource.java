@@ -9,8 +9,11 @@ import com.oussamabenberkane.espritlivre.service.dto.ProfileUpdateResponseDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -69,6 +72,36 @@ public class AppUserResource {
         LOG.debug("REST request to toggle user activation for ID: {}", id);
         appUserService.toggleUserActivation(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * {@code GET  /app-users/export} : Export all non-admin users to Excel (admin only).
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the Excel file as a byte array.
+     */
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<Resource> exportUsers() {
+        LOG.debug("REST request to export all non-admin users to Excel");
+
+        try {
+            byte[] excelData = appUserService.exportUsersToExcel();
+
+            // Generate filename with current timestamp
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String filename = "users_export_" + timestamp + ".xlsx";
+
+            ByteArrayResource resource = new ByteArrayResource(excelData);
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(excelData.length)
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to export users to Excel", e);
+            throw new BadRequestAlertException("Failed to export users", "appUser", "exportfailed");
+        }
     }
 
     /**

@@ -6,16 +6,25 @@ import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -246,5 +255,103 @@ public class AppUserService {
         clearUserCaches(user);
 
         LOG.info("User '{}' activation toggled to: {}", user.getLogin(), user.getActivated());
+    }
+
+    /**
+     * Export all non-admin users to Excel format.
+     *
+     * @return byte array containing the Excel file
+     * @throws IOException if there's an error creating the Excel file
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportUsersToExcel() throws IOException {
+        LOG.debug("Request to export all non-admin users to Excel");
+
+        // Fetch all non-admin users, sorted by creation date descending
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Direction.DESC, "createdDate"));
+        List<User> users = userRepository.findAllByAuthoritiesNotContaining("ROLE_ADMIN", pageable).getContent();
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Users");
+
+            // Create header row with styling
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 12);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            String[] headers = {
+                "ID", "Login", "First Name", "Last Name", "Email", "Phone",
+                "Wilaya", "City", "Street Address", "Postal Code",
+                "Language", "Shipping Method", "Shipping Provider",
+                "Activated", "Image URL", "Created Date"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Create date formatter
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                .withZone(ZoneId.systemDefault());
+
+            // Create cell style for data
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            // Populate data rows
+            int rowNum = 1;
+            for (User user : users) {
+                Row row = sheet.createRow(rowNum++);
+
+                createCell(row, 0, user.getId(), dataStyle);
+                createCell(row, 1, user.getLogin(), dataStyle);
+                createCell(row, 2, user.getFirstName(), dataStyle);
+                createCell(row, 3, user.getLastName(), dataStyle);
+                createCell(row, 4, user.getEmail(), dataStyle);
+                createCell(row, 5, user.getPhone(), dataStyle);
+                createCell(row, 6, user.getWilaya(), dataStyle);
+                createCell(row, 7, user.getCity(), dataStyle);
+                createCell(row, 8, user.getStreetAddress(), dataStyle);
+                createCell(row, 9, user.getPostalCode(), dataStyle);
+                createCell(row, 10, user.getLangKey(), dataStyle);
+                createCell(row, 11, user.getDefaultShippingMethod() != null ? user.getDefaultShippingMethod().toString() : "", dataStyle);
+                createCell(row, 12, user.getDefaultShippingProvider() != null ? user.getDefaultShippingProvider().toString() : "", dataStyle);
+                createCell(row, 13, user.getActivated() ? "Yes" : "No", dataStyle);
+                createCell(row, 14, user.getImageUrl(), dataStyle);
+                createCell(row, 15, user.getCreatedDate() != null ? dateFormatter.format(user.getCreatedDate()) : "", dataStyle);
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            LOG.info("Successfully exported {} users to Excel", users.size());
+            return out.toByteArray();
+        }
+    }
+
+    /**
+     * Helper method to create a cell with value and style.
+     */
+    private void createCell(Row row, int column, String value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
     }
 }
