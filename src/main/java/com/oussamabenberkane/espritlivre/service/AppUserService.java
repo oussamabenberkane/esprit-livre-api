@@ -202,6 +202,7 @@ public class AppUserService {
         dto.setPostalCode(user.getPostalCode());
         dto.setDefaultShippingMethod(user.getDefaultShippingMethod());
         dto.setDefaultShippingProvider(user.getDefaultShippingProvider());
+        dto.setActivated(user.isActivated());
         dto.setCreatedDate(user.getCreatedDate());
         return dto;
     }
@@ -242,10 +243,12 @@ public class AppUserService {
     public void toggleUserActivation(String userId) {
         LOG.debug("Request to toggle activation for user ID: {}", userId);
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findOneWithAuthoritiesByLogin(userId)
+            .or(() -> userRepository.findById(userId))
             .orElseThrow(() -> new BadRequestAlertException("User not found", "appUser", "usernotfound"));
 
-        // Prevent toggling admin users
+        // Prevent toggling admin users - force loading authorities if not already loaded
+        user.getAuthorities().size(); // Force lazy loading
         if (user.getAuthorities().stream().anyMatch(auth -> "ROLE_ADMIN".equals(auth.getName()))) {
             throw new BadRequestAlertException("Cannot toggle admin user activation", "appUser", "cannotmodifyadmin");
         }

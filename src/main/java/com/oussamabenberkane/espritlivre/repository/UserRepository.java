@@ -30,13 +30,11 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Page<User> findAllByIdNotNullAndActivatedIsTrue(Pageable pageable);
 
-    @EntityGraph(attributePaths = "authorities")
-    @Query("SELECT u FROM User u WHERE u.id IS NOT NULL AND NOT EXISTS " +
+    @Query("SELECT DISTINCT u FROM User u WHERE u.id IS NOT NULL AND NOT EXISTS " +
            "(SELECT a FROM u.authorities a WHERE a.name = :excludedAuthority)")
     Page<User> findAllByAuthoritiesNotContaining(@Param("excludedAuthority") String excludedAuthority, Pageable pageable);
 
-    @EntityGraph(attributePaths = "authorities")
-    @Query("SELECT u FROM User u WHERE u.id IS NOT NULL AND u.activated = :activated AND NOT EXISTS " +
+    @Query("SELECT DISTINCT u FROM User u WHERE u.id IS NOT NULL AND u.activated = :activated AND NOT EXISTS " +
            "(SELECT a FROM u.authorities a WHERE a.name = :excludedAuthority)")
     Page<User> findAllByActivatedAndAuthoritiesNotContaining(
         @Param("activated") Boolean activated,
