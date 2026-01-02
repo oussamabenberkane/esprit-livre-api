@@ -64,7 +64,7 @@ public class LikeService {
         boolean isLiked;
         if (existingLike.isPresent()) {
             // Unlike: delete the existing like
-            likeRepository.delete(existingLike.get());
+            likeRepository.delete(existingLike.orElseThrow());
             isLiked = false;
             LOG.debug("User {} unliked book {}", login, bookId);
         } else {

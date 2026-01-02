@@ -56,6 +56,8 @@ public class AppUserDTO {
 
     private ShippingProvider defaultShippingProvider;
 
+    private boolean activated = false;
+
     // Getters and Setters
     public String getId() {
         return id;
@@ -175,6 +177,14 @@ public class AppUserDTO {
 
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public boolean isActivated() {
+        return activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated = activated;
     }
 
     @Override

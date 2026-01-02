@@ -188,7 +188,7 @@ public class BookPackResource {
             return loadPlaceholder();
         }
 
-        String coverImageUrl = bookPackDTO.get().getCoverUrl();
+        String coverImageUrl = bookPackDTO.orElseThrow().getCoverUrl();
         if (coverImageUrl == null || coverImageUrl.isEmpty()) {
             return loadPlaceholder();
         }

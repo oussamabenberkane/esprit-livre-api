@@ -250,11 +250,11 @@ public class AppUserService {
             throw new BadRequestAlertException("Cannot toggle admin user activation", "appUser", "cannotmodifyadmin");
         }
 
-        user.setActivated(!user.getActivated());
+        user.setActivated(!user.isActivated());
         userRepository.save(user);
         clearUserCaches(user);
 
-        LOG.info("User '{}' activation toggled to: {}", user.getLogin(), user.getActivated());
+        LOG.info("User '{}' activation toggled to: {}", user.getLogin(), user.isActivated());
     }
 
     /**
@@ -330,7 +330,7 @@ public class AppUserService {
                 createCell(row, 10, user.getLangKey(), dataStyle);
                 createCell(row, 11, user.getDefaultShippingMethod() != null ? user.getDefaultShippingMethod().toString() : "", dataStyle);
                 createCell(row, 12, user.getDefaultShippingProvider() != null ? user.getDefaultShippingProvider().toString() : "", dataStyle);
-                createCell(row, 13, user.getActivated() ? "Yes" : "No", dataStyle);
+                createCell(row, 13, user.isActivated() ? "Yes" : "No", dataStyle);
                 createCell(row, 14, user.getImageUrl(), dataStyle);
                 createCell(row, 15, user.getCreatedDate() != null ? dateFormatter.format(user.getCreatedDate()) : "", dataStyle);
             }

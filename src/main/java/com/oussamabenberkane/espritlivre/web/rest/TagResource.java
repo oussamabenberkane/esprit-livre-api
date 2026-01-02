@@ -169,7 +169,7 @@ public class TagResource {
             return loadPlaceholder();
         }
 
-        String imageUrl = tagDTO.get().getImageUrl();
+        String imageUrl = tagDTO.orElseThrow().getImageUrl();
         if (imageUrl == null || imageUrl.isEmpty()) {
             return loadPlaceholder();
         }

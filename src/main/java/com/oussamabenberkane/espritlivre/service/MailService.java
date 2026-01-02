@@ -169,9 +169,12 @@ public class MailService {
         // Retrieve admin user and use their language preference, default to French if not found
         Locale locale = Locale.forLanguageTag("fr");
         Optional<User> adminUser = userRepository.findOneByEmailIgnoreCase(adminEmail);
-        if (adminUser.isPresent() && adminUser.get().getLangKey() != null) {
-            locale = Locale.forLanguageTag(adminUser.get().getLangKey());
-            LOG.info("Using admin user language preference: {}", adminUser.get().getLangKey());
+        if (adminUser.isPresent()) {
+            User user = adminUser.orElseThrow();
+            if (user.getLangKey() != null) {
+                locale = Locale.forLanguageTag(user.getLangKey());
+                LOG.info("Using admin user language preference: {}", user.getLangKey());
+            }
         } else {
             LOG.info("Admin user not found or no language preference set, using default locale: fr");
         }

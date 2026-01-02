@@ -185,7 +185,7 @@ public class AuthorResource {
             return loadPlaceholder();
         }
 
-        String profilePictureUrl = authorDTO.get().getProfilePictureUrl();
+        String profilePictureUrl = authorDTO.orElseThrow().getProfilePictureUrl();
         if (profilePictureUrl == null || profilePictureUrl.isEmpty()) {
             return loadPlaceholder();
         }

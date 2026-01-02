@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
@@ -134,7 +133,7 @@ public class FileStorageService {
         validateImageDimensions(file, entityName);
 
         // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(uploadDir);
+        Path uploadPath = Path.of(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
@@ -215,7 +214,7 @@ public class FileStorageService {
         try {
             // Extract filename from URL path
             String filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-            Path filePath = Paths.get(uploadDir, filename);
+            Path filePath = Path.of(uploadDir, filename);
 
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
@@ -355,7 +354,7 @@ public class FileStorageService {
                 throw new IOException("Invalid image URL: " + imageUrl);
             }
 
-            Path filePath = Paths.get(directory).resolve(filename).normalize();
+            Path filePath = Path.of(directory).resolve(filename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {
@@ -397,7 +396,7 @@ public class FileStorageService {
      */
     public Resource loadPlaceholderImage() throws IOException {
         try {
-            Path filePath = Paths.get(DEFAULT_PLACEHOLDER_PATH).normalize();
+            Path filePath = Path.of(DEFAULT_PLACEHOLDER_PATH).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {

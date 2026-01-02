@@ -104,7 +104,7 @@ public class OrderService {
         order.setCreatedAt(ZonedDateTime.now());
 
         // Handle user (authenticated or guest)
-        String currentUserLogin = SecurityUtils.getCurrentUserLogin().get();
+        String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElseThrow();
         User user = null;
         if (currentUserLogin.equals(ANONYMOUS_USER)) {
             order.setCreatedBy("guest");
@@ -512,7 +512,7 @@ public class OrderService {
             return 0;
         }
 
-        User user = userOpt.get();
+        User user = userOpt.orElseThrow();
 
         try {
             String normalizedPhone = normalizePhoneNumber(phoneNumber);

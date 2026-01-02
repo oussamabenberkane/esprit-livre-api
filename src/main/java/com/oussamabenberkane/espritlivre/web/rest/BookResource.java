@@ -215,7 +215,7 @@ public class BookResource {
             return loadPlaceholder();
         }
 
-        String coverImageUrl = bookDTO.get().getCoverImageUrl();
+        String coverImageUrl = bookDTO.orElseThrow().getCoverImageUrl();
         if (coverImageUrl == null || coverImageUrl.isEmpty()) {
             return loadPlaceholder();
         }
