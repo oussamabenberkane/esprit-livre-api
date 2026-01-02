@@ -11,6 +11,14 @@ import java.util.List;
 
 public class OrderSpecifications {
 
+    /**
+     * Specification to filter only active (non-soft-deleted) orders.
+     * This should be composed with all queries to exclude soft-deleted entities.
+     */
+    public static Specification<Order> activeOnly() {
+        return (root, query, builder) -> builder.equal(root.get("active"), true);
+    }
+
     public static Specification<Order> hasStatus(OrderStatus status) {
         return (root, query, builder) -> {
             if (status == null) {

@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.SQLRestriction;
 
 /**
  * A Tag.
@@ -17,7 +16,6 @@ import org.hibernate.annotations.SQLRestriction;
 @Entity
 @Table(name = "tag")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-@SQLRestriction("active = true")
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class Tag implements Serializable {
 

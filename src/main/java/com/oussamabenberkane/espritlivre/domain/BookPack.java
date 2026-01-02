@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,7 +21,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "book_pack")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @EntityListeners(AuditingEntityListener.class)
-@SQLRestriction("active = true")
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class BookPack implements Serializable {
 

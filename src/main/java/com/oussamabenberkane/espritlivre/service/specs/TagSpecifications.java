@@ -6,14 +6,25 @@ import org.springframework.data.jpa.domain.Specification;
 
 public class TagSpecifications {
 
+    /**
+     * Specification to filter only active (non-soft-deleted) tags.
+     * This should be composed with all queries to exclude soft-deleted entities.
+     */
+    public static Specification<Tag> activeOnly() {
+        return (root, query, builder) -> builder.equal(root.get("active"), true);
+    }
+
+    /**
+     * @deprecated Use {@link #activeOnly()} instead for consistency across all specifications
+     */
+    @Deprecated
+    public static Specification<Tag> isActive() {
+        return activeOnly();
+    }
+
     public static Specification<Tag> hasType(TagType type) {
         return (root, query, criteriaBuilder) ->
             type == null ? null : criteriaBuilder.equal(root.get("type"), type);
-    }
-
-    public static Specification<Tag> isActive() {
-        return (root, query, criteriaBuilder) ->
-            criteriaBuilder.equal(root.get("active"), true);
     }
 
     public static Specification<Tag> searchByName(String search) {

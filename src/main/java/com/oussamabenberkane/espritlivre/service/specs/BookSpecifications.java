@@ -16,6 +16,14 @@ import java.util.stream.Collectors;
 
 public class BookSpecifications {
 
+    /**
+     * Specification to filter only active (non-soft-deleted) books.
+     * This should be composed with all queries to exclude soft-deleted entities.
+     */
+    public static Specification<Book> activeOnly() {
+        return (root, query, builder) -> builder.equal(root.get("active"), true);
+    }
+
     public static Specification<Book> hasAuthor(List<Long> authorIds) {
         return (root, query, builder) -> {
             if (authorIds == null || authorIds.isEmpty()) {

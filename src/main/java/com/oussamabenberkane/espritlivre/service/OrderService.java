@@ -207,7 +207,7 @@ public class OrderService {
         BigDecimal minAmount,
         BigDecimal maxAmount
     ) {
-        Specification<Order> spec = Specification.where(null);
+        Specification<Order> spec = Specification.where(OrderSpecifications.activeOnly());
 
         if (status != null) {
             spec = spec.and(OrderSpecifications.hasStatus(status));

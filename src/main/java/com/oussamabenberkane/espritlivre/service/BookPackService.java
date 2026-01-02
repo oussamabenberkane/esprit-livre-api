@@ -282,7 +282,7 @@ public class BookPackService {
         LOG.debug("Request to get all BookPacks with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}",
             search, author, minPrice, maxPrice, categoryId, mainDisplayId, language);
 
-        Specification<BookPack> spec = Specification.where(null);
+        Specification<BookPack> spec = Specification.where(BookPackSpecifications.activeOnly());
 
         // Apply search filter if provided
         if (StringUtils.hasText(search)) {

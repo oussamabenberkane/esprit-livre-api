@@ -6,7 +6,6 @@ import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
@@ -15,7 +14,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "author")
 @EntityListeners(AuditingEntityListener.class)
-@SQLRestriction("active = true")
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class Author extends AbstractAuditingEntity<Long> {
 

@@ -246,7 +246,7 @@ public class BookService {
         LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}",
             search, author, minPrice, maxPrice, categoryId, mainDisplayId, language);
 
-        Specification<Book> spec = Specification.where(null);
+        Specification<Book> spec = Specification.where(BookSpecifications.activeOnly());
 
         // Apply search filter if provided
         if (StringUtils.hasText(search)) {
@@ -395,7 +395,7 @@ public class BookService {
     ) {
         LOG.debug("Request to get books liked by current user");
 
-        Specification<Book> spec = BookSpecifications.isLikedByCurrentUser();
+        Specification<Book> spec = BookSpecifications.activeOnly().and(BookSpecifications.isLikedByCurrentUser());
 
         return bookRepository.findLikedBooksByCurrentUser(spec, pageable).map(bookMapper::toDto);
     }

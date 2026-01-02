@@ -2,7 +2,6 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.domain.*;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
-import com.oussamabenberkane.espritlivre.repository.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;

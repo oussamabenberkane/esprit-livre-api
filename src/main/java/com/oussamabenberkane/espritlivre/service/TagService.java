@@ -254,7 +254,7 @@ public class TagService {
     public Page<TagDTO> findAllWithFilters(Pageable pageable, TagType type, String search) {
         LOG.debug("Request to get all Tags with type: {} and search: {}", type, search);
 
-        Specification<Tag> spec = Specification.where(null);
+        Specification<Tag> spec = Specification.where(TagSpecifications.activeOnly());
 
         if (type != null) {
             spec = spec.and(TagSpecifications.hasType(type));

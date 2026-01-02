@@ -155,7 +155,7 @@ public class AuthorService {
     public Page<AuthorDTO> findAllWithFilters(Pageable pageable, String search) {
         LOG.debug("Request to get all Authors with search: {}", search);
 
-        Specification<Author> spec = Specification.where(null);
+        Specification<Author> spec = Specification.where(AuthorSpecifications.activeOnly());
 
         if (search != null && !search.trim().isEmpty()) {
             spec = spec.and(AuthorSpecifications.searchByName(search));
