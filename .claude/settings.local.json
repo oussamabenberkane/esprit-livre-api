@@ -10,7 +10,8 @@
       "Bash(timeout 90 bash:*)",
       "Bash(test:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(java -version:*)"
     ],
     "deny": [],
     "ask": []

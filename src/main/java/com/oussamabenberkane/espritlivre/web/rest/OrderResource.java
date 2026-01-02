@@ -60,6 +60,8 @@ public class OrderResource {
     /**
      * {@code POST  /orders} : Create a new order.
      * Public endpoint - allows guest checkout (no authentication required).
+     * Admin-specific: Admins can specify a user.id in the orderDTO to create orders for specific users.
+     * Regular users/guests: The user field in orderDTO is ignored, order is created for the authenticated user or as guest.
      *
      * @param orderDTO the orderDTO to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new orderDTO, or with status {@code 400 (Bad Request)} if the order has already an ID.
@@ -79,6 +81,10 @@ public class OrderResource {
 
     /**
      * {@code PUT  /orders/:id} : Updates an existing order.
+     * Admin-only endpoint.
+     * Supports updating: status, shipping details, customer information, order items, and user assignment.
+     * Stock management: When status changes to DELIVERED, stock is automatically decremented.
+     * When status changes from DELIVERED to another status, stock is restored.
      *
      * @param id the id of the orderDTO to save.
      * @param orderDTO the orderDTO to update.

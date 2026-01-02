@@ -89,6 +89,7 @@ public class OrderService {
      * Validates: required fields (phone, city, wilaya).
      * Supports: individual books, book packs, or mixed orders.
      * Uses user profile data as fallback for: fullName, phone, email, city, wilaya.
+     * Admin-specific: Admins can specify a userId in the orderDTO to create orders for specific users.
      *
      * @param orderDTO the entity to create.
      * @return the persisted entity.
@@ -103,10 +104,21 @@ public class OrderService {
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(ZonedDateTime.now());
 
-        // Handle user (authenticated or guest)
+        // Handle user assignment
         String currentUserLogin = SecurityUtils.getCurrentUserLogin().orElseThrow();
+        boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
         User user = null;
-        if (currentUserLogin.equals(ANONYMOUS_USER)) {
+
+        // If admin and userId is specified in DTO, use that user
+        if (isAdmin && orderDTO.getUser() != null && orderDTO.getUser().getId() != null) {
+            user = userRepository.findById(orderDTO.getUser().getId())
+                .orElseThrow(() -> new BadRequestAlertException("Specified user not found", "order", "usernotfound"));
+            order.setUser(user);
+            order.setCreatedBy(currentUserLogin + " (admin)");
+            LOG.debug("Admin creating order for user: {}", user.getLogin());
+        }
+        // Otherwise, use current authenticated user or guest
+        else if (currentUserLogin.equals(ANONYMOUS_USER)) {
             order.setCreatedBy("guest");
         } else {
             user = userRepository.findOneByLogin(currentUserLogin)
