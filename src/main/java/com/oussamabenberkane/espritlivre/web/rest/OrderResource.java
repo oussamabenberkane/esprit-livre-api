@@ -64,6 +64,36 @@ public class OrderResource {
     }
 
     /**
+     * {@code GET  /orders/export} : Export all orders to Excel (admin only).
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the Excel file as a byte array.
+     */
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<Resource> exportOrders() {
+        LOG.debug("REST request to export all orders to Excel");
+
+        try {
+            byte[] excelData = orderService.exportOrdersToExcel();
+
+            // Generate filename with current timestamp
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String filename = "orders_export_" + timestamp + ".xlsx";
+
+            ByteArrayResource resource = new ByteArrayResource(excelData);
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(excelData.length)
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to export orders to Excel", e);
+            throw new BadRequestAlertException("Failed to export orders", ENTITY_NAME, "exportfailed");
+        }
+    }
+
+    /**
      * {@code POST  /orders} : Create a new order.
      * Public endpoint - allows guest checkout (no authentication required).
      * Admin-specific: Admins can specify a user.id in the orderDTO to create orders for specific users.
@@ -164,36 +194,6 @@ public class OrderResource {
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
-    }
-
-    /**
-     * {@code GET  /orders/export} : Export all orders to Excel (admin only).
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the Excel file as a byte array.
-     */
-    @GetMapping("/export")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<Resource> exportOrders() {
-        LOG.debug("REST request to export all orders to Excel");
-
-        try {
-            byte[] excelData = orderService.exportOrdersToExcel();
-
-            // Generate filename with current timestamp
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String filename = "orders_export_" + timestamp + ".xlsx";
-
-            ByteArrayResource resource = new ByteArrayResource(excelData);
-
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .contentLength(excelData.length)
-                .body(resource);
-        } catch (IOException e) {
-            LOG.error("Failed to export orders to Excel", e);
-            throw new BadRequestAlertException("Failed to export orders", ENTITY_NAME, "exportfailed");
-        }
     }
 
     /**
