@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Add default value 'true' to active columns for all entities.
+    -->
+    <changeSet id="20260103000000-1" author="claude">
+        <!-- Author active column -->
+        <addDefaultValue
+            tableName="author"
+            columnName="active"
+            columnDataType="boolean"
+            defaultValueBoolean="true"/>
+
+        <!-- Book active column -->
+        <addDefaultValue
+            tableName="book"
+            columnName="active"
+            columnDataType="boolean"
+            defaultValueBoolean="true"/>
+
+        <!-- BookPack active column -->
+        <addDefaultValue
+            tableName="book_pack"
+            columnName="active"
+            columnDataType="boolean"
+            defaultValueBoolean="true"/>
+
+        <!-- Order active column -->
+        <addDefaultValue
+            tableName="jhi_order"
+            columnName="active"
+            columnDataType="boolean"
+            defaultValueBoolean="true"/>
+
+        <!-- Tag active column -->
+        <addDefaultValue
+            tableName="tag"
+            columnName="active"
+            columnDataType="boolean"
+            defaultValueBoolean="true"/>
+    </changeSet>
+
+    <changeSet id="20260103000000-2" author="claude">
+        <!-- Update existing null values to true for all tables -->
+        <sql>
+            UPDATE author SET active = true WHERE active IS NULL;
+            UPDATE book SET active = true WHERE active IS NULL;
+            UPDATE book_pack SET active = true WHERE active IS NULL;
+            UPDATE jhi_order SET active = true WHERE active IS NULL;
+            UPDATE tag SET active = true WHERE active IS NULL;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

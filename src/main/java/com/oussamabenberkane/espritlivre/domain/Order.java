@@ -89,7 +89,7 @@ public class Order implements Serializable {
     @Column(name = "linked_at")
     private ZonedDateTime linkedAt;
 
-    @Column(name = "active")
+    @Column(name = "active", columnDefinition = "boolean default true")
     private Boolean active;
 
     @Column(name = "deleted_at")
@@ -447,6 +447,13 @@ public class Order implements Serializable {
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
+
+    @PrePersist
+    public void prePersist() {
+        if (this.active == null) {
+            this.active = true;
+        }
+    }
 
     @Override
     public boolean equals(Object o) {

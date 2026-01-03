@@ -37,7 +37,7 @@ public class Tag implements Serializable {
     @Column(name = "type")
     private TagType type;
 
-    @Column(name = "active")
+    @Column(name = "active", columnDefinition = "boolean default true")
     private Boolean active;
 
     @Column(name = "color_hex", length = 7)
@@ -201,6 +201,13 @@ public class Tag implements Serializable {
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
+
+    @PrePersist
+    public void prePersist() {
+        if (this.active == null) {
+            this.active = true;
+        }
+    }
 
     @Override
     public boolean equals(Object o) {
