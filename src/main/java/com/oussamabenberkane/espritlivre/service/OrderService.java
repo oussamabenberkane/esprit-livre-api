@@ -19,19 +19,26 @@ import com.oussamabenberkane.espritlivre.service.dto.OrderItemDTO;
 import com.oussamabenberkane.espritlivre.service.mapper.OrderMapper;
 import com.oussamabenberkane.espritlivre.service.specs.OrderSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.annotations.BatchSize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -609,5 +616,124 @@ public class OrderService {
             LOG.error("Error updating orders phone for user {}", user.getId(), e);
             return 0;
         }
+    }
+
+    /**
+     * Export all orders to Excel format.
+     *
+     * @return byte array containing the Excel file
+     * @throws IOException if there's an error creating the Excel file
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportOrdersToExcel() throws IOException {
+        LOG.debug("Request to export all orders to Excel");
+
+        // Fetch all active orders, sorted by creation date descending
+        Specification<Order> spec = Specification.where(OrderSpecifications.activeOnly());
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<Order> orders = orderRepository.findAll(spec, pageable).getContent();
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Orders");
+
+            // Create header row with styling
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 12);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            String[] headers = {
+                "Order ID", "Unique ID", "Status", "Customer Name", "Phone", "Email",
+                "Wilaya", "City", "Street Address", "Postal Code",
+                "Items", "Total Amount", "Shipping Cost", "Shipping Provider", "Shipping Method",
+                "User ID", "User Login", "Created By", "Created At", "Updated At"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Create date formatter
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            // Create cell style for data
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            // Populate data rows
+            int rowNum = 1;
+            for (Order order : orders) {
+                Row row = sheet.createRow(rowNum++);
+
+                // Build items summary
+                StringBuilder itemsSummary = new StringBuilder();
+                if (order.getOrderItems() != null && !order.getOrderItems().isEmpty()) {
+                    for (OrderItem item : order.getOrderItems()) {
+                        if (itemsSummary.length() > 0) {
+                            itemsSummary.append("; ");
+                        }
+                        if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
+                            itemsSummary.append(item.getBook().getTitle())
+                                .append(" x").append(item.getQuantity());
+                        } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
+                            itemsSummary.append(item.getBookPack().getTitle())
+                                .append(" (Pack) x").append(item.getQuantity());
+                        }
+                    }
+                }
+
+                createCell(row, 0, order.getId() != null ? order.getId().toString() : "", dataStyle);
+                createCell(row, 1, order.getUniqueId(), dataStyle);
+                createCell(row, 2, order.getStatus() != null ? order.getStatus().toString() : "", dataStyle);
+                createCell(row, 3, order.getFullName(), dataStyle);
+                createCell(row, 4, order.getPhone(), dataStyle);
+                createCell(row, 5, order.getEmail(), dataStyle);
+                createCell(row, 6, order.getWilaya(), dataStyle);
+                createCell(row, 7, order.getCity(), dataStyle);
+                createCell(row, 8, order.getStreetAddress(), dataStyle);
+                createCell(row, 9, order.getPostalCode(), dataStyle);
+                createCell(row, 10, itemsSummary.toString(), dataStyle);
+                createCell(row, 11, order.getTotalAmount() != null ? order.getTotalAmount().toString() : "", dataStyle);
+                createCell(row, 12, order.getShippingCost() != null ? order.getShippingCost().toString() : "", dataStyle);
+                createCell(row, 13, order.getShippingProvider() != null ? order.getShippingProvider().toString() : "", dataStyle);
+                createCell(row, 14, order.getShippingMethod() != null ? order.getShippingMethod().toString() : "", dataStyle);
+                createCell(row, 15, order.getUser() != null ? order.getUser().getId() : "", dataStyle);
+                createCell(row, 16, order.getUser() != null ? order.getUser().getLogin() : "", dataStyle);
+                createCell(row, 17, order.getCreatedBy(), dataStyle);
+                createCell(row, 18, order.getCreatedAt() != null ? dateFormatter.format(order.getCreatedAt()) : "", dataStyle);
+                createCell(row, 19, order.getUpdatedAt() != null ? dateFormatter.format(order.getUpdatedAt()) : "", dataStyle);
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            LOG.info("Successfully exported {} orders to Excel", orders.size());
+            return out.toByteArray();
+        }
+    }
+
+    /**
+     * Helper method to create a cell with value and style.
+     */
+    private void createCell(Row row, int column, String value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
     }
 }

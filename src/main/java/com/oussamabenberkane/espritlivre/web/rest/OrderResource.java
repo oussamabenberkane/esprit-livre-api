@@ -10,19 +10,25 @@ import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -158,6 +164,36 @@ public class OrderResource {
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
+    }
+
+    /**
+     * {@code GET  /orders/export} : Export all orders to Excel (admin only).
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the Excel file as a byte array.
+     */
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<Resource> exportOrders() {
+        LOG.debug("REST request to export all orders to Excel");
+
+        try {
+            byte[] excelData = orderService.exportOrdersToExcel();
+
+            // Generate filename with current timestamp
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String filename = "orders_export_" + timestamp + ".xlsx";
+
+            ByteArrayResource resource = new ByteArrayResource(excelData);
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(excelData.length)
+                .body(resource);
+        } catch (IOException e) {
+            LOG.error("Failed to export orders to Excel", e);
+            throw new BadRequestAlertException("Failed to export orders", ENTITY_NAME, "exportfailed");
+        }
     }
 
     /**
