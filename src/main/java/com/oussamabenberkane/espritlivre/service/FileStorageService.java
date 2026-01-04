@@ -115,6 +115,18 @@ public class FileStorageService {
     }
 
     /**
+     * Store the admin profile picture with fixed filename "admin.{extension}".
+     *
+     * @param file the uploaded file
+     * @return the relative URL path to the stored file
+     * @throws IOException if file storage fails
+     */
+    public String storeAdminPicture(MultipartFile file) throws IOException {
+        LOG.debug("Request to store admin picture");
+        return storeImage(file, USERS_DIR, "admin", "/media/users/", "admin");
+    }
+
+    /**
      * Generic method to store an image.
      *
      * @param file the uploaded file
@@ -198,6 +210,34 @@ public class FileStorageService {
      */
     public void deleteUserPicture(String profilePictureUrl) {
         deleteImage(profilePictureUrl, USERS_DIR);
+    }
+
+    /**
+     * Delete all admin profile pictures (with any extension).
+     * Since admin pictures are named admin.{extension}, this deletes all possible admin images.
+     */
+    public void deleteAllAdminPictures() {
+        LOG.debug("Request to delete all admin pictures");
+
+        Path usersPath = Path.of(USERS_DIR);
+        if (!Files.exists(usersPath)) {
+            return;
+        }
+
+        // Delete all admin.* files
+        for (String extension : ALLOWED_EXTENSIONS) {
+            String filename = "admin." + extension;
+            Path filePath = usersPath.resolve(filename);
+
+            try {
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    LOG.debug("Deleted admin picture: {}", filename);
+                }
+            } catch (IOException e) {
+                LOG.error("Failed to delete admin picture: {}", filename, e);
+            }
+        }
     }
 
     /**

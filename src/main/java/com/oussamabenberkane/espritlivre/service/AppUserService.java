@@ -135,6 +135,7 @@ public class AppUserService {
     /**
      * Update admin profile (admin only).
      * Admin can only update firstName, lastName, email, and profile picture.
+     * Profile picture is always stored as "admin.{extension}".
      * Does not handle order linking.
      *
      * @param appUserDTO the updated profile information
@@ -155,23 +156,22 @@ public class AppUserService {
         // Handle profile picture upload if provided
         if (profilePicture != null && !profilePicture.isEmpty()) {
             try {
-                // Delete old image if exists
-                if (admin.getImageUrl() != null && !admin.getImageUrl().isEmpty()) {
-                    fileStorageService.deleteUserPicture(admin.getImageUrl());
-                }
+                // Always delete all existing admin pictures (with any extension)
+                fileStorageService.deleteAllAdminPictures();
 
-                // Store new profile picture
-                String imageUrl = fileStorageService.storeUserPicture(profilePicture, admin.getId());
+                // Store new admin profile picture with fixed filename "admin.{extension}"
+                String imageUrl = fileStorageService.storeAdminPicture(profilePicture);
                 admin.setImageUrl(imageUrl);
-                LOG.debug("Admin profile picture uploaded for user '{}'", login);
+                LOG.debug("Admin profile picture uploaded as '{}'", imageUrl);
             } catch (IOException e) {
                 LOG.error("Failed to store admin profile picture", e);
                 throw new BadRequestAlertException("Failed to upload profile picture", "admin", "imageuploadfailed");
             }
         }
 
-        userRepository.save(admin);
-        clearUserCaches(admin);
+        User savedAdmin = userRepository.save(admin);
+        LOG.info("Admin profile saved '{}'", savedAdmin);
+        clearUserCaches(savedAdmin);
 
         LOG.info("Admin profile updated for user '{}'", login);
     }
