@@ -1,7 +1,6 @@
 check soft/hard delete implementation for books (for soft delete implementation on frontend side > filter the fetched books by active state = true): done
 Get/export/toggle users: done
-
- - update : Orders
+create/update/export Orders: done
  - admin profile actions
  - image cache problem for books and authors and everything else
  - recheck your job scheduling for soft deleting a book/author...etc

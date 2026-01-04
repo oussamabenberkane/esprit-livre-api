@@ -129,6 +129,32 @@ public class AppUserService {
         return new int[] { linkedOrdersCount, updatedOrdersCount };
     }
 
+    /**
+     * Update admin profile (admin only).
+     * Admin can only update firstName, lastName, email, and imageUrl.
+     * Does not handle order linking.
+     *
+     * @param appUserDTO the updated profile information
+     */
+    public void updateAdminProfile(AppUserDTO appUserDTO) {
+        String login = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "admin", "notauthenticated"));
+
+        User admin = userRepository.findOneByLogin(login)
+            .orElseThrow(() -> new BadRequestAlertException("User not found", "admin", "usernotfound"));
+
+        // Only update firstName, lastName, email, and imageUrl
+        if (appUserDTO.getFirstName() != null) admin.setFirstName(appUserDTO.getFirstName());
+        if (appUserDTO.getLastName() != null) admin.setLastName(appUserDTO.getLastName());
+        if (appUserDTO.getEmail() != null) admin.setEmail(appUserDTO.getEmail());
+        if (appUserDTO.getImageUrl() != null) admin.setImageUrl(appUserDTO.getImageUrl());
+
+        userRepository.save(admin);
+        clearUserCaches(admin);
+
+        LOG.info("Admin profile updated for user '{}'", login);
+    }
+
     public void requestEmailChange(String newEmail) {
         String login = SecurityUtils.getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "appUser", "notauthenticated"));
