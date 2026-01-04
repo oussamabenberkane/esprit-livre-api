@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * REST controller for admin-only operations.
@@ -117,16 +118,20 @@ public class AdminResource {
 
     /**
      * {@code PUT  /admin/profile} : Update current admin profile.
-     * Admin can only update firstName, lastName, email, and imageUrl.
+     * Admin can only update firstName, lastName, email, and profile picture.
      *
      * @param appUserDTO the updated profile information.
+     * @param profilePicture the optional profile picture file.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
      */
-    @PutMapping("/profile")
-    public ResponseEntity<Void> updateAdminProfile(@Valid @RequestBody AppUserDTO appUserDTO) {
+    @PutMapping(value = "/profile", consumes = "multipart/form-data")
+    public ResponseEntity<Void> updateAdminProfile(
+        @RequestPart("admin") @Valid AppUserDTO appUserDTO,
+        @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture
+    ) {
         LOG.debug("REST request to update admin profile : {}", appUserDTO);
 
-        appUserService.updateAdminProfile(appUserDTO);
+        appUserService.updateAdminProfile(appUserDTO, profilePicture);
         return ResponseEntity.ok().build();
     }
 

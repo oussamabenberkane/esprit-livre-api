@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,12 +38,14 @@ public class AppUserService {
     private final MailService mailService;
     private final CacheManager cacheManager;
     private final OrderService orderService;
+    private final FileStorageService fileStorageService;
 
-    public AppUserService(UserRepository userRepository, MailService mailService, CacheManager cacheManager, OrderService orderService) {
+    public AppUserService(UserRepository userRepository, MailService mailService, CacheManager cacheManager, OrderService orderService, FileStorageService fileStorageService) {
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.cacheManager = cacheManager;
         this.orderService = orderService;
+        this.fileStorageService = fileStorageService;
     }
 
     public void completeAppUserRegistration(AppUserDTO appUserDTO) {
@@ -131,23 +134,41 @@ public class AppUserService {
 
     /**
      * Update admin profile (admin only).
-     * Admin can only update firstName, lastName, email, and imageUrl.
+     * Admin can only update firstName, lastName, email, and profile picture.
      * Does not handle order linking.
      *
      * @param appUserDTO the updated profile information
+     * @param profilePicture the optional profile picture file
      */
-    public void updateAdminProfile(AppUserDTO appUserDTO) {
+    public void updateAdminProfile(AppUserDTO appUserDTO, MultipartFile profilePicture) {
         String login = SecurityUtils.getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "admin", "notauthenticated"));
 
         User admin = userRepository.findOneByLogin(login)
             .orElseThrow(() -> new BadRequestAlertException("User not found", "admin", "usernotfound"));
 
-        // Only update firstName, lastName, email, and imageUrl
+        // Only update firstName, lastName, and email
         if (appUserDTO.getFirstName() != null) admin.setFirstName(appUserDTO.getFirstName());
         if (appUserDTO.getLastName() != null) admin.setLastName(appUserDTO.getLastName());
         if (appUserDTO.getEmail() != null) admin.setEmail(appUserDTO.getEmail());
-        if (appUserDTO.getImageUrl() != null) admin.setImageUrl(appUserDTO.getImageUrl());
+
+        // Handle profile picture upload if provided
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            try {
+                // Delete old image if exists
+                if (admin.getImageUrl() != null && !admin.getImageUrl().isEmpty()) {
+                    fileStorageService.deleteUserPicture(admin.getImageUrl());
+                }
+
+                // Store new profile picture
+                String imageUrl = fileStorageService.storeUserPicture(profilePicture, admin.getId());
+                admin.setImageUrl(imageUrl);
+                LOG.debug("Admin profile picture uploaded for user '{}'", login);
+            } catch (IOException e) {
+                LOG.error("Failed to store admin profile picture", e);
+                throw new BadRequestAlertException("Failed to upload profile picture", "admin", "imageuploadfailed");
+            }
+        }
 
         userRepository.save(admin);
         clearUserCaches(admin);
