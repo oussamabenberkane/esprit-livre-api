@@ -116,26 +116,25 @@ public class OrderResource {
     }
 
     /**
-     * {@code PUT  /orders/:id} : Updates an existing order.
+     * {@code PUT  /orders/:id} : Updates an existing order's status.
      * Admin-only endpoint.
-     * Supports updating: status, shipping details, customer information, order items, and user assignment.
+     * Only updates the order status field. All other fields in the request are ignored.
      * Stock management: When status changes to DELIVERED, stock is automatically decremented.
      * When status changes from DELIVERED to another status, stock is restored.
      *
-     * @param id the id of the orderDTO to save.
-     * @param orderDTO the orderDTO to update.
+     * @param id the id of the order to update.
+     * @param orderDTO the orderDTO containing the new status (other fields are ignored).
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated orderDTO,
      * or with status {@code 400 (Bad Request)} if the orderDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the orderDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     * or with status {@code 404 (Not Found)} if the order doesn't exist.
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<OrderDTO> updateOrder(
         @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody OrderDTO orderDTO
-    ) throws URISyntaxException {
-        LOG.debug("REST request to update Order : {}, {}", id, orderDTO);
+    ) {
+        LOG.debug("REST request to update Order status: {}, new status: {}", id, orderDTO.getStatus());
         if (orderDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
@@ -147,7 +146,7 @@ public class OrderResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        orderDTO = orderService.update(orderDTO);
+        orderDTO = orderService.updateStatus(id, orderDTO.getStatus());
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, orderDTO.getId().toString()))
             .body(orderDTO);

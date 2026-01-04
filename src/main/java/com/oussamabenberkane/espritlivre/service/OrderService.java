@@ -244,127 +244,99 @@ public class OrderService {
     }
 
     /**
-     * Update a order (Admin only).
-     * Cannot update: id, uniqueId, createdAt, createdBy.
+     * Update order status only (Admin only).
+     * All other fields remain unchanged.
      * Auto-decrements book stock when status changes to DELIVERED.
+     * Auto-restores book stock when status changes from DELIVERED to another status.
      *
-     * @param orderDTO the entity to save.
-     * @return the persisted entity.
+     * @param orderId the id of the order to update.
+     * @param newStatus the new status to set.
+     * @return the updated order as DTO.
      */
-    public OrderDTO update(OrderDTO orderDTO) {
-        LOG.debug("Request to update Order : {}", orderDTO);
+    public OrderDTO updateStatus(Long orderId, OrderStatus newStatus) {
+        LOG.debug("Request to update Order status: {} to {}", orderId, newStatus);
 
         // Fetch existing order
-        Order existingOrder = orderRepository.findById(orderDTO.getId())
+        Order existingOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new BadRequestAlertException("Order not found", "order", "ordernotfound"));
 
         OrderStatus oldStatus = existingOrder.getStatus();
 
-        // Update allowed fields (cannot update id, uniqueId, createdAt, createdBy)
-        existingOrder.setStatus(orderDTO.getStatus());
-        existingOrder.setTotalAmount(orderDTO.getTotalAmount());
-        existingOrder.setShippingCost(orderDTO.getShippingCost());
-        existingOrder.setShippingProvider(orderDTO.getShippingProvider());
-        existingOrder.setShippingMethod(orderDTO.getShippingMethod());
-        existingOrder.setFullName(orderDTO.getFullName());
-        existingOrder.setPhone(orderDTO.getPhone());
-        existingOrder.setEmail(orderDTO.getEmail());
-        existingOrder.setStreetAddress(orderDTO.getStreetAddress());
-        existingOrder.setWilaya(orderDTO.getWilaya());
-        existingOrder.setCity(orderDTO.getCity());
-        existingOrder.setPostalCode(orderDTO.getPostalCode());
+        // Only update status and timestamp
+        existingOrder.setStatus(newStatus);
         existingOrder.setUpdatedAt(ZonedDateTime.now());
 
-        // Update user if provided
-        if (orderDTO.getUser() != null && orderDTO.getUser().getId() != null) {
-            User user = userRepository.findById(orderDTO.getUser().getId())
-                .orElseThrow(() -> new BadRequestAlertException("User not found", "order", "usernotfound"));
-            existingOrder.setUser(user);
-        }
-
-        // Update order items if provided
-        if (orderDTO.getOrderItems() != null) {
-            // Clear existing items
-            existingOrder.getOrderItems().clear();
-
-            // Add new items
-            Set<OrderItem> newOrderItems = new HashSet<>();
-            for (OrderItemDTO itemDTO : orderDTO.getOrderItems()) {
-                // Use pessimistic lock for consistency
-                Book book = bookRepository.findByIdWithLock(itemDTO.getBookId())
-                    .orElseThrow(() -> new BadRequestAlertException("Book not found", "orderItem", "booknotfound"));
-
-                OrderItem orderItem = new OrderItem();
-                if (itemDTO.getId() != null) {
-                    orderItem.setId(itemDTO.getId());
-                }
-                orderItem.setBook(book);
-                orderItem.setQuantity(itemDTO.getQuantity());
-                orderItem.setUnitPrice(itemDTO.getUnitPrice());
-                orderItem.setTotalPrice(itemDTO.getTotalPrice());
-                orderItem.setOrder(existingOrder);
-                newOrderItems.add(orderItem);
-            }
-            existingOrder.setOrderItems(newOrderItems);
-        }
-
         // Stock management: decrement when changing to DELIVERED, restore when changing from DELIVERED
-        if (orderDTO.getStatus() == OrderStatus.DELIVERED && oldStatus != OrderStatus.DELIVERED) {
-            // Decrement stock using batch update
+        if (newStatus == OrderStatus.DELIVERED && oldStatus != OrderStatus.DELIVERED) {
             LOG.debug("Order status changed to DELIVERED, decrementing stock for order items");
-            for (OrderItem item : existingOrder.getOrderItems()) {
-                if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
-                    // Handle individual book stock
-                    int updated = bookRepository.decrementStock(item.getBook().getId(), item.getQuantity());
-                    if (updated == 0) {
-                        LOG.warn("Insufficient stock for book {} during order delivery. Required: {}",
-                            item.getBook().getId(), item.getQuantity());
-                    } else {
-                        LOG.debug("Decremented stock for book {} by {}", item.getBook().getId(), item.getQuantity());
-                    }
-                } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
-                    // Handle book pack - decrement stock for all books in the pack
-                    BookPack bookPack = bookPackRepository.findOneWithEagerRelationships(item.getBookPack().getId())
-                        .orElse(item.getBookPack());
-                    LOG.debug("Decrementing stock for book pack: {} (contains {} books)",
-                        bookPack.getTitle(), bookPack.getBooks().size());
-                    for (Book book : bookPack.getBooks()) {
-                        int updated = bookRepository.decrementStock(book.getId(), item.getQuantity());
-                        if (updated == 0) {
-                            LOG.warn("Insufficient stock for book {} (from pack {}) during order delivery. Required: {}",
-                                book.getId(), bookPack.getTitle(), item.getQuantity());
-                        } else {
-                            LOG.debug("Decremented stock for book {} (from pack {}) by {}",
-                                book.getId(), bookPack.getTitle(), item.getQuantity());
-                        }
-                    }
-                }
-            }
-        } else if (oldStatus == OrderStatus.DELIVERED && orderDTO.getStatus() != OrderStatus.DELIVERED) {
-            // Restore stock when moving from DELIVERED to another status
+            decrementStockForOrder(existingOrder);
+        } else if (oldStatus == OrderStatus.DELIVERED && newStatus != OrderStatus.DELIVERED) {
             LOG.debug("Order status changed from DELIVERED, restoring stock for order items");
-            for (OrderItem item : existingOrder.getOrderItems()) {
-                if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
-                    // Restore individual book stock
-                    bookRepository.incrementStock(item.getBook().getId(), item.getQuantity());
-                    LOG.debug("Restored stock for book {} by {}", item.getBook().getId(), item.getQuantity());
-                } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
-                    // Restore stock for all books in the pack
-                    BookPack bookPack = bookPackRepository.findOneWithEagerRelationships(item.getBookPack().getId())
-                        .orElse(item.getBookPack());
-                    LOG.debug("Restoring stock for book pack: {} (contains {} books)",
-                        bookPack.getTitle(), bookPack.getBooks().size());
-                    for (Book book : bookPack.getBooks()) {
-                        bookRepository.incrementStock(book.getId(), item.getQuantity());
-                        LOG.debug("Restored stock for book {} (from pack {}) by {}",
+            restoreStockForOrder(existingOrder);
+        }
+
+        existingOrder = orderRepository.save(existingOrder);
+        return orderMapper.toDto(existingOrder);
+    }
+
+    /**
+     * Decrement stock for all items in an order.
+     * Handles both individual books and book packs.
+     */
+    private void decrementStockForOrder(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+            if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
+                // Handle individual book stock
+                int updated = bookRepository.decrementStock(item.getBook().getId(), item.getQuantity());
+                if (updated == 0) {
+                    LOG.warn("Insufficient stock for book {} during order delivery. Required: {}",
+                        item.getBook().getId(), item.getQuantity());
+                } else {
+                    LOG.debug("Decremented stock for book {} by {}", item.getBook().getId(), item.getQuantity());
+                }
+            } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
+                // Handle book pack - decrement stock for all books in the pack
+                BookPack bookPack = bookPackRepository.findOneWithEagerRelationships(item.getBookPack().getId())
+                    .orElse(item.getBookPack());
+                LOG.debug("Decrementing stock for book pack: {} (contains {} books)",
+                    bookPack.getTitle(), bookPack.getBooks().size());
+                for (Book book : bookPack.getBooks()) {
+                    int updated = bookRepository.decrementStock(book.getId(), item.getQuantity());
+                    if (updated == 0) {
+                        LOG.warn("Insufficient stock for book {} (from pack {}) during order delivery. Required: {}",
+                            book.getId(), bookPack.getTitle(), item.getQuantity());
+                    } else {
+                        LOG.debug("Decremented stock for book {} (from pack {}) by {}",
                             book.getId(), bookPack.getTitle(), item.getQuantity());
                     }
                 }
             }
         }
+    }
 
-        existingOrder = orderRepository.save(existingOrder);
-        return orderMapper.toDto(existingOrder);
+    /**
+     * Restore stock for all items in an order.
+     * Handles both individual books and book packs.
+     */
+    private void restoreStockForOrder(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+            if (item.getItemType() == OrderItemType.BOOK && item.getBook() != null) {
+                // Restore individual book stock
+                bookRepository.incrementStock(item.getBook().getId(), item.getQuantity());
+                LOG.debug("Restored stock for book {} by {}", item.getBook().getId(), item.getQuantity());
+            } else if (item.getItemType() == OrderItemType.PACK && item.getBookPack() != null) {
+                // Restore stock for all books in the pack
+                BookPack bookPack = bookPackRepository.findOneWithEagerRelationships(item.getBookPack().getId())
+                    .orElse(item.getBookPack());
+                LOG.debug("Restoring stock for book pack: {} (contains {} books)",
+                    bookPack.getTitle(), bookPack.getBooks().size());
+                for (Book book : bookPack.getBooks()) {
+                    bookRepository.incrementStock(book.getId(), item.getQuantity());
+                    LOG.debug("Restored stock for book {} (from pack {}) by {}",
+                        book.getId(), bookPack.getTitle(), item.getQuantity());
+                }
+            }
+        }
     }
 
     /**
