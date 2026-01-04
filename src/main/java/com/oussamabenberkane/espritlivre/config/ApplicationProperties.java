@@ -19,6 +19,8 @@ public class ApplicationProperties {
 
     private String adminPanelUrl;
 
+    private final Keycloak keycloak = new Keycloak();
+
     // jhipster-needle-application-properties-property
 
     public Liquibase getLiquibase() {
@@ -49,6 +51,10 @@ public class ApplicationProperties {
         this.adminPanelUrl = adminPanelUrl;
     }
 
+    public Keycloak getKeycloak() {
+        return keycloak;
+    }
+
     // jhipster-needle-application-properties-property-getter
 
     public static class Liquibase {
@@ -61,6 +67,37 @@ public class ApplicationProperties {
 
         public void setAsyncStart(Boolean asyncStart) {
             this.asyncStart = asyncStart;
+        }
+    }
+
+    public static class Keycloak {
+
+        private String adminUsername;
+        private String adminPassword;
+        private String adminClientId;
+
+        public String getAdminUsername() {
+            return adminUsername;
+        }
+
+        public void setAdminUsername(String adminUsername) {
+            this.adminUsername = adminUsername;
+        }
+
+        public String getAdminPassword() {
+            return adminPassword;
+        }
+
+        public void setAdminPassword(String adminPassword) {
+            this.adminPassword = adminPassword;
+        }
+
+        public String getAdminClientId() {
+            return adminClientId;
+        }
+
+        public void setAdminClientId(String adminClientId) {
+            this.adminClientId = adminClientId;
         }
     }
     // jhipster-needle-application-properties-property-class

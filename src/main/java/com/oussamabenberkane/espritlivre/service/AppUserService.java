@@ -1,22 +1,32 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.User;
 import com.oussamabenberkane.espritlivre.repository.UserRepository;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PasswordChangeDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
@@ -25,7 +35,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -39,13 +51,28 @@ public class AppUserService {
     private final CacheManager cacheManager;
     private final OrderService orderService;
     private final FileStorageService fileStorageService;
+    private final RestTemplate restTemplate;
+    private final ApplicationProperties applicationProperties;
 
-    public AppUserService(UserRepository userRepository, MailService mailService, CacheManager cacheManager, OrderService orderService, FileStorageService fileStorageService) {
+    @Value("${spring.security.oauth2.client.provider.oidc.issuer-uri}")
+    private String keycloakIssuerUri;
+
+    public AppUserService(
+        UserRepository userRepository,
+        MailService mailService,
+        CacheManager cacheManager,
+        OrderService orderService,
+        FileStorageService fileStorageService,
+        RestTemplate restTemplate,
+        ApplicationProperties applicationProperties
+    ) {
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.cacheManager = cacheManager;
         this.orderService = orderService;
         this.fileStorageService = fileStorageService;
+        this.restTemplate = restTemplate;
+        this.applicationProperties = applicationProperties;
     }
 
     public void completeAppUserRegistration(AppUserDTO appUserDTO) {
@@ -137,6 +164,7 @@ public class AppUserService {
      * Admin can only update firstName, lastName, email, and profile picture.
      * Profile picture is always stored as "admin.{extension}".
      * Does not handle order linking.
+     * Synchronizes firstName, lastName, and email with Keycloak.
      *
      * @param appUserDTO the updated profile information
      * @param profilePicture the optional profile picture file
@@ -148,10 +176,44 @@ public class AppUserService {
         User admin = userRepository.findOneByLogin(login)
             .orElseThrow(() -> new BadRequestAlertException("User not found", "admin", "usernotfound"));
 
+        // Get the current user's ID from JWT token for Keycloak updates
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication instanceof JwtAuthenticationToken)) {
+            throw new BadRequestAlertException("Invalid authentication", "admin", "invalidauth");
+        }
+
+        JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+        Jwt jwt = jwtAuth.getToken();
+        String userId = jwt.getSubject(); // Keycloak user ID
+
+        // Track if we need to sync to Keycloak
+        boolean needsKeycloakSync = false;
+        Map<String, Object> keycloakUpdates = new HashMap<>();
+
         // Only update firstName, lastName, and email
-        if (appUserDTO.getFirstName() != null) admin.setFirstName(appUserDTO.getFirstName());
-        if (appUserDTO.getLastName() != null) admin.setLastName(appUserDTO.getLastName());
-        if (appUserDTO.getEmail() != null) admin.setEmail(appUserDTO.getEmail());
+        if (appUserDTO.getFirstName() != null && !appUserDTO.getFirstName().equals(admin.getFirstName())) {
+            admin.setFirstName(appUserDTO.getFirstName());
+            keycloakUpdates.put("firstName", appUserDTO.getFirstName());
+            needsKeycloakSync = true;
+        }
+        if (appUserDTO.getLastName() != null && !appUserDTO.getLastName().equals(admin.getLastName())) {
+            admin.setLastName(appUserDTO.getLastName());
+            keycloakUpdates.put("lastName", appUserDTO.getLastName());
+            needsKeycloakSync = true;
+        }
+        if (appUserDTO.getEmail() != null && !appUserDTO.getEmail().equalsIgnoreCase(admin.getEmail())) {
+            // Check if email already exists in local database
+            userRepository.findOneByEmailIgnoreCase(appUserDTO.getEmail()).ifPresent(existingUser -> {
+                if (!existingUser.getLogin().equals(login)) {
+                    throw new BadRequestAlertException("Email already in use", "admin", "emailexists");
+                }
+            });
+
+            admin.setEmail(appUserDTO.getEmail());
+            keycloakUpdates.put("email", appUserDTO.getEmail());
+            keycloakUpdates.put("emailVerified", true); // Maintain email verification status
+            needsKeycloakSync = true;
+        }
 
         // Handle profile picture upload if provided
         if (profilePicture != null && !profilePicture.isEmpty()) {
@@ -169,11 +231,116 @@ public class AppUserService {
             }
         }
 
+        // Sync to Keycloak if any fields changed
+        if (needsKeycloakSync) {
+            try {
+                syncAdminProfileToKeycloak(userId, keycloakUpdates);
+                LOG.info("Admin profile synchronized to Keycloak for user '{}'", login);
+            } catch (Exception e) {
+                LOG.error("Failed to sync admin profile to Keycloak for user '{}'", login, e);
+                throw new BadRequestAlertException("Failed to sync profile to Keycloak", "admin", "keycloaksyncfailed");
+            }
+        }
+
         User savedAdmin = userRepository.save(admin);
         LOG.info("Admin profile saved '{}'", savedAdmin);
         clearUserCaches(savedAdmin);
 
         LOG.info("Admin profile updated for user '{}'", login);
+    }
+
+    /**
+     * Synchronize admin profile changes to Keycloak.
+     *
+     * @param userId the Keycloak user ID
+     * @param updates the map of fields to update (firstName, lastName, email, emailVerified)
+     */
+    private void syncAdminProfileToKeycloak(String userId, Map<String, Object> updates) {
+        String keycloakBaseUrl = keycloakIssuerUri.replace("/realms/jhipster", "");
+
+        // Step 1: Get Keycloak master admin access token
+        String masterTokenEndpoint = keycloakBaseUrl + "/realms/master/protocol/openid-connect/token";
+
+        HttpHeaders masterHeaders = new HttpHeaders();
+        masterHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        String masterTokenBody = "grant_type=password" +
+            "&client_id=" + applicationProperties.getKeycloak().getAdminClientId() +
+            "&username=" + applicationProperties.getKeycloak().getAdminUsername() +
+            "&password=" + applicationProperties.getKeycloak().getAdminPassword();
+
+        HttpEntity<String> masterTokenRequest = new HttpEntity<>(masterTokenBody, masterHeaders);
+
+        try {
+            @SuppressWarnings("rawtypes")
+            ResponseEntity<Map> masterTokenResponse = restTemplate.postForEntity(
+                masterTokenEndpoint,
+                masterTokenRequest,
+                Map.class
+            );
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> masterTokenData = masterTokenResponse.getBody();
+            String masterAccessToken = (String) masterTokenData.get("access_token");
+
+            LOG.debug("Obtained Keycloak master admin token for profile sync");
+
+            // Step 2: Check if email already exists in Keycloak (if email is being updated)
+            if (updates.containsKey("email")) {
+                String email = (String) updates.get("email");
+                String searchUrl = keycloakBaseUrl + "/admin/realms/jhipster/users?email=" + email + "&exact=true";
+
+                HttpHeaders searchHeaders = new HttpHeaders();
+                searchHeaders.setBearerAuth(masterAccessToken);
+                HttpEntity<Void> searchRequest = new HttpEntity<>(searchHeaders);
+
+                @SuppressWarnings("rawtypes")
+                ResponseEntity<List> searchResponse = restTemplate.exchange(
+                    searchUrl,
+                    HttpMethod.GET,
+                    searchRequest,
+                    List.class
+                );
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> existingUsers = searchResponse.getBody();
+                if (existingUsers != null && !existingUsers.isEmpty()) {
+                    // Check if the found user is not the current user
+                    for (Map<String, Object> user : existingUsers) {
+                        String existingUserId = (String) user.get("id");
+                        if (!existingUserId.equals(userId)) {
+                            throw new BadRequestAlertException("Email already exists in Keycloak", "admin", "emailexists");
+                        }
+                    }
+                }
+            }
+
+            // Step 3: Update user profile in Keycloak
+            String updateUserUrl = keycloakBaseUrl + "/admin/realms/jhipster/users/" + userId;
+
+            HttpHeaders updateHeaders = new HttpHeaders();
+            updateHeaders.setContentType(MediaType.APPLICATION_JSON);
+            updateHeaders.setBearerAuth(masterAccessToken);
+
+            HttpEntity<Map<String, Object>> updateRequest = new HttpEntity<>(updates, updateHeaders);
+
+            // PUT request to update user
+            restTemplate.exchange(
+                updateUserUrl,
+                HttpMethod.PUT,
+                updateRequest,
+                Void.class
+            );
+
+            LOG.debug("Successfully updated Keycloak user profile for userId: {}", userId);
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("Error syncing profile to Keycloak, status: {}, error: {}", e.getStatusCode(), e.getMessage());
+            if (e.getStatusCode() == HttpStatus.CONFLICT) {
+                throw new BadRequestAlertException("Email already exists in Keycloak", "admin", "emailexists");
+            }
+            throw e;
+        }
     }
 
     public void requestEmailChange(String newEmail) {
@@ -231,6 +398,125 @@ public class AppUserService {
         user.setActivated(false);
         userRepository.save(user);
         clearUserCaches(user);
+    }
+
+    /**
+     * Change admin password via Keycloak.
+     * Validates the current password by attempting to obtain a token, then uses Keycloak master admin API to reset password.
+     *
+     * @param passwordChangeDTO contains current and new passwords
+     */
+    public void changeAdminPassword(PasswordChangeDTO passwordChangeDTO) {
+        String login = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestAlertException("User not authenticated", "admin", "notauthenticated"));
+
+        LOG.debug("Request to change password for admin: {}", login);
+
+        // Get the current user's ID from JWT token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication instanceof JwtAuthenticationToken)) {
+            throw new BadRequestAlertException("Invalid authentication", "admin", "invalidauth");
+        }
+
+        JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+        Jwt jwt = jwtAuth.getToken();
+        String userId = jwt.getSubject(); // Keycloak user ID
+
+        String keycloakBaseUrl = keycloakIssuerUri.replace("/realms/jhipster", "");
+
+        // Step 1: Validate current password by attempting to obtain a token with it
+        String tokenEndpoint = keycloakBaseUrl + "/realms/jhipster/protocol/openid-connect/token";
+
+        HttpHeaders validateHeaders = new HttpHeaders();
+        validateHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        String validateBody = "grant_type=password" +
+            "&client_id=web_app" +
+            "&client_secret=ASoXbE72eEiIpZmvGBObIpN2dNhiyM26" +
+            "&username=" + login +
+            "&password=" + passwordChangeDTO.getCurrentPassword();
+
+        HttpEntity<String> validateRequest = new HttpEntity<>(validateBody, validateHeaders);
+
+        try {
+            // Validate current password
+            @SuppressWarnings("rawtypes")
+            ResponseEntity<Map> validateResponse = restTemplate.postForEntity(
+                tokenEndpoint,
+                validateRequest,
+                Map.class
+            );
+
+            if (!validateResponse.getStatusCode().is2xxSuccessful()) {
+                throw new BadRequestAlertException("Current password is incorrect", "admin", "invalidcurrentpassword");
+            }
+
+            LOG.debug("Current password validated successfully for admin: {}", login);
+
+            // Step 2: Get Keycloak master admin access token
+            String masterTokenEndpoint = keycloakBaseUrl + "/realms/master/protocol/openid-connect/token";
+
+            HttpHeaders masterHeaders = new HttpHeaders();
+            masterHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            String masterTokenBody = "grant_type=password" +
+                "&client_id=" + applicationProperties.getKeycloak().getAdminClientId() +
+                "&username=" + applicationProperties.getKeycloak().getAdminUsername() +
+                "&password=" + applicationProperties.getKeycloak().getAdminPassword();
+
+            HttpEntity<String> masterTokenRequest = new HttpEntity<>(masterTokenBody, masterHeaders);
+
+            @SuppressWarnings("rawtypes")
+            ResponseEntity<Map> masterTokenResponse = restTemplate.postForEntity(
+                masterTokenEndpoint,
+                masterTokenRequest,
+                Map.class
+            );
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> masterTokenData = masterTokenResponse.getBody();
+            String masterAccessToken = (String) masterTokenData.get("access_token");
+
+            LOG.debug("Obtained Keycloak master admin token");
+
+            // Step 3: Use Admin API to reset password
+            String resetPasswordUrl = keycloakBaseUrl + "/admin/realms/jhipster/users/" + userId + "/reset-password";
+
+            Map<String, Object> passwordResetRequest = new HashMap<>();
+            passwordResetRequest.put("type", "password");
+            passwordResetRequest.put("temporary", false);
+            passwordResetRequest.put("value", passwordChangeDTO.getNewPassword());
+
+            HttpHeaders resetHeaders = new HttpHeaders();
+            resetHeaders.setContentType(MediaType.APPLICATION_JSON);
+            resetHeaders.setBearerAuth(masterAccessToken);
+
+            HttpEntity<Map<String, Object>> resetRequest = new HttpEntity<>(passwordResetRequest, resetHeaders);
+
+            // PUT request to reset password
+            restTemplate.exchange(
+                resetPasswordUrl,
+                HttpMethod.PUT,
+                resetRequest,
+                Void.class
+            );
+
+            LOG.info("Password successfully changed for admin: {}", login);
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("Error changing password for admin: {}, status: {}, error: {}", login, e.getStatusCode(), e.getMessage());
+            if (e.getStatusCode() == HttpStatus.UNAUTHORIZED || e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                // Check if this is from the validation step or the admin API step
+                if (e.getMessage().contains("invalid_grant") || e.getResponseBodyAsString().contains("invalid_grant")) {
+                    throw new BadRequestAlertException("Current password is incorrect", "admin", "invalidcurrentpassword");
+                }
+                throw new BadRequestAlertException("Current password is incorrect", "admin", "invalidcurrentpassword");
+            }
+            throw new BadRequestAlertException("Failed to change password", "admin", "passwordchangefailed");
+        } catch (Exception e) {
+            LOG.error("Unexpected error changing password for admin: {}", login, e);
+            throw new BadRequestAlertException("Failed to change password", "admin", "passwordchangefailed");
+        }
     }
 
     private AppUserDTO mapToDTO(User user) {

@@ -4,6 +4,7 @@ import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.AppUserService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PasswordChangeDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -172,6 +173,20 @@ public class AdminResource {
             LOG.error("Failed to load admin picture: {}, returning placeholder", imageUrl, e);
             return loadPlaceholder();
         }
+    }
+
+    /**
+     * {@code POST  /admin/password} : Change admin password.
+     * Validates the current password and updates to the new password via Keycloak.
+     *
+     * @param passwordChangeDTO the DTO containing current and new passwords.
+     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     */
+    @PostMapping("/password")
+    public ResponseEntity<Void> changeAdminPassword(@Valid @RequestBody PasswordChangeDTO passwordChangeDTO) {
+        LOG.debug("REST request to change admin password");
+        appUserService.changeAdminPassword(passwordChangeDTO);
+        return ResponseEntity.noContent().build();
     }
 
     /**
