@@ -61,7 +61,7 @@ public class TagResource {
      * {@code POST  /tags} : Create a new tag with optional image.
      *
      * @param tagDTO the tag data.
-     * @param image the category image file (required for CATEGORY tags).
+     * @param image the category image file (optional).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new tagDTO, or with status {@code 400 (Bad Request)} if the tag has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
