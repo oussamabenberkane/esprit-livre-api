@@ -158,6 +158,7 @@ public class OrderResource {
      * Admins see all orders.
      *
      * @param pageable the pagination information.
+     * @param search the search term (searches in order ID, customer name, email, phone).
      * @param status the order status filter.
      * @param dateFrom the start date filter.
      * @param dateTo the end date filter.
@@ -169,6 +170,7 @@ public class OrderResource {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
     public ResponseEntity<Page<OrderDTO>> getAllOrders(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
+        @RequestParam(required = false) String search,
         @RequestParam(required = false) OrderStatus status,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateFrom,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateTo,
@@ -185,10 +187,10 @@ public class OrderResource {
 
         if (isAdmin) {
             // Admin sees all orders
-            page = orderService.findAll(pageable, status, dateFrom, dateTo, minAmount, maxAmount);
+            page = orderService.findAll(pageable, search, status, dateFrom, dateTo, minAmount, maxAmount);
         } else {
             // Regular user sees only their orders
-            page = orderService.findAllForCurrentUser(pageable, status, dateFrom, dateTo, minAmount, maxAmount);
+            page = orderService.findAllForCurrentUser(pageable, search, status, dateFrom, dateTo, minAmount, maxAmount);
         }
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);

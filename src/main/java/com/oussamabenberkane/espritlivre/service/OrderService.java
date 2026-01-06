@@ -220,6 +220,7 @@ public class OrderService {
     }
 
     private Specification<Order> buildOrderSpecification(
+        String search,
         OrderStatus status,
         ZonedDateTime dateFrom,
         ZonedDateTime dateTo,
@@ -227,6 +228,10 @@ public class OrderService {
         BigDecimal maxAmount
     ) {
         Specification<Order> spec = Specification.where(OrderSpecifications.activeOnly());
+
+        if (StringUtils.hasText(search)) {
+            spec = spec.and(OrderSpecifications.searchByText(search));
+        }
 
         if (status != null) {
             spec = spec.and(OrderSpecifications.hasStatus(status));
@@ -343,6 +348,7 @@ public class OrderService {
      * Get all the orders with optional filtering.
      *
      * @param pageable the pagination information.
+     * @param search the search term (searches in order ID, customer name, email, phone).
      * @param status the order status filter.
      * @param dateFrom the start date filter.
      * @param dateTo the end date filter.
@@ -353,16 +359,17 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<OrderDTO> findAll(
         Pageable pageable,
+        String search,
         OrderStatus status,
         ZonedDateTime dateFrom,
         ZonedDateTime dateTo,
         BigDecimal minAmount,
         BigDecimal maxAmount
     ) {
-        LOG.debug("Request to get all Orders with filters - status: {}, dateRange: [{}, {}], amountRange: [{}, {}]",
-            status, dateFrom, dateTo, minAmount, maxAmount);
+        LOG.debug("Request to get all Orders with filters - search: {}, status: {}, dateRange: [{}, {}], amountRange: [{}, {}]",
+            search, status, dateFrom, dateTo, minAmount, maxAmount);
 
-        Specification<Order> spec = buildOrderSpecification(status, dateFrom, dateTo, minAmount, maxAmount);
+        Specification<Order> spec = buildOrderSpecification(search, status, dateFrom, dateTo, minAmount, maxAmount);
         return orderRepository.findAll(spec, pageable).map(orderMapper::toDto);
     }
 
@@ -370,6 +377,7 @@ public class OrderService {
      * Get all orders for current user with optional filtering.
      *
      * @param pageable the pagination information.
+     * @param search the search term (searches in order ID, customer name, email, phone).
      * @param status the order status filter.
      * @param dateFrom the start date filter.
      * @param dateTo the end date filter.
@@ -380,15 +388,16 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<OrderDTO> findAllForCurrentUser(
         Pageable pageable,
+        String search,
         OrderStatus status,
         ZonedDateTime dateFrom,
         ZonedDateTime dateTo,
         BigDecimal minAmount,
         BigDecimal maxAmount
     ) {
-        LOG.debug("Request to get orders for current user with filters");
+        LOG.debug("Request to get orders for current user with filters - search: {}", search);
 
-        Specification<Order> spec = buildOrderSpecification(status, dateFrom, dateTo, minAmount, maxAmount);
+        Specification<Order> spec = buildOrderSpecification(search, status, dateFrom, dateTo, minAmount, maxAmount);
         return orderRepository.findByCurrentUser(spec, pageable).map(orderMapper::toDto);
     }
 

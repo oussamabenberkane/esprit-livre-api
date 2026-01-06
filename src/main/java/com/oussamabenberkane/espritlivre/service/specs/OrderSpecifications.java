@@ -4,6 +4,7 @@ import com.oussamabenberkane.espritlivre.domain.Order;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -57,6 +58,45 @@ public class OrderSpecifications {
             }
 
             return builder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    /**
+     * Specification to search orders by text.
+     * Searches in: order ID (numeric), customer name, email, phone number.
+     * Uses case-insensitive partial matching (LIKE with LOWER).
+     *
+     * @param searchTerm the search term
+     * @return the specification
+     */
+    public static Specification<Order> searchByText(String searchTerm) {
+        return (root, query, builder) -> {
+            if (!StringUtils.hasText(searchTerm)) {
+                return builder.conjunction();
+            }
+
+            String trimmedSearch = searchTerm.trim();
+            String searchPattern = "%" + trimmedSearch.toLowerCase() + "%";
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Search in customer name (fullName)
+            predicates.add(builder.like(builder.lower(root.get("fullName")), searchPattern));
+
+            // Search in email
+            predicates.add(builder.like(builder.lower(root.get("email")), searchPattern));
+
+            // Search in phone number
+            predicates.add(builder.like(builder.lower(root.get("phone")), searchPattern));
+
+            // Search by order ID if the search term is numeric
+            try {
+                Long orderId = Long.parseLong(trimmedSearch);
+                predicates.add(builder.equal(root.get("id"), orderId));
+            } catch (NumberFormatException e) {
+                // Not a number, skip ID search
+            }
+
+            return builder.or(predicates.toArray(new Predicate[0]));
         };
     }
 }
