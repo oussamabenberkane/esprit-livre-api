@@ -181,12 +181,9 @@ public class TagService {
                 tag.setColorHex(tagDTO.getColorHex());
             }
         } else {
-            // Create new tag - image is REQUIRED for CATEGORY tags
+            // Create new tag - image is OPTIONAL for CATEGORY tags
             if (tagDTO.getId() != null) {
                 throw new BadRequestAlertException("A new tag cannot already have an ID", "tag", "idexists");
-            }
-            if (tagDTO.getType() == TagType.CATEGORY && (image == null || image.isEmpty())) {
-                throw new BadRequestAlertException("Image is required for category tags", "tag", "imagerequired");
             }
 
             // Set active to true by default
@@ -194,10 +191,10 @@ public class TagService {
                 tagDTO.setActive(true);
             }
 
-            // Assign random color to ETIQUETTE tags
-            if (tagDTO.getType() == TagType.ETIQUETTE) {
+            // Assign random color to ETIQUETTE tags if not provided
+            if (tagDTO.getType() == TagType.ETIQUETTE && (tagDTO.getColorHex() == null || tagDTO.getColorHex().isEmpty())) {
                 tagDTO.setColorHex(getRandomColor());
-            }
+            } 
 
             tag = tagMapper.toEntity(tagDTO);
             tag = tagRepository.save(tag);

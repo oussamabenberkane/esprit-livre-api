@@ -21,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +61,7 @@ public class TagResource {
      * {@code POST  /tags} : Create a new tag with optional image.
      *
      * @param tagDTO the tag data.
-     * @param image the category image file (required for CATEGORY tags).
+     * @param image the category image file (optional).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new tagDTO, or with status {@code 400 (Bad Request)} if the tag has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */

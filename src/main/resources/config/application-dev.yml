@@ -105,3 +105,7 @@ jhipster:
 application:
   admin-email: ${ADMIN_EMAIL:oussamabenberkane.pro@gmail.com}
   admin-panel-url: ${ADMIN_PANEL_URL:http://localhost:8080/admin}
+  keycloak:
+    admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}

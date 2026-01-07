@@ -23,7 +23,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -61,10 +60,10 @@ public class AuthorResource {
     }
 
     /**
-     * {@code POST  /authors} : Create a new author with profile picture.
+     * {@code POST  /authors} : Create a new author with optional profile picture.
      *
      * @param authorDTO the author data.
-     * @param profilePicture the author profile picture file (required).
+     * @param profilePicture the author profile picture file (optional).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new authorDTO, or with status {@code 400 (Bad Request)} if the author has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
@@ -72,7 +71,7 @@ public class AuthorResource {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<AuthorDTO> createAuthor(
         @RequestPart("author") @Valid AuthorDTO authorDTO,
-        @RequestPart("profilePicture") @NotNull MultipartFile profilePicture
+        @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture
     ) throws URISyntaxException {
         LOG.debug("REST request to save Author with profile picture : {}", authorDTO);
 

@@ -123,20 +123,21 @@ public class UserService {
                     idpModifiedDate = Instant.ofEpochSecond((Integer) details.get("updated_at"));
                 }
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
-                    LOG.debug("Updating user '{}' in local database", user.getLogin());
+                    LOG.debug("IdP data is newer, updating user '{}' in local database", user.getLogin());
                     updateUser(user.getFirstName(), user.getLastName(), user.getEmail(), user.getLangKey(), user.getImageUrl());
+                } else {
+                    LOG.debug("Local database is newer or same, keeping existing data for user '{}'", user.getLogin());
                 }
-                // no last updated info, blindly update
             } else {
-                LOG.debug("Updating user '{}' in local database", user.getLogin());
-                updateUser(user.getFirstName(), user.getLastName(), user.getEmail(), user.getLangKey(), user.getImageUrl());
+                // No updated_at from IdP - don't blindly overwrite, only sync if user doesn't exist locally yet
+                LOG.debug("No updated_at from IdP, preserving local data for existing user '{}'", user.getLogin());
             }
         } else {
-            LOG.debug("Saving user '{}' in local database", user.getLogin());
+            LOG.debug("Saving new user '{}' in local database", user.getLogin());
             userRepository.save(user);
             this.clearUserCaches(user);
         }
-        return user;
+        return existingUser.orElse(user);
     }
 
     /**

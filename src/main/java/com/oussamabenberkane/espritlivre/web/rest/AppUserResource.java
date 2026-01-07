@@ -4,24 +4,16 @@ import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.AppUserService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
-import com.oussamabenberkane.espritlivre.service.dto.EmailChangeDTO;
 import com.oussamabenberkane.espritlivre.service.dto.ProfileUpdateResponseDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -40,68 +32,6 @@ public class AppUserResource {
     public AppUserResource(AppUserService appUserService, FileStorageService fileStorageService) {
         this.appUserService = appUserService;
         this.fileStorageService = fileStorageService;
-    }
-
-    /**
-     * {@code GET  /app-users} : Get all non-admin users (admin only).
-     *
-     * @param active Optional filter for active/inactive users (null = all users).
-     * @param pageable Pagination and sorting information.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of users in body.
-     */
-    @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Page<AppUserDTO>> getAllUsers(
-        @RequestParam(required = false) Boolean active,
-        Pageable pageable
-    ) {
-        LOG.debug("REST request to get all non-admin users with active filter: {}", active);
-        Page<AppUserDTO> page = appUserService.getAllNonAdminUsers(active, pageable);
-        return ResponseEntity.ok(page);
-    }
-
-    /**
-     * {@code PATCH  /app-users/{id}/toggle} : Toggle user activation status (admin only).
-     *
-     * @param id the id of the user to toggle.
-     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
-     */
-    @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Void> toggleUserActivation(@PathVariable String id) {
-        LOG.debug("REST request to toggle user activation for ID: {}", id);
-        appUserService.toggleUserActivation(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * {@code GET  /app-users/export} : Export all non-admin users to Excel (admin only).
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the Excel file as a byte array.
-     */
-    @GetMapping("/export")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Resource> exportUsers() {
-        LOG.debug("REST request to export all non-admin users to Excel");
-
-        try {
-            byte[] excelData = appUserService.exportUsersToExcel();
-
-            // Generate filename with current timestamp
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String filename = "users_export_" + timestamp + ".xlsx";
-
-            ByteArrayResource resource = new ByteArrayResource(excelData);
-
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .contentLength(excelData.length)
-                .body(resource);
-        } catch (IOException e) {
-            LOG.error("Failed to export users to Excel", e);
-            throw new BadRequestAlertException("Failed to export users", "appUser", "exportfailed");
-        }
     }
 
     /**
@@ -150,35 +80,6 @@ public class AppUserResource {
         int[] counts = appUserService.updateAppUserProfile(appUserDTO);
         ProfileUpdateResponseDTO response = new ProfileUpdateResponseDTO(counts[0], counts[1]);
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * {@code POST  /app-users/change-email} : Request email change (sends verification email).
-     *
-     * @param emailChangeDTO the new email information.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
-     */
-    @PostMapping("/change-email")
-    //@PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> changeEmail(@Valid @RequestBody EmailChangeDTO emailChangeDTO) {
-        LOG.debug("REST request to change email to: {}", emailChangeDTO.getNewEmail());
-
-        appUserService.requestEmailChange(emailChangeDTO.getNewEmail());
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * {@code GET  /app-users/verify-email} : Verify new email with token.
-     *
-     * @param token the verification token.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
-     */
-    @GetMapping("/verify-email")
-    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
-        LOG.debug("REST request to verify email with token");
-
-        appUserService.verifyEmailChange(token);
-        return ResponseEntity.ok().build();
     }
 
     /**

@@ -111,12 +111,9 @@ public class AuthorService {
                 .orElseThrow(() -> new BadRequestAlertException("Entity not found", "author", "idnotfound"));
             author.setName(authorDTO.getName());
         } else {
-            // Create new author - picture is REQUIRED
+            // Create new author - picture is OPTIONAL
             if (authorDTO.getId() != null) {
                 throw new BadRequestAlertException("A new author cannot already have an ID", "author", "idexists");
-            }
-            if (profilePicture == null || profilePicture.isEmpty()) {
-                throw new BadRequestAlertException("Profile picture is required for new authors", "author", "picturerequired");
             }
             author = authorMapper.toEntity(authorDTO);
             author = authorRepository.save(author);
