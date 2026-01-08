@@ -66,10 +66,10 @@ public class BookPackResource {
     }
 
     /**
-     * {@code POST  /book-packs} : Create a new bookPack with cover image.
+     * {@code POST  /book-packs} : Create a new bookPack with optional cover image.
      *
      * @param bookPackDTO the book pack data.
-     * @param coverImage the cover image file (required).
+     * @param coverImage the cover image file (optional).
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new bookPackDTO, or with status {@code 400 (Bad Request)} if the bookPack has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
@@ -77,7 +77,7 @@ public class BookPackResource {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<BookPackDTO> createBookPack(
         @RequestPart("bookPack") @Valid BookPackDTO bookPackDTO,
-        @RequestPart("coverImage") @NotNull MultipartFile coverImage
+        @RequestPart(value = "coverImage", required = false) MultipartFile coverImage
     ) throws URISyntaxException {
         LOG.debug("REST request to save BookPack with cover image : {}", bookPackDTO);
 

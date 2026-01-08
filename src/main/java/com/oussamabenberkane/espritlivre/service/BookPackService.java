@@ -158,7 +158,7 @@ public class BookPackService {
      * Save or update book pack with cover image.
      *
      * @param bookPackDTO the book pack data.
-     * @param coverImage the cover image file (required for create, optional for update).
+     * @param coverImage the cover image file (optional for both create and update).
      * @param isUpdate whether this is an update operation.
      * @return the persisted entity.
      */
@@ -198,12 +198,9 @@ public class BookPackService {
 
             bookPack = bookPackMapper.toEntity(bookPackDTO);
         } else {
-            // Create new book pack - cover is REQUIRED
+            // Create new book pack
             if (bookPackDTO.getId() != null) {
                 throw new BadRequestAlertException("A new book pack cannot already have an ID", "bookPack", "idexists");
-            }
-            if (coverImage == null || coverImage.isEmpty()) {
-                throw new BadRequestAlertException("Cover image is required for new book packs", "bookPack", "coverrequired");
             }
 
             // Validate title is unique
