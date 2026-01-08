@@ -303,6 +303,12 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
         </dependency>
+        <!-- WebP ImageIO support for reading WebP images -->
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>3.13.0</version>
+        </dependency>
     </dependencies>
 
     <build>

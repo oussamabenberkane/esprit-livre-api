@@ -10,35 +10,35 @@ This is "Esprit Livre", a book e-commerce application built with JHipster 8.11.0
 
 ### Development Workflow
 - **Start services (PostgreSQL + Keycloak)**: `docker compose up -d`
-- **Start application**: `./mvnw` (runs on port 8080)
-- **Debug mode**: `./mvnw -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000"`
-- **Run unit tests**: `./mvnw test`
-- **Run integration tests**: `./mvnw verify`
-- **Build for production**: `./mvnw -Pprod clean verify`
-- **Code formatting**: `./mvnw checkstyle:check`
-- **Generate Docker image**: `npm run java:docker`
+- **Start application**: `mvn` or `mvn spring-boot:run` (runs on port 8080)
+- **Debug mode**: `mvn -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000"`
+- **Run unit tests**: `mvn test`
+- **Run integration tests**: `mvn verify`
+- **Build for production**: `mvn -Pprod clean verify`
+- **Code formatting**: `mvn checkstyle:check`
+- **Generate Docker image**: `npm run java:docker` or `mvn -ntp verify -DskipTests -Pprod jib:dockerBuild`
 
 ### Testing Commands
-- **Run single test class**: `./mvnw test -Dtest=ClassName`
-- **Run single test method**: `./mvnw test -Dtest=ClassName#methodName`
+- **Run single test class**: `mvn test -Dtest=ClassName`
+- **Run single test method**: `mvn test -Dtest=ClassName#methodName`
 - **Run tests with coverage**: `npm run ci:backend:test`
-- **Skip tests**: `./mvnw -DskipTests`
+- **Skip tests**: `mvn -DskipTests`
 
 ### Database Management
 - **Start services**: `docker compose up -d`
 - **Stop services**: `docker compose down`
 - **View logs**: `docker compose logs -f postgres` or `docker compose logs -f keycloak`
-- **Generate Liquibase diff**: Configure `liquibase-plugin.*` properties, then run `./mvnw liquibase:diff`
+- **Generate Liquibase diff**: Configure `liquibase-plugin.*` properties in pom.xml, then run `mvn liquibase:diff`
 
 ## Architecture
 
 ### Core Technologies
 - **Backend**: Spring Boot 3.4.5 with Java 17
-- **Database**: PostgreSQL (dev: espritlivre-dev-db, prod: espritLivre)
+- **Database**: PostgreSQL (dev: el-dev-db, prod: espritLivre)
 - **Authentication**: OAuth2/OIDC with Keycloak 26.2.3
 - **Caching**: Hazelcast (port 5701 for clustering)
 - **API Documentation**: SpringDoc OpenAPI at `/v3/api-docs`
-- **Build**: Maven wrapper (`./mvnw`)
+- **Build**: Maven (use `mvn` directly)
 - **Server**: Undertow (not Tomcat)
 - **WebSocket**: Spring WebSocket support
 
@@ -78,7 +78,7 @@ com.oussamabenberkane.espritlivre/
 
 **Development (docker-compose.yml)**:
 - Host: localhost:5432
-- Database: espritlivre-dev-db
+- Database: el-dev-db
 - User: postgres
 - Password: postgres
 
@@ -108,7 +108,7 @@ com.oussamabenberkane.espritlivre/
 
 ### Spring Profiles
 
-- **dev** (default): Development mode with devtools, auto-reload
+- **dev** (default): Development mode with devtools, auto-reload, CORS enabled
 - **prod**: Production mode with optimizations, no devtools
 - **test**: Test profile for unit tests
 - **testdev**: Test profile variant for dev environment
@@ -119,6 +119,17 @@ com.oussamabenberkane.espritlivre/
 
 Activate profiles via Maven: `-Pprod` or in IDE/environment: `spring.profiles.active=dev`
 
+### Key Dependencies
+
+- **JHipster Framework**: 8.11.0
+- **MapStruct**: 1.6.3 (DTO mapping)
+- **Liquibase**: Database migrations
+- **Hazelcast**: 5.5.0 (distributed caching)
+- **SpringDoc OpenAPI**: 2.8.8 (API documentation)
+- **Testcontainers**: PostgreSQL integration testing
+- **Apache POI**: 5.2.5 (Excel export functionality)
+- **ArchUnit**: 1.4.0 (architecture testing)
+
 ## Development Workflows
 
 ### Adding New Entities
@@ -127,7 +138,7 @@ Activate profiles via Maven: `-Pprod` or in IDE/environment: `spring.profiles.ac
 2. Run JHipster entity sub-generator: `jhipster entity <EntityName>`
 3. Review generated Liquibase changelog in `src/main/resources/config/liquibase/changelog/`
 4. Implement business logic in service layer if needed
-5. Test with `./mvnw verify`
+5. Test with `mvn verify`
 
 ### API Development Patterns
 
@@ -136,12 +147,27 @@ Activate profiles via Maven: `-Pprod` or in IDE/environment: `spring.profiles.ac
 - Return `ResponseEntity<DTO>` for single resources
 - Use pagination: `Pageable` parameter, return `Page<DTO>`
 - Validation via JSR-303 annotations on DTOs
+- Notable endpoints:
+  - `AccountResource`: User account management and profile
+  - `AdminResource`: Admin-specific operations and Keycloak integration
+  - `DashboardResource`: Dashboard statistics and metrics
+  - `ContactResource`: Contact form handling
+  - `AuthInfoResource`: OAuth2 authentication information
+  - `LogoutResource`: Custom logout handling
 
 **Service Layer** ([service/](src/main/java/com/oussamabenberkane/espritlivre/service/)):
 - Business logic in service classes
 - DTOs for API contracts (in [service/dto/](src/main/java/com/oussamabenberkane/espritlivre/service/dto/))
 - MapStruct mappers handle entity-DTO conversion (in [service/mapper/](src/main/java/com/oussamabenberkane/espritlivre/service/mapper/))
 - JPA Specifications for complex queries (in [service/specs/](src/main/java/com/oussamabenberkane/espritlivre/service/specs/))
+- Key services:
+  - `FileStorageService`: Handles media file uploads and storage
+  - `OrderService`: Order management and Excel export functionality
+  - `DashboardService`: Admin dashboard statistics
+  - `MailService`: Email notifications using Thymeleaf templates
+  - `AppUserService`: Extended user management beyond OAuth2
+  - `CleanupService`: Scheduled cleanup of unused resources
+  - `UniqueIdGeneratorService`: Generates unique order IDs
 
 **Repository Layer** ([repository/](src/main/java/com/oussamabenberkane/espritlivre/repository/)):
 - Extend `JpaRepository` or `JpaSpecificationExecutor` for dynamic queries
@@ -154,13 +180,13 @@ Activate profiles via Maven: `-Pprod` or in IDE/environment: `spring.profiles.ac
 - Use `@SpringBootTest` for integration-style unit tests
 - Mock dependencies with `@MockBean`
 - Test services and repositories independently
-- Run with: `./mvnw test`
+- Run with: `mvn test`
 
 **Integration Tests** (suffix: `IT.java` or `IntTest.java`):
 - Full Spring context with `@SpringBootTest`
 - Use Testcontainers for PostgreSQL
 - Test full request-response cycles
-- Run with: `./mvnw verify`
+- Run with: `mvn verify`
 
 **Test Profiles**: Tests run with `test,testdev` or `test,testprod` profiles
 
@@ -171,8 +197,10 @@ Media files stored in [src/main/resources/media/](src/main/resources/media/):
 - `books/`: Book cover images
 - `book-packs/`: Book pack cover images
 - `categories/`: Category images
+- `users/`: User profile pictures
+- `default.png`: Default fallback image
 
-These are served as static resources in production builds.
+These are served as static resources in production builds. Managed by `FileStorageService`.
 
 ### Internationalization (i18n)
 
@@ -182,11 +210,15 @@ These are served as static resources in production builds.
 
 ## Important Notes
 
-- **Always use `./mvnw`** instead of `mvn` (ensures correct Maven version)
+- **Use `mvn` directly** for all Maven commands (Maven wrapper not used in this project)
 - **Docker Compose**: Use root `docker-compose.yml` (not files in `src/main/docker/`)
+  - Note: Spring Docker Compose integration is disabled by default (`spring.docker.compose.enabled: false`)
+  - Services must be started manually with `docker compose up -d` before running the application
 - **OAuth2 varies by environment**: Check [application.yml](src/main/resources/config/application.yml) and profile-specific configs
 - **Liquibase changelogs are immutable**: Never modify existing changelogs, always create new ones
 - **Ports**: 8080 (app), 5432 (postgres), 9080 (keycloak), 5701 (hazelcast)
 - **JHipster version**: 8.11.0 (check before using generators)
 - **Node.js required**: For npm scripts (version >= 22.15.0)
 - **Test containers**: Integration tests use Testcontainers, requires Docker
+- **Algeria-specific features**: Order entity includes wilaya and city fields for Algerian addresses
+- **Shipping providers**: Yalidine and ZR Express are configured as shipping options
