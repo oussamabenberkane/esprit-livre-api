@@ -155,3 +155,8 @@ coverage/
 mvnw
 
 frontend-auth-prompt.md
+
+######################
+# Media Files
+######################
+src/main/resources/media/
