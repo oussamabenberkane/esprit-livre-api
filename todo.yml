@@ -9,3 +9,7 @@ admin profile actions: done
 
 
 - implement search filtering for users 
+- updating a pack deletes it even tho i get a 200 OK responsse 
+- In books page add "dispo/non" filter / used endpoint on the front : 
+   api/books?page=0&size=20&sort=createdAt,desc&status=out_of_stock 
+   api/books?page=0&size=20&sort=createdAt,desc&status=available
