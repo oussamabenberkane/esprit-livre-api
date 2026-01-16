@@ -19,6 +19,7 @@ services:
     container_name: espritlivre-keycloak
     command: 'start-dev --import-realm'
     volumes:
+      - espritlivre_keycloak_data:/opt/keycloak/data
       - ./src/main/docker/realm-config:/opt/keycloak/data/import
       - ./src/main/docker/realm-config/keycloak-health-check.sh:/opt/keycloak/health-check.sh
     environment:
@@ -45,6 +46,8 @@ services:
 volumes:
   espritlivre_postgres_data:
     name: espritlivre_postgres_data
+  espritlivre_keycloak_data:
+    name: espritlivre_keycloak_data
 
 networks:
   espritlivre-network:
