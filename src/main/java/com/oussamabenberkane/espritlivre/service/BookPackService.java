@@ -52,109 +52,6 @@ public class BookPackService {
     }
 
     /**
-     * Save a bookPack.
-     *
-     * @param bookPackDTO the entity to save.
-     * @return the persisted entity.
-     */
-    public BookPackDTO save(BookPackDTO bookPackDTO) {
-        LOG.debug("Request to save BookPack : {}", bookPackDTO);
-
-        // Validate minimum 2 books
-        if (bookPackDTO.getBooks() == null || bookPackDTO.getBooks().size() < 2) {
-            throw new BadRequestAlertException("Book pack must contain at least 2 books", "bookPack", "minbooks");
-        }
-
-        // Validate price is positive
-        if (bookPackDTO.getPrice() == null || bookPackDTO.getPrice().signum() < 0) {
-            throw new BadRequestAlertException("Price must be a positive number", "bookPack", "invalidprice");
-        }
-
-        // Validate title is unique (for new packs)
-        if (bookPackDTO.getId() == null) {
-            bookPackRepository
-                .findAll()
-                .stream()
-                .filter(pack -> pack.getTitle().equalsIgnoreCase(bookPackDTO.getTitle()))
-                .findFirst()
-                .ifPresent(pack -> {
-                    throw new BadRequestAlertException("Book pack with this title already exists", "bookPack", "titleexists");
-                });
-        }
-
-        BookPack bookPack = bookPackMapper.toEntity(bookPackDTO);
-
-        // Fetch and set the books
-        Set<Book> books = bookPackDTO
-            .getBooks()
-            .stream()
-            .map(bookDTO ->
-                bookRepository
-                    .findById(bookDTO.getId())
-                    .orElseThrow(() -> new BadRequestAlertException("Book not found: " + bookDTO.getId(), "bookPack", "booknotfound"))
-            )
-            .collect(Collectors.toSet());
-
-        bookPack.setBooks(books);
-
-        bookPack = bookPackRepository.save(bookPack);
-        return bookPackMapper.toDto(bookPack);
-    }
-
-    /**
-     * Update a bookPack.
-     *
-     * @param bookPackDTO the entity to save.
-     * @return the persisted entity.
-     */
-    public BookPackDTO update(BookPackDTO bookPackDTO) {
-        LOG.debug("Request to update BookPack : {}", bookPackDTO);
-
-        // Validate book pack exists
-        if (!bookPackRepository.existsById(bookPackDTO.getId())) {
-            throw new BadRequestAlertException("Entity not found", "bookPack", "idnotfound");
-        }
-
-        // Validate minimum 2 books
-        if (bookPackDTO.getBooks() == null || bookPackDTO.getBooks().size() < 2) {
-            throw new BadRequestAlertException("Book pack must contain at least 2 books", "bookPack", "minbooks");
-        }
-
-        // Validate price is positive
-        if (bookPackDTO.getPrice() == null || bookPackDTO.getPrice().signum() < 0) {
-            throw new BadRequestAlertException("Price must be a positive number", "bookPack", "invalidprice");
-        }
-
-        // Validate title is unique (excluding current pack)
-        bookPackRepository
-            .findAll()
-            .stream()
-            .filter(pack -> !pack.getId().equals(bookPackDTO.getId()) && pack.getTitle().equalsIgnoreCase(bookPackDTO.getTitle()))
-            .findFirst()
-            .ifPresent(pack -> {
-                throw new BadRequestAlertException("Book pack with this title already exists", "bookPack", "titleexists");
-            });
-
-        BookPack bookPack = bookPackMapper.toEntity(bookPackDTO);
-
-        // Fetch and set the books
-        Set<Book> books = bookPackDTO
-            .getBooks()
-            .stream()
-            .map(bookDTO ->
-                bookRepository
-                    .findById(bookDTO.getId())
-                    .orElseThrow(() -> new BadRequestAlertException("Book not found: " + bookDTO.getId(), "bookPack", "booknotfound"))
-            )
-            .collect(Collectors.toSet());
-
-        bookPack.setBooks(books);
-
-        bookPack = bookPackRepository.save(bookPack);
-        return bookPackMapper.toDto(bookPack);
-    }
-
-    /**
      * Save or update book pack with cover image.
      *
      * @param bookPackDTO the book pack data.
@@ -182,9 +79,10 @@ public class BookPackService {
             if (bookPackDTO.getId() == null) {
                 throw new BadRequestAlertException("Invalid id", "bookPack", "idnull");
             }
-            if (!bookPackRepository.existsById(bookPackDTO.getId())) {
-                throw new BadRequestAlertException("Entity not found", "bookPack", "idnotfound");
-            }
+
+            // Fetch existing entity to preserve non-updatable fields
+            bookPack = bookPackRepository.findById(bookPackDTO.getId())
+                .orElseThrow(() -> new BadRequestAlertException("Entity not found", "bookPack", "idnotfound"));
 
             // Validate title is unique (excluding current pack)
             bookPackRepository
@@ -196,7 +94,10 @@ public class BookPackService {
                     throw new BadRequestAlertException("Book pack with this title already exists", "bookPack", "titleexists");
                 });
 
-            bookPack = bookPackMapper.toEntity(bookPackDTO);
+            // Only update allowed fields from DTO, preserving active, deletedAt, deletedBy, coverUrl
+            bookPack.setTitle(bookPackDTO.getTitle());
+            bookPack.setDescription(bookPackDTO.getDescription());
+            bookPack.setPrice(bookPackDTO.getPrice());
         } else {
             // Create new book pack
             if (bookPackDTO.getId() != null) {
