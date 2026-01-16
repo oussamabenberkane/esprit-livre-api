@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.oussamabenberkane.espritlivre.domain.enumeration.BookStatus;
 import com.oussamabenberkane.espritlivre.service.specs.BookSpecifications;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -241,12 +242,19 @@ public class BookService {
         BigDecimal maxPrice,
         Long categoryId,
         Long mainDisplayId,
-        List<String> language
+        List<String> language,
+        String status
     ) {
-        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}",
-            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language);
+        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}, status: {}",
+            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status);
 
         Specification<Book> spec = Specification.where(BookSpecifications.activeOnly());
+
+        // Apply status filter if provided (case-insensitive)
+        BookStatus bookStatus = BookStatus.fromString(status);
+        if (bookStatus != null) {
+            spec = spec.and(BookSpecifications.hasStatus(bookStatus));
+        }
 
         // Apply search filter if provided
         if (StringUtils.hasText(search)) {

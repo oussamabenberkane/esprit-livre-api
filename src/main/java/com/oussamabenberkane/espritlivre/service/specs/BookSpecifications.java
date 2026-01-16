@@ -3,6 +3,7 @@ package com.oussamabenberkane.espritlivre.service.specs;
 import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
 import com.oussamabenberkane.espritlivre.domain.Tag;
+import com.oussamabenberkane.espritlivre.domain.enumeration.BookStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import jakarta.persistence.criteria.Join;
@@ -130,6 +131,29 @@ public class BookSpecifications {
             }
 
             return root.get("language").in(languageEnums);
+        };
+    }
+
+    /**
+     * Specification to filter books by stock status.
+     * AVAILABLE: stockQuantity >= 1
+     * OUT_OF_STOCK: stockQuantity is null or stockQuantity = 0
+     */
+    public static Specification<Book> hasStatus(BookStatus status) {
+        return (root, query, builder) -> {
+            if (status == null) {
+                return builder.conjunction();
+            }
+
+            if (status == BookStatus.AVAILABLE) {
+                return builder.greaterThanOrEqualTo(root.get("stockQuantity"), 1);
+            } else {
+                // OUT_OF_STOCK: stockQuantity is null or 0
+                return builder.or(
+                    builder.isNull(root.get("stockQuantity")),
+                    builder.equal(root.get("stockQuantity"), 0)
+                );
+            }
         };
     }
 }
