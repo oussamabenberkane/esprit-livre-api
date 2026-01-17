@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Configuration properties for shipping providers (Yalidine, ZR Express).
  */
-@ConfigurationProperties(prefix = "application.shipping")
+@ConfigurationProperties(prefix = "shipping")
 public class ShippingProperties {
 
     private String originWilaya = "Bejaia";

@@ -45,6 +45,20 @@ public class YalidineParcelRequest {
     @JsonProperty("has_exchange")
     private Boolean hasExchange;
 
+    @JsonProperty("do_insurance")
+    private Boolean doInsurance;
+
+    @JsonProperty("declared_value")
+    private Integer declaredValue;
+
+    private Integer length;
+
+    private Integer width;
+
+    private Integer height;
+
+    private Integer weight;
+
     // Getters and setters
 
     public String getOrderId() {
@@ -159,6 +173,54 @@ public class YalidineParcelRequest {
         this.hasExchange = hasExchange;
     }
 
+    public Boolean getDoInsurance() {
+        return doInsurance;
+    }
+
+    public void setDoInsurance(Boolean doInsurance) {
+        this.doInsurance = doInsurance;
+    }
+
+    public Integer getDeclaredValue() {
+        return declaredValue;
+    }
+
+    public void setDeclaredValue(Integer declaredValue) {
+        this.declaredValue = declaredValue;
+    }
+
+    public Integer getLength() {
+        return length;
+    }
+
+    public void setLength(Integer length) {
+        this.length = length;
+    }
+
+    public Integer getWidth() {
+        return width;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public Integer getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Integer weight) {
+        this.weight = weight;
+    }
+
     // Builder pattern for convenience
     public static Builder builder() {
         return new Builder();
@@ -234,6 +296,36 @@ public class YalidineParcelRequest {
 
         public Builder hasExchange(Boolean hasExchange) {
             request.setHasExchange(hasExchange);
+            return this;
+        }
+
+        public Builder doInsurance(Boolean doInsurance) {
+            request.setDoInsurance(doInsurance);
+            return this;
+        }
+
+        public Builder declaredValue(Integer declaredValue) {
+            request.setDeclaredValue(declaredValue);
+            return this;
+        }
+
+        public Builder length(Integer length) {
+            request.setLength(length);
+            return this;
+        }
+
+        public Builder width(Integer width) {
+            request.setWidth(width);
+            return this;
+        }
+
+        public Builder height(Integer height) {
+            request.setHeight(height);
+            return this;
+        }
+
+        public Builder weight(Integer weight) {
+            request.setWeight(weight);
             return this;
         }
 

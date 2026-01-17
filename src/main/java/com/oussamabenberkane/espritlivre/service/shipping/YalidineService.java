@@ -6,11 +6,15 @@ import com.oussamabenberkane.espritlivre.domain.OrderItem;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.RelayPointDTO;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineCentersResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelRequest;
-import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -32,10 +36,12 @@ public class YalidineService implements ShippingProviderService {
 
     private final ShippingProperties shippingProperties;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     public YalidineService(ShippingProperties shippingProperties) {
         this.shippingProperties = shippingProperties;
         this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -52,25 +58,45 @@ public class YalidineService implements ShippingProviderService {
 
         try {
             YalidineParcelRequest request = buildParcelRequest(order);
-            LOG.debug("Creating Yalidine parcel for order {}: {}", order.getUniqueId(), request);
+            LOG.debug("Creating Yalidine parcel for order {}", order.getUniqueId());
 
             HttpHeaders headers = createHeaders();
             HttpEntity<List<YalidineParcelRequest>> entity = new HttpEntity<>(List.of(request), headers);
 
             String url = shippingProperties.getYalidine().getBaseUrl() + "/parcels/";
 
-            ResponseEntity<YalidineParcelResponse[]> response = restTemplate.exchange(
+            // Response is an object with order_id as key: { "ORDER_ID": { success, tracking, label, ... } }
+            ResponseEntity<String> response = restTemplate.exchange(
                 url,
                 HttpMethod.POST,
                 entity,
-                YalidineParcelResponse[].class
+                String.class
             );
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().length > 0) {
-                YalidineParcelResponse parcelResponse = response.getBody()[0];
-                LOG.info("Yalidine parcel created successfully for order {}: tracking={}",
-                    order.getUniqueId(), parcelResponse.tracking());
-                return ShippingResult.success(parcelResponse.tracking(), parcelResponse.label());
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode parcelNode = root.get(order.getUniqueId());
+
+                if (parcelNode != null) {
+                    boolean success = parcelNode.has("success") && parcelNode.get("success").asBoolean();
+                    String tracking = parcelNode.has("tracking") ? parcelNode.get("tracking").asText(null) : null;
+                    String label = parcelNode.has("label") ? parcelNode.get("label").asText(null) : null;
+                    String message = parcelNode.has("message") ? parcelNode.get("message").asText("") : "";
+
+                    if (success && tracking != null) {
+                        LOG.info("Yalidine parcel created successfully for order {}: tracking={}",
+                            order.getUniqueId(), tracking);
+                        return ShippingResult.success(tracking, label);
+                    } else {
+                        LOG.error("Yalidine parcel creation failed for order {}: {}",
+                            order.getUniqueId(), message);
+                        return ShippingResult.failure("Yalidine error: " + message);
+                    }
+                } else {
+                    LOG.error("Yalidine API response missing order_id key for order {}: {}",
+                        order.getUniqueId(), response.getBody());
+                    return ShippingResult.failure("Yalidine API response missing order data");
+                }
             } else {
                 LOG.error("Yalidine API returned unexpected response for order {}: status={}",
                     order.getUniqueId(), response.getStatusCode());
@@ -147,13 +173,14 @@ public class YalidineService implements ShippingProviderService {
 
     private YalidineParcelRequest buildParcelRequest(Order order) {
         String[] nameParts = splitFullName(order.getFullName());
+        int priceInt = order.getTotalAmount() != null ? order.getTotalAmount().intValue() : 0;
 
         return YalidineParcelRequest.builder()
             .orderId(order.getUniqueId())
             .firstname(nameParts[0])
             .familyname(nameParts[1])
             .contactPhone(formatPhoneForYalidine(order.getPhone()))
-            .address(order.getStreetAddress())
+            .address(order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
             .fromWilayaName(shippingProperties.getOriginWilaya())
             .toWilayaName(order.getWilaya())
             .toCommuneName(order.getCity())
@@ -163,6 +190,13 @@ public class YalidineService implements ShippingProviderService {
             .isStopdesk(order.getIsStopdesk() != null ? order.getIsStopdesk() : false)
             .stopdeskId(order.getStopdeskId())
             .hasExchange(false)
+            // Required fields with defaults for books
+            .doInsurance(false)
+            .declaredValue(priceInt)
+            .length(20)  // Default dimensions for book packages
+            .width(15)
+            .height(5)
+            .weight(1)
             .build();
     }
 
@@ -233,5 +267,161 @@ public class YalidineService implements ShippingProviderService {
     private boolean isFreeShipping(Order order) {
         return order.getShippingCost() == null ||
                order.getShippingCost().compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    /**
+     * Get all centers (relay points) from Yalidine.
+     *
+     * @return List of relay points
+     */
+    public List<RelayPointDTO> getCenters() {
+        return getCenters(null);
+    }
+
+    /**
+     * Get centers (relay points) from Yalidine, optionally filtered by wilaya.
+     *
+     * @param wilayaId Optional wilaya ID to filter by
+     * @return List of relay points
+     */
+    public List<RelayPointDTO> getCenters(Integer wilayaId) {
+        if (!shippingProperties.getYalidine().isEnabled()) {
+            LOG.warn("Yalidine integration is disabled");
+            return Collections.emptyList();
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getYalidine().getBaseUrl() + "/centers/";
+            if (wilayaId != null) {
+                url += "?wilaya_id=" + wilayaId;
+            }
+
+            LOG.debug("Fetching Yalidine centers from: {}", url);
+
+            ResponseEntity<YalidineCentersResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                YalidineCentersResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                YalidineCentersResponse centersResponse = response.getBody();
+                if (centersResponse.getData() != null) {
+                    LOG.info("Retrieved {} centers from Yalidine", centersResponse.getData().size());
+                    return centersResponse.getData().stream()
+                        .map(YalidineCentersResponse.YalidineCenter::toRelayPointDTO)
+                        .collect(Collectors.toList());
+                }
+            }
+
+            LOG.warn("Empty or unsuccessful response from Yalidine centers API");
+            return Collections.emptyList();
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("Yalidine API client error fetching centers: {} - {}",
+                e.getStatusCode(), e.getResponseBodyAsString());
+            return Collections.emptyList();
+        } catch (HttpServerErrorException e) {
+            LOG.error("Yalidine API server error fetching centers: {} - {}",
+                e.getStatusCode(), e.getResponseBodyAsString());
+            return Collections.emptyList();
+        } catch (Exception e) {
+            LOG.error("Unexpected error fetching Yalidine centers", e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get a specific center by ID.
+     *
+     * @param centerId The center ID
+     * @return The relay point, or null if not found
+     */
+    public RelayPointDTO getCenterById(Integer centerId) {
+        if (!shippingProperties.getYalidine().isEnabled()) {
+            LOG.warn("Yalidine integration is disabled");
+            return null;
+        }
+
+        if (centerId == null) {
+            return null;
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getYalidine().getBaseUrl() + "/centers/" + centerId;
+
+            LOG.debug("Fetching Yalidine center by ID: {}", centerId);
+
+            ResponseEntity<YalidineCentersResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                YalidineCentersResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                YalidineCentersResponse centersResponse = response.getBody();
+                if (centersResponse.getData() != null && !centersResponse.getData().isEmpty()) {
+                    return centersResponse.getData().get(0).toRelayPointDTO();
+                }
+            }
+
+            LOG.warn("Center not found with ID: {}", centerId);
+            return null;
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("Yalidine API client error fetching center {}: {} - {}",
+                centerId, e.getStatusCode(), e.getResponseBodyAsString());
+            return null;
+        } catch (HttpServerErrorException e) {
+            LOG.error("Yalidine API server error fetching center {}: {} - {}",
+                centerId, e.getStatusCode(), e.getResponseBodyAsString());
+            return null;
+        } catch (Exception e) {
+            LOG.error("Unexpected error fetching Yalidine center {}", centerId, e);
+            return null;
+        }
+    }
+
+    /**
+     * Search centers by query string.
+     *
+     * @param query Search query (searches in name)
+     * @param wilayaId Optional wilaya ID to filter by
+     * @return List of matching relay points
+     */
+    public List<RelayPointDTO> searchCenters(String query, Integer wilayaId) {
+        // Get centers (optionally filtered by wilaya)
+        List<RelayPointDTO> centers = getCenters(wilayaId);
+
+        // If no query, return all
+        if (query == null || query.isBlank()) {
+            return centers;
+        }
+
+        // Filter by query (search in name, address, commune name)
+        String lowerQuery = query.toLowerCase();
+        return centers.stream()
+            .filter(c -> {
+                boolean matches = false;
+                if (c.getName() != null) {
+                    matches = c.getName().toLowerCase().contains(lowerQuery);
+                }
+                if (!matches && c.getAddress() != null) {
+                    matches = c.getAddress().toLowerCase().contains(lowerQuery);
+                }
+                if (!matches && c.getCommuneName() != null) {
+                    matches = c.getCommuneName().toLowerCase().contains(lowerQuery);
+                }
+                return matches;
+            })
+            .collect(Collectors.toList());
     }
 }

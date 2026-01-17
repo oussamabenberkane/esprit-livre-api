@@ -167,6 +167,10 @@ public class OrderService {
         order.setShippingCost(orderDTO.getShippingCost());
         order.setTotalAmount(orderDTO.getTotalAmount());
 
+        // Relay point (stopdesk) info
+        order.setIsStopdesk(orderDTO.getIsStopdesk());
+        order.setStopdeskId(orderDTO.getStopdeskId());
+
         // Process order items - supports both books and book packs
         Set<OrderItem> orderItems = new HashSet<>();
         if (orderDTO.getOrderItems() != null && !orderDTO.getOrderItems().isEmpty()) {

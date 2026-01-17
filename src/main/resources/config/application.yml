@@ -241,13 +241,14 @@ jhipster:
 application:
   admin-email: oussamabenberkane.pro@gmail.com
   dev-website: https://oussamabenberkane.com
-  shipping:
-    origin-wilaya: ${SHIPPING_ORIGIN_WILAYA:Bejaia}
-    yalidine:
-      enabled: ${YALIDINE_ENABLED:false}
-      api-id: ${YALIDINE_API_ID:}
-      api-token: ${YALIDINE_API_TOKEN:}
-      webhook-secret: ${YALIDINE_WEBHOOK_SECRET:}
-      base-url: ${YALIDINE_BASE_URL:https://api.yalidine.app/v1}
-    zr-express:
-      enabled: false
+
+shipping:
+  origin-wilaya: ${SHIPPING_ORIGIN_WILAYA:Bejaia}
+  yalidine:
+    enabled: ${YALIDINE_ENABLED:false}
+    api-id: ${YALIDINE_API_ID:}
+    api-token: ${YALIDINE_API_TOKEN:}
+    webhook-secret: ${YALIDINE_WEBHOOK_SECRET:}
+    base-url: ${YALIDINE_BASE_URL:https://api.yalidine.app/v1}
+  zr-express:
+    enabled: false
