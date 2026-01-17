@@ -1,10 +1,4 @@
-check soft/hard delete implementation for books (for soft delete implementation on frontend side > filter the fetched books by active state = true): done
-Get/export/toggle users: done
-create/update/export Orders: done
-admin profile actions: done
-updating a pack deletes it even tho i get a 200 OK response: done
-In books page add "dispo/non" filter / used endpoint on the front: done
-  api/books?page=0&size=20&sort=createdAt,desc&status=out_of_stock
-  api/books?page=0&size=20&sort=createdAt,desc&status=available
-pull app-admin and check createOrderError.md: Done
+Yalidine: loading
+ZR: pending
+UniqueId when soft delete order: pending
 

@@ -16,7 +16,10 @@ import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
 import com.oussamabenberkane.espritlivre.service.dto.OrderItemDTO;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
 import com.oussamabenberkane.espritlivre.service.mapper.OrderMapper;
+import com.oussamabenberkane.espritlivre.service.shipping.ShippingProviderFactory;
+import com.oussamabenberkane.espritlivre.service.shipping.ShippingProviderService;
 import com.oussamabenberkane.espritlivre.service.specs.OrderSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import java.io.ByteArrayOutputStream;
@@ -70,6 +73,8 @@ public class OrderService {
 
     private final ApplicationProperties applicationProperties;
 
+    private final ShippingProviderFactory shippingProviderFactory;
+
     public OrderService(
         OrderRepository orderRepository,
         OrderMapper orderMapper,
@@ -78,7 +83,8 @@ public class OrderService {
         BookRepository bookRepository,
         BookPackRepository bookPackRepository,
         MailService mailService,
-        ApplicationProperties applicationProperties
+        ApplicationProperties applicationProperties,
+        ShippingProviderFactory shippingProviderFactory
     ) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
@@ -88,6 +94,7 @@ public class OrderService {
         this.bookPackRepository = bookPackRepository;
         this.mailService = mailService;
         this.applicationProperties = applicationProperties;
+        this.shippingProviderFactory = shippingProviderFactory;
     }
 
     /**
@@ -253,6 +260,7 @@ public class OrderService {
      * All other fields remain unchanged.
      * Auto-decrements book stock when status changes to DELIVERED.
      * Auto-restores book stock when status changes from DELIVERED to another status.
+     * Auto-creates shipping parcel when status changes to CONFIRMED (if shipping provider is set).
      *
      * @param orderId the id of the order to update.
      * @param newStatus the new status to set.
@@ -271,6 +279,13 @@ public class OrderService {
         existingOrder.setStatus(newStatus);
         existingOrder.setUpdatedAt(ZonedDateTime.now());
 
+        // Shipping provider integration: create parcel when confirming order
+        String shippingError = null;
+        if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED &&
+            existingOrder.getShippingProvider() != null) {
+            shippingError = createShippingParcel(existingOrder);
+        }
+
         // Stock management: decrement when changing to DELIVERED, restore when changing from DELIVERED
         if (newStatus == OrderStatus.DELIVERED && oldStatus != OrderStatus.DELIVERED) {
             LOG.debug("Order status changed to DELIVERED, decrementing stock for order items");
@@ -281,7 +296,45 @@ public class OrderService {
         }
 
         existingOrder = orderRepository.save(existingOrder);
-        return orderMapper.toDto(existingOrder);
+        OrderDTO dto = orderMapper.toDto(existingOrder);
+        dto.setShippingProviderError(shippingError);
+        return dto;
+    }
+
+    /**
+     * Create a shipping parcel with the configured shipping provider.
+     * This method does not throw exceptions - it logs errors and returns them for display.
+     *
+     * @param order the order to create a parcel for
+     * @return error message if failed, null if successful
+     */
+    private String createShippingParcel(Order order) {
+        try {
+            var serviceOpt = shippingProviderFactory.getService(order.getShippingProvider());
+            if (serviceOpt.isEmpty()) {
+                LOG.warn("No shipping provider service available for: {}", order.getShippingProvider());
+                return "Shipping provider not configured: " + order.getShippingProvider();
+            }
+
+            ShippingProviderService service = serviceOpt.get();
+            ShippingResult result = service.createParcel(order);
+
+            if (result.success()) {
+                order.setProviderOrderId(result.trackingNumber());
+                order.setTrackingNumber(result.trackingNumber());
+                order.setShippingLabelUrl(result.labelUrl());
+                LOG.info("Shipping parcel created for order {}: tracking={}",
+                    order.getUniqueId(), result.trackingNumber());
+                return null; // No error
+            } else {
+                LOG.error("Failed to create shipping parcel for order {}: {}",
+                    order.getUniqueId(), result.errorMessage());
+                return result.errorMessage();
+            }
+        } catch (Exception e) {
+            LOG.error("Exception creating shipping parcel for order {}", order.getUniqueId(), e);
+            return "Failed to create shipping parcel: " + e.getMessage();
+        }
     }
 
     /**

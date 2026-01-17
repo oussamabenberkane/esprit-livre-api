@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre;
 
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.config.CRLFLogConverter;
+import com.oussamabenberkane.espritlivre.config.ShippingProperties;
 import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -20,7 +21,7 @@ import tech.jhipster.config.DefaultProfileUtil;
 import tech.jhipster.config.JHipsterConstants;
 
 @SpringBootApplication
-@EnableConfigurationProperties({ LiquibaseProperties.class, ApplicationProperties.class })
+@EnableConfigurationProperties({ LiquibaseProperties.class, ApplicationProperties.class, ShippingProperties.class })
 public class EspritLivreApp {
 
     private static final Logger LOG = LoggerFactory.getLogger(EspritLivreApp.class);

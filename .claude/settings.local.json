@@ -11,7 +11,8 @@
       "Bash(test:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(java -version:*)"
+      "Bash(java -version:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
