@@ -12,7 +12,9 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(java -version:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:docs.zrexpress.app)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

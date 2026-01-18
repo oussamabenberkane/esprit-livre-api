@@ -11,9 +11,11 @@ import org.springframework.stereotype.Component;
 public class ShippingProviderFactory {
 
     private final YalidineService yalidineService;
+    private final ZrExpressService zrExpressService;
 
-    public ShippingProviderFactory(YalidineService yalidineService) {
+    public ShippingProviderFactory(YalidineService yalidineService, ZrExpressService zrExpressService) {
         this.yalidineService = yalidineService;
+        this.zrExpressService = zrExpressService;
     }
 
     /**
@@ -29,7 +31,7 @@ public class ShippingProviderFactory {
 
         return switch (provider) {
             case YALIDINE -> Optional.of(yalidineService);
-            case ZR -> Optional.empty(); // Not yet implemented
+            case ZR -> Optional.of(zrExpressService);
         };
     }
 }

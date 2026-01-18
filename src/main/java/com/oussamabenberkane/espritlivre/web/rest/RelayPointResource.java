@@ -3,6 +3,7 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.RelayPointDTO;
 import com.oussamabenberkane.espritlivre.service.shipping.YalidineService;
+import com.oussamabenberkane.espritlivre.service.shipping.ZrExpressService;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
@@ -21,24 +22,28 @@ public class RelayPointResource {
     private static final Logger LOG = LoggerFactory.getLogger(RelayPointResource.class);
 
     private final YalidineService yalidineService;
+    private final ZrExpressService zrExpressService;
 
-    public RelayPointResource(YalidineService yalidineService) {
+    public RelayPointResource(YalidineService yalidineService, ZrExpressService zrExpressService) {
         this.yalidineService = yalidineService;
+        this.zrExpressService = zrExpressService;
     }
 
     /**
      * GET /api/relay-points : Get relay points with optional filters.
      *
      * @param provider the shipping provider (YALIDINE or ZR)
-     * @param wilayaId optional wilaya ID to filter by
+     * @param wilayaId optional wilaya ID to filter by (for Yalidine)
+     * @param wilayaName optional wilaya name to filter by (for ZR Express, e.g., "Bejaia", "Alger")
      * @return list of relay points
      */
     @GetMapping
     public ResponseEntity<List<RelayPointDTO>> getRelayPoints(
         @RequestParam(required = false) String provider,
-        @RequestParam(required = false) Integer wilayaId
+        @RequestParam(required = false) Integer wilayaId,
+        @RequestParam(required = false) String wilayaName
     ) {
-        LOG.debug("REST request to get relay points: provider={}, wilayaId={}", provider, wilayaId);
+        LOG.debug("REST request to get relay points: provider={}, wilayaId={}, wilayaName={}", provider, wilayaId, wilayaName);
 
         ShippingProvider shippingProvider = parseProvider(provider);
 
@@ -46,9 +51,8 @@ public class RelayPointResource {
             List<RelayPointDTO> relayPoints = yalidineService.getCenters(wilayaId);
             return ResponseEntity.ok(relayPoints);
         } else if (shippingProvider == ShippingProvider.ZR) {
-            // ZR Express not yet implemented
-            LOG.warn("ZR Express relay points not yet implemented");
-            return ResponseEntity.ok(Collections.emptyList());
+            List<RelayPointDTO> relayPoints = zrExpressService.getHubs(wilayaName);
+            return ResponseEntity.ok(relayPoints);
         }
 
         // If no provider specified, return Yalidine by default
@@ -61,17 +65,19 @@ public class RelayPointResource {
      *
      * @param provider the shipping provider (YALIDINE or ZR)
      * @param search optional search query
-     * @param wilayaId optional wilaya ID to filter by
+     * @param wilayaId optional wilaya ID to filter by (for Yalidine)
+     * @param wilayaName optional wilaya name to filter by (for ZR Express, e.g., "Bejaia", "Alger")
      * @return list of matching relay points
      */
     @GetMapping("/search")
     public ResponseEntity<List<RelayPointDTO>> searchRelayPoints(
         @RequestParam(required = false) String provider,
         @RequestParam(required = false) String search,
-        @RequestParam(required = false) Integer wilayaId
+        @RequestParam(required = false) Integer wilayaId,
+        @RequestParam(required = false) String wilayaName
     ) {
-        LOG.debug("REST request to search relay points: provider={}, search={}, wilayaId={}",
-            provider, search, wilayaId);
+        LOG.debug("REST request to search relay points: provider={}, search={}, wilayaId={}, wilayaName={}",
+            provider, search, wilayaId, wilayaName);
 
         ShippingProvider shippingProvider = parseProvider(provider);
 
@@ -79,9 +85,8 @@ public class RelayPointResource {
             List<RelayPointDTO> relayPoints = yalidineService.searchCenters(search, wilayaId);
             return ResponseEntity.ok(relayPoints);
         } else if (shippingProvider == ShippingProvider.ZR) {
-            // ZR Express not yet implemented
-            LOG.warn("ZR Express relay points search not yet implemented");
-            return ResponseEntity.ok(Collections.emptyList());
+            List<RelayPointDTO> relayPoints = zrExpressService.searchHubs(search, wilayaName);
+            return ResponseEntity.ok(relayPoints);
         }
 
         // If no provider specified, search Yalidine by default
@@ -93,12 +98,29 @@ public class RelayPointResource {
      * GET /api/relay-points/{id} : Get a specific relay point by ID.
      *
      * @param id the relay point ID
+     * @param provider optional shipping provider hint (YALIDINE or ZR)
      * @return the relay point, or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<RelayPointDTO> getRelayPointById(@PathVariable String id) {
-        LOG.debug("REST request to get relay point by ID: {}", id);
+    public ResponseEntity<RelayPointDTO> getRelayPointById(
+        @PathVariable String id,
+        @RequestParam(required = false) String provider
+    ) {
+        LOG.debug("REST request to get relay point by ID: {}, provider={}", id, provider);
 
+        ShippingProvider shippingProvider = parseProvider(provider);
+
+        // If provider is explicitly ZR, use ZR Express
+        if (shippingProvider == ShippingProvider.ZR) {
+            RelayPointDTO relayPoint = zrExpressService.getHubById(id);
+            if (relayPoint != null) {
+                return ResponseEntity.ok(relayPoint);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        }
+
+        // Try to parse as integer for Yalidine
         try {
             Integer centerId = Integer.parseInt(id);
             RelayPointDTO relayPoint = yalidineService.getCenterById(centerId);
@@ -109,8 +131,13 @@ public class RelayPointResource {
                 return ResponseEntity.notFound().build();
             }
         } catch (NumberFormatException e) {
-            LOG.warn("Invalid relay point ID format: {}", id);
-            return ResponseEntity.badRequest().build();
+            // Not an integer, try ZR Express (UUID)
+            RelayPointDTO relayPoint = zrExpressService.getHubById(id);
+            if (relayPoint != null) {
+                return ResponseEntity.ok(relayPoint);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         }
     }
 

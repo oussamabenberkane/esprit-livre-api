@@ -251,4 +251,7 @@ shipping:
     webhook-secret: ${YALIDINE_WEBHOOK_SECRET:}
     base-url: ${YALIDINE_BASE_URL:https://api.yalidine.app/v1}
   zr-express:
-    enabled: false
+    enabled: ${ZR_EXPRESS_ENABLED:true}
+    tenant-id: ${ZR_EXPRESS_TENANT_ID:27a6ba7a-cb07-4aa6-ba78-2cb5aa778cd9}
+    api-key: ${ZR_EXPRESS_API_KEY:snv8Jq7OkJOdlyYEnX9KdNUcuJif6PEVpjG5Z3JBav9j1g5rzU0Cox0UDmWcOy26}
+    base-url: ${ZR_EXPRESS_BASE_URL:https://api.zrexpress.app/api/v1.0}

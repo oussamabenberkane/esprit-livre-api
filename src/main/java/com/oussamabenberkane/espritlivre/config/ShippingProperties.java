@@ -82,6 +82,9 @@ public class ShippingProperties {
     public static class ZrExpressConfig {
 
         private boolean enabled = false;
+        private String tenantId;
+        private String apiKey;
+        private String baseUrl = "https://api.zrexpress.app/api/v1.0";
 
         public boolean isEnabled() {
             return enabled;
@@ -89,6 +92,30 @@ public class ShippingProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
         }
     }
 }
