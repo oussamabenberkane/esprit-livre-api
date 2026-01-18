@@ -61,9 +61,9 @@ public class OrderDTO implements Serializable {
 
     private String shippingLabelUrl;
 
-    private Boolean isStopdesk;
+    private Boolean isStopDesk;
 
-    private String stopdeskId;
+    private String stopDeskId;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String shippingProviderError;
@@ -232,20 +232,20 @@ public class OrderDTO implements Serializable {
         this.shippingLabelUrl = shippingLabelUrl;
     }
 
-    public Boolean getIsStopdesk() {
-        return isStopdesk;
+    public Boolean getIsStopDesk() {
+        return isStopDesk;
     }
 
-    public void setIsStopdesk(Boolean isStopdesk) {
-        this.isStopdesk = isStopdesk;
+    public void setIsStopDesk(Boolean isStopDesk) {
+        this.isStopDesk = isStopDesk;
     }
 
-    public String getStopdeskId() {
-        return stopdeskId;
+    public String getStopDeskId() {
+        return stopDeskId;
     }
 
-    public void setStopdeskId(String stopdeskId) {
-        this.stopdeskId = stopdeskId;
+    public void setStopDeskId(String stopDeskId) {
+        this.stopDeskId = stopDeskId;
     }
 
     public String getShippingProviderError() {
@@ -313,7 +313,7 @@ public class OrderDTO implements Serializable {
             ", postalCode='" + getPostalCode() + "'" +
             ", providerOrderId='" + getProviderOrderId() + "'" +
             ", trackingNumber='" + getTrackingNumber() + "'" +
-            ", isStopdesk=" + getIsStopdesk() +
+            ", isStopDesk=" + getIsStopDesk() +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +

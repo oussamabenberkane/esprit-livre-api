@@ -108,10 +108,10 @@ public class Order implements Serializable {
     private String shippingLabelUrl;
 
     @Column(name = "is_stopdesk")
-    private Boolean isStopdesk;
+    private Boolean isStopDesk;
 
     @Column(name = "stopdesk_id", length = 100)
-    private String stopdeskId;
+    private String stopDeskId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -501,29 +501,29 @@ public class Order implements Serializable {
     }
 
     public Boolean getIsStopdesk() {
-        return this.isStopdesk;
+        return this.isStopDesk;
     }
 
-    public Order isStopdesk(Boolean isStopdesk) {
-        this.setIsStopdesk(isStopdesk);
+    public Order isStopDesk(Boolean isStopDesk) {
+        this.setIsStopdesk(isStopDesk);
         return this;
     }
 
-    public void setIsStopdesk(Boolean isStopdesk) {
-        this.isStopdesk = isStopdesk;
+    public void setIsStopdesk(Boolean isStopDesk) {
+        this.isStopDesk = isStopDesk;
     }
 
     public String getStopdeskId() {
-        return this.stopdeskId;
+        return this.stopDeskId;
     }
 
-    public Order stopdeskId(String stopdeskId) {
-        this.setStopdeskId(stopdeskId);
+    public Order stopDeskId(String stopDeskId) {
+        this.setStopdeskId(stopDeskId);
         return this;
     }
 
-    public void setStopdeskId(String stopdeskId) {
-        this.stopdeskId = stopdeskId;
+    public void setStopdeskId(String stopDeskId) {
+        this.stopDeskId = stopDeskId;
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
@@ -572,7 +572,7 @@ public class Order implements Serializable {
             ", postalCode='" + getPostalCode() + "'" +
             ", providerOrderId='" + getProviderOrderId() + "'" +
             ", trackingNumber='" + getTrackingNumber() + "'" +
-            ", isStopdesk=" + getIsStopdesk() +
+            ", isStopDesk=" + getIsStopdesk() +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +

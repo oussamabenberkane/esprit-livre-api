@@ -177,8 +177,8 @@ public class YalidineService implements ShippingProviderService {
 
         return YalidineParcelRequest.builder()
             .orderId(order.getUniqueId())
-            .firstname(nameParts[0])
-            .familyname(nameParts[1])
+            .firstName(nameParts[0])
+            .familyName(nameParts[1])
             .contactPhone(formatPhoneForYalidine(order.getPhone()))
             .address(order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
             .fromWilayaName(shippingProperties.getOriginWilaya())
@@ -186,9 +186,9 @@ public class YalidineService implements ShippingProviderService {
             .toCommuneName(order.getCity())
             .productList(buildProductList(order))
             .price(order.getTotalAmount())
-            .freeshipping(isFreeShipping(order))
-            .isStopdesk(order.getIsStopdesk() != null ? order.getIsStopdesk() : false)
-            .stopdeskId(order.getStopdeskId())
+            .freeShipping(isFreeShipping(order))
+            .isStopDesk(order.getIsStopdesk() != null ? order.getIsStopdesk() : false)
+            .stopDeskId(order.getStopdeskId())
             .hasExchange(false)
             // Required fields with defaults for books
             .doInsurance(false)

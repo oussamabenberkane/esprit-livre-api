@@ -11,9 +11,9 @@ public class YalidineParcelRequest {
     @JsonProperty("order_id")
     private String orderId;
 
-    private String firstname;
+    private String firstName;
 
-    private String familyname;
+    private String familyName;
 
     @JsonProperty("contact_phone")
     private String contactPhone;
@@ -34,13 +34,13 @@ public class YalidineParcelRequest {
 
     private BigDecimal price;
 
-    private Boolean freeshipping;
+    private Boolean freeShipping;
 
     @JsonProperty("is_stopdesk")
-    private Boolean isStopdesk;
+    private Boolean isStopDesk;
 
     @JsonProperty("stopdesk_id")
-    private String stopdeskId;
+    private String stopDeskId;
 
     @JsonProperty("has_exchange")
     private Boolean hasExchange;
@@ -69,20 +69,20 @@ public class YalidineParcelRequest {
         this.orderId = orderId;
     }
 
-    public String getFirstname() {
-        return firstname;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getFamilyname() {
-        return familyname;
+    public String getFamilyName() {
+        return familyName;
     }
 
-    public void setFamilyname(String familyname) {
-        this.familyname = familyname;
+    public void setFamilyName(String familyName) {
+        this.familyName = familyName;
     }
 
     public String getContactPhone() {
@@ -141,28 +141,28 @@ public class YalidineParcelRequest {
         this.price = price;
     }
 
-    public Boolean getFreeshipping() {
-        return freeshipping;
+    public Boolean getFreeShipping() {
+        return freeShipping;
     }
 
-    public void setFreeshipping(Boolean freeshipping) {
-        this.freeshipping = freeshipping;
+    public void setFreeShipping(Boolean freeShipping) {
+        this.freeShipping = freeShipping;
     }
 
-    public Boolean getIsStopdesk() {
-        return isStopdesk;
+    public Boolean getIsStopDesk() {
+        return isStopDesk;
     }
 
-    public void setIsStopdesk(Boolean isStopdesk) {
-        this.isStopdesk = isStopdesk;
+    public void setIsStopDesk(Boolean isStopDesk) {
+        this.isStopDesk = isStopDesk;
     }
 
-    public String getStopdeskId() {
-        return stopdeskId;
+    public String getStopDeskId() {
+        return stopDeskId;
     }
 
-    public void setStopdeskId(String stopdeskId) {
-        this.stopdeskId = stopdeskId;
+    public void setStopDeskId(String stopDeskId) {
+        this.stopDeskId = stopDeskId;
     }
 
     public Boolean getHasExchange() {
@@ -234,13 +234,13 @@ public class YalidineParcelRequest {
             return this;
         }
 
-        public Builder firstname(String firstname) {
-            request.setFirstname(firstname);
+        public Builder firstName(String firstName) {
+            request.setFirstName(firstName);
             return this;
         }
 
-        public Builder familyname(String familyname) {
-            request.setFamilyname(familyname);
+        public Builder familyName(String familyName) {
+            request.setFamilyName(familyName);
             return this;
         }
 
@@ -279,18 +279,18 @@ public class YalidineParcelRequest {
             return this;
         }
 
-        public Builder freeshipping(Boolean freeshipping) {
-            request.setFreeshipping(freeshipping);
+        public Builder freeShipping(Boolean freeShipping) {
+            request.setFreeShipping(freeShipping);
             return this;
         }
 
-        public Builder isStopdesk(Boolean isStopdesk) {
-            request.setIsStopdesk(isStopdesk);
+        public Builder isStopDesk(Boolean isStopDesk) {
+            request.setIsStopDesk(isStopDesk);
             return this;
         }
 
-        public Builder stopdeskId(String stopdeskId) {
-            request.setStopdeskId(stopdeskId);
+        public Builder stopDeskId(String stopDeskId) {
+            request.setStopDeskId(stopDeskId);
             return this;
         }
 
