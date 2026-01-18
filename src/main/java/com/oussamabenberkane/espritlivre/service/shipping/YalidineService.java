@@ -187,8 +187,8 @@ public class YalidineService implements ShippingProviderService {
             .productList(buildProductList(order))
             .price(order.getTotalAmount())
             .freeShipping(isFreeShipping(order))
-            .isStopDesk(order.getIsStopdesk() != null ? order.getIsStopdesk() : false)
-            .stopDeskId(order.getStopdeskId())
+            .isStopDesk(order.getIsStopDesk() != null ? order.getIsStopDesk() : false)
+            .stopDeskId(order.getStopDeskId())
             .hasExchange(false)
             // Required fields with defaults for books
             .doInsurance(false)

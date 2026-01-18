@@ -500,29 +500,29 @@ public class Order implements Serializable {
         this.shippingLabelUrl = shippingLabelUrl;
     }
 
-    public Boolean getIsStopdesk() {
+    public Boolean getIsStopDesk() {
         return this.isStopDesk;
     }
 
     public Order isStopDesk(Boolean isStopDesk) {
-        this.setIsStopdesk(isStopDesk);
+        this.setIsStopDesk(isStopDesk);
         return this;
     }
 
-    public void setIsStopdesk(Boolean isStopDesk) {
+    public void setIsStopDesk(Boolean isStopDesk) {
         this.isStopDesk = isStopDesk;
     }
 
-    public String getStopdeskId() {
+    public String getStopDeskId() {
         return this.stopDeskId;
     }
 
     public Order stopDeskId(String stopDeskId) {
-        this.setStopdeskId(stopDeskId);
+        this.setStopDeskId(stopDeskId);
         return this;
     }
 
-    public void setStopdeskId(String stopDeskId) {
+    public void setStopDeskId(String stopDeskId) {
         this.stopDeskId = stopDeskId;
     }
 
@@ -572,7 +572,7 @@ public class Order implements Serializable {
             ", postalCode='" + getPostalCode() + "'" +
             ", providerOrderId='" + getProviderOrderId() + "'" +
             ", trackingNumber='" + getTrackingNumber() + "'" +
-            ", isStopDesk=" + getIsStopdesk() +
+            ", isStopDesk=" + getIsStopDesk() +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +

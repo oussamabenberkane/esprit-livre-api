@@ -168,8 +168,8 @@ public class OrderService {
         order.setTotalAmount(orderDTO.getTotalAmount());
 
         // Relay point (stop desk) info
-        order.setIsStopdesk(orderDTO.getIsStopDesk());
-        order.setStopdeskId(orderDTO.getStopDeskId());
+        order.setIsStopDesk(orderDTO.getIsStopDesk());
+        order.setStopDeskId(orderDTO.getStopDeskId());
 
         // Process order items - supports both books and book packs
         Set<OrderItem> orderItems = new HashSet<>();

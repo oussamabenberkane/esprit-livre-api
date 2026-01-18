@@ -11,8 +11,10 @@ public class YalidineParcelRequest {
     @JsonProperty("order_id")
     private String orderId;
 
+    @JsonProperty("firstname")
     private String firstName;
 
+    @JsonProperty("familyname")
     private String familyName;
 
     @JsonProperty("contact_phone")
@@ -34,6 +36,7 @@ public class YalidineParcelRequest {
 
     private BigDecimal price;
 
+    @JsonProperty("freeshipping")
     private Boolean freeShipping;
 
     @JsonProperty("is_stopdesk")
