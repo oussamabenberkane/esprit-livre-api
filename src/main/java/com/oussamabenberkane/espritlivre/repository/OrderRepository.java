@@ -75,7 +75,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Query("select jhiOrder from Order jhiOrder where jhiOrder.id = :id and jhiOrder.user.login = ?#{authentication.name} and jhiOrder.active = true")
     Optional<Order> findOneByIdAndCurrentUser(@Param("id") Long id);
 
-    @Query("select o.uniqueId from Order o where o.active = true and o.uniqueId like :prefix% order by o.uniqueId desc")
+    @Query("select o.uniqueId from Order o where o.uniqueId like :prefix% order by o.uniqueId desc")
     List<String> findUniqueIdsByPrefix(@Param("prefix") String prefix);
 
     default String findMaxUniqueIdByPrefix(String prefix) {
