@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
@@ -53,6 +54,19 @@ public class OrderDTO implements Serializable {
     private String createdBy;
 
     private ZonedDateTime updatedAt;
+
+    private String providerOrderId;
+
+    private String trackingNumber;
+
+    private String shippingLabelUrl;
+
+    private Boolean isStopDesk;
+
+    private String stopDeskId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String shippingProviderError;
 
     private UserDTO user;
 
@@ -194,6 +208,54 @@ public class OrderDTO implements Serializable {
         this.updatedAt = updatedAt;
     }
 
+    public String getProviderOrderId() {
+        return providerOrderId;
+    }
+
+    public void setProviderOrderId(String providerOrderId) {
+        this.providerOrderId = providerOrderId;
+    }
+
+    public String getTrackingNumber() {
+        return trackingNumber;
+    }
+
+    public void setTrackingNumber(String trackingNumber) {
+        this.trackingNumber = trackingNumber;
+    }
+
+    public String getShippingLabelUrl() {
+        return shippingLabelUrl;
+    }
+
+    public void setShippingLabelUrl(String shippingLabelUrl) {
+        this.shippingLabelUrl = shippingLabelUrl;
+    }
+
+    public Boolean getIsStopDesk() {
+        return isStopDesk;
+    }
+
+    public void setIsStopDesk(Boolean isStopDesk) {
+        this.isStopDesk = isStopDesk;
+    }
+
+    public String getStopDeskId() {
+        return stopDeskId;
+    }
+
+    public void setStopDeskId(String stopDeskId) {
+        this.stopDeskId = stopDeskId;
+    }
+
+    public String getShippingProviderError() {
+        return shippingProviderError;
+    }
+
+    public void setShippingProviderError(String shippingProviderError) {
+        this.shippingProviderError = shippingProviderError;
+    }
+
     public UserDTO getUser() {
         return user;
     }
@@ -249,6 +311,9 @@ public class OrderDTO implements Serializable {
             ", wilaya='" + getWilaya() + "'" +
             ", city='" + getCity() + "'" +
             ", postalCode='" + getPostalCode() + "'" +
+            ", providerOrderId='" + getProviderOrderId() + "'" +
+            ", trackingNumber='" + getTrackingNumber() + "'" +
+            ", isStopDesk=" + getIsStopDesk() +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +

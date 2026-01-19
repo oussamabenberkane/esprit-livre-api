@@ -11,7 +11,11 @@
       "Bash(test:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(java -version:*)"
+      "Bash(java -version:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.zrexpress.app)",
+      "WebFetch(domain:github.com)",
+      "Bash(mvn compile:*)"
     ],
     "deny": [],
     "ask": []

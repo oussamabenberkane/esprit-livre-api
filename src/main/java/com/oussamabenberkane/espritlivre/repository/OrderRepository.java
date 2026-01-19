@@ -75,7 +75,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Query("select jhiOrder from Order jhiOrder where jhiOrder.id = :id and jhiOrder.user.login = ?#{authentication.name} and jhiOrder.active = true")
     Optional<Order> findOneByIdAndCurrentUser(@Param("id") Long id);
 
-    @Query("select o.uniqueId from Order o where o.active = true and o.uniqueId like :prefix% order by o.uniqueId desc")
+    @Query("select o.uniqueId from Order o where o.uniqueId like :prefix% order by o.uniqueId desc")
     List<String> findUniqueIdsByPrefix(@Param("prefix") String prefix);
 
     default String findMaxUniqueIdByPrefix(String prefix) {
@@ -91,4 +91,13 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
      */
     @Query("select o from Order o where o.user is null and o.phone = :phone and o.active = true")
     List<Order> findByUserIsNullAndPhone(@Param("phone") String phone);
+
+    /**
+     * Find an order by its unique ID (active orders only).
+     *
+     * @param uniqueId the unique order ID (e.g., "EL-2026-0001")
+     * @return the order if found and active
+     */
+    @Query("select o from Order o where o.uniqueId = :uniqueId and o.active = true")
+    Optional<Order> findByUniqueIdAndActiveTrue(@Param("uniqueId") String uniqueId);
 }

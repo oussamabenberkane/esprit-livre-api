@@ -109,3 +109,9 @@ application:
     admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
     admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
     admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+
+shipping:
+  yalidine:
+    enabled: true
+    api-id: '65092794549713328832'
+    api-token: of7p6H5aUlSEBYwVCTrOjQmZMzyRuWcDn2XhPg1v8xsI9FN4bG03AiKJdteqLk

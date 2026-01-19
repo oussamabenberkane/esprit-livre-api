@@ -98,6 +98,21 @@ public class Order implements Serializable {
     @Column(name = "deleted_by", length = 50)
     private String deletedBy;
 
+    @Column(name = "provider_order_id")
+    private String providerOrderId;
+
+    @Column(name = "tracking_number")
+    private String trackingNumber;
+
+    @Column(name = "shipping_label_url", length = 500)
+    private String shippingLabelUrl;
+
+    @Column(name = "is_stopdesk")
+    private Boolean isStopDesk;
+
+    @Column(name = "stopdesk_id", length = 100)
+    private String stopDeskId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
@@ -446,6 +461,71 @@ public class Order implements Serializable {
         return this;
     }
 
+    public String getProviderOrderId() {
+        return this.providerOrderId;
+    }
+
+    public Order providerOrderId(String providerOrderId) {
+        this.setProviderOrderId(providerOrderId);
+        return this;
+    }
+
+    public void setProviderOrderId(String providerOrderId) {
+        this.providerOrderId = providerOrderId;
+    }
+
+    public String getTrackingNumber() {
+        return this.trackingNumber;
+    }
+
+    public Order trackingNumber(String trackingNumber) {
+        this.setTrackingNumber(trackingNumber);
+        return this;
+    }
+
+    public void setTrackingNumber(String trackingNumber) {
+        this.trackingNumber = trackingNumber;
+    }
+
+    public String getShippingLabelUrl() {
+        return this.shippingLabelUrl;
+    }
+
+    public Order shippingLabelUrl(String shippingLabelUrl) {
+        this.setShippingLabelUrl(shippingLabelUrl);
+        return this;
+    }
+
+    public void setShippingLabelUrl(String shippingLabelUrl) {
+        this.shippingLabelUrl = shippingLabelUrl;
+    }
+
+    public Boolean getIsStopDesk() {
+        return this.isStopDesk;
+    }
+
+    public Order isStopDesk(Boolean isStopDesk) {
+        this.setIsStopDesk(isStopDesk);
+        return this;
+    }
+
+    public void setIsStopDesk(Boolean isStopDesk) {
+        this.isStopDesk = isStopDesk;
+    }
+
+    public String getStopDeskId() {
+        return this.stopDeskId;
+    }
+
+    public Order stopDeskId(String stopDeskId) {
+        this.setStopDeskId(stopDeskId);
+        return this;
+    }
+
+    public void setStopDeskId(String stopDeskId) {
+        this.stopDeskId = stopDeskId;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @PrePersist
@@ -490,6 +570,9 @@ public class Order implements Serializable {
             ", wilaya='" + getWilaya() + "'" +
             ", city='" + getCity() + "'" +
             ", postalCode='" + getPostalCode() + "'" +
+            ", providerOrderId='" + getProviderOrderId() + "'" +
+            ", trackingNumber='" + getTrackingNumber() + "'" +
+            ", isStopDesk=" + getIsStopDesk() +
             ", createdAt='" + getCreatedAt() + "'" +
             ", createdBy='" + getCreatedBy() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +

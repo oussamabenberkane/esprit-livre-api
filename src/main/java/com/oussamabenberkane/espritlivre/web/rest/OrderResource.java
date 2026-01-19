@@ -7,6 +7,7 @@ import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.OrderService;
 import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
+import com.oussamabenberkane.espritlivre.service.dto.OrderPageResponse;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -156,6 +157,7 @@ public class OrderResource {
      * {@code GET  /orders} : get all orders.
      * Regular users see only their own orders.
      * Admins see all orders.
+     * Response includes live status updates from shipping providers and refresh counts.
      *
      * @param pageable the pagination information.
      * @param search the search term (searches in order ID, customer name, email, phone).
@@ -164,11 +166,11 @@ public class OrderResource {
      * @param dateTo the end date filter.
      * @param minAmount the minimum total amount filter.
      * @param maxAmount the maximum total amount filter.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of orders in body.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the OrderPageResponse containing orders and refresh info.
      */
     @GetMapping("")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.USER + "\")")
-    public ResponseEntity<Page<OrderDTO>> getAllOrders(
+    public ResponseEntity<OrderPageResponse> getAllOrders(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
         @RequestParam(required = false) String search,
         @RequestParam(required = false) OrderStatus status,
@@ -183,18 +185,18 @@ public class OrderResource {
         validationService.validateDateRange(dateFrom, dateTo, ENTITY_NAME);
 
         boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
-        Page<OrderDTO> page;
+        OrderPageResponse response;
 
         if (isAdmin) {
             // Admin sees all orders
-            page = orderService.findAll(pageable, search, status, dateFrom, dateTo, minAmount, maxAmount);
+            response = orderService.findAll(pageable, search, status, dateFrom, dateTo, minAmount, maxAmount);
         } else {
             // Regular user sees only their orders
-            page = orderService.findAllForCurrentUser(pageable, search, status, dateFrom, dateTo, minAmount, maxAmount);
+            response = orderService.findAllForCurrentUser(pageable, search, status, dateFrom, dateTo, minAmount, maxAmount);
         }
 
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), response.getPage());
+        return ResponseEntity.ok().headers(headers).body(response);
     }
 
     /**

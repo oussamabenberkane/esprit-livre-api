@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Add shipping tracking fields to Order entity for Yalidine/ZR Express integration
+    -->
+    <changeSet id="20260117000000-1" author="claude">
+        <comment>Add shipping provider tracking fields to Order entity</comment>
+        <addColumn tableName="jhi_order">
+            <column name="provider_order_id" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="tracking_number" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="shipping_label_url" type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="is_stopdesk" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="true"/>
+            </column>
+            <column name="stopdesk_id" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

@@ -63,6 +63,7 @@ public class SecurityConfiguration {
                     .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact"))
+                    .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/webhooks/**"))
             )
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
@@ -92,6 +93,8 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*/cover")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/*/picture")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*/image")).permitAll()
+                    // Shipping provider webhooks (validated by security token in payload)
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/webhooks/**")).permitAll()
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).authenticated()
                     .requestMatchers(mvc.pattern("/websocket/**")).authenticated()
