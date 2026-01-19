@@ -765,12 +765,16 @@ public class ZrExpressService implements ShippingProviderService {
 
     /**
      * Normalize location name for caching.
+     * Converts accented characters to ASCII equivalents (é→e, ï→i, etc.)
      */
     private String normalizeLocationName(String name) {
         if (name == null) {
             return "";
         }
-        return name.toLowerCase().trim()
+        // Normalize accented characters to ASCII (é→e, ï→i, etc.)
+        String normalized = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        return normalized.toLowerCase().trim()
             .replaceAll("[^a-z0-9\\s]", "")
             .replaceAll("\\s+", " ");
     }
