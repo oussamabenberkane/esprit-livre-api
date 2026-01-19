@@ -78,9 +78,8 @@ public class ZrExpressService implements ShippingProviderService {
                 return ShippingResult.failure("Could not resolve commune: " + order.getCity());
             }
 
-            // 2. Find or create customer
-            String formattedPhone = formatPhoneForZrExpress(order.getPhone());
-            String customerId = findOrCreateCustomer(order.getFullName(), formattedPhone);
+            // 2. Find or create customer (uses User info if available, falls back to Order)
+            String customerId = findOrCreateCustomer(order, cityTerritoryId, districtTerritoryId);
             if (customerId == null) {
                 LOG.error("Could not find or create customer for order: {}", order.getUniqueId());
                 return ShippingResult.failure("Could not create customer in ZR Express");
@@ -535,17 +534,23 @@ public class ZrExpressService implements ShippingProviderService {
 
     /**
      * Build parcel request from order.
+     * Uses User info if available, falls back to Order info.
      */
     private ZrExpressParcelRequest buildParcelRequest(Order order, String customerId, String cityTerritoryId, String districtTerritoryId) {
         boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
         String deliveryType = isPickupPoint ? DELIVERY_TYPE_PICKUP_POINT : DELIVERY_TYPE_HOME;
 
+        // Get customer info (prefers User, falls back to Order)
+        String customerName = getCustomerName(order);
+        String customerPhone = formatPhoneForZrExpress(getCustomerPhone(order));
+        String streetAddress = getCustomerStreetAddress(order);
+
         // Build ordered products list from order items
         List<ZrExpressParcelRequest.ZrOrderedProduct> orderedProducts = buildOrderedProducts(order);
 
         ZrExpressParcelRequest.Builder builder = ZrExpressParcelRequest.builder()
-            .customer(customerId, order.getFullName(), formatPhoneForZrExpress(order.getPhone()))
-            .deliveryAddress(cityTerritoryId, districtTerritoryId, order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
+            .customer(customerId, customerName, customerPhone)
+            .deliveryAddress(cityTerritoryId, districtTerritoryId, streetAddress != null ? streetAddress : "N/A")
             .deliveryType(deliveryType)
             .amount(order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0)
             .weight(1.0) // Default weight for books
@@ -642,12 +647,16 @@ public class ZrExpressService implements ShippingProviderService {
     /**
      * Find or create a customer in ZR Express.
      * First searches by phone number, creates new customer if not found.
+     * Uses User info if available, falls back to Order info.
      *
-     * @param name Customer name
-     * @param phone Customer phone (formatted)
+     * @param order The order containing customer info
+     * @param cityTerritoryId Resolved city territory UUID
+     * @param districtTerritoryId Resolved district territory UUID
      * @return Customer UUID, or null if failed
      */
-    private String findOrCreateCustomer(String name, String phone) {
+    private String findOrCreateCustomer(Order order, String cityTerritoryId, String districtTerritoryId) {
+        String phone = formatPhoneForZrExpress(getCustomerPhone(order));
+
         // First, try to find existing customer by phone
         String existingCustomerId = searchCustomerByPhone(phone);
         if (existingCustomerId != null) {
@@ -655,9 +664,92 @@ public class ZrExpressService implements ShippingProviderService {
             return existingCustomerId;
         }
 
-        // Customer not found, create new one
+        // Customer not found, create new one with full info
         LOG.debug("Customer not found, creating new customer with phone: {}", phone);
-        return createCustomer(name, phone);
+        return createCustomer(order, cityTerritoryId, districtTerritoryId);
+    }
+
+    /**
+     * Get customer name - prefer User info, fallback to Order.
+     */
+    private String getCustomerName(Order order) {
+        if (order.getUser() != null) {
+            String firstName = order.getUser().getFirstName();
+            String lastName = order.getUser().getLastName();
+            if (firstName != null || lastName != null) {
+                String fullName = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+                if (!fullName.isEmpty()) {
+                    return fullName;
+                }
+            }
+        }
+        return order.getFullName();
+    }
+
+    /**
+     * Get customer phone - prefer User info, fallback to Order.
+     */
+    private String getCustomerPhone(Order order) {
+        if (order.getUser() != null && order.getUser().getPhone() != null && !order.getUser().getPhone().isEmpty()) {
+            return order.getUser().getPhone();
+        }
+        return order.getPhone();
+    }
+
+    /**
+     * Get customer wilaya - prefer User info, fallback to Order.
+     */
+    private String getCustomerWilaya(Order order) {
+        if (order.getUser() != null && order.getUser().getWilaya() != null && !order.getUser().getWilaya().isEmpty()) {
+            return order.getUser().getWilaya();
+        }
+        return order.getWilaya();
+    }
+
+    /**
+     * Get customer city/commune - prefer User info, fallback to Order.
+     */
+    private String getCustomerCity(Order order) {
+        if (order.getUser() != null && order.getUser().getCity() != null && !order.getUser().getCity().isEmpty()) {
+            return order.getUser().getCity();
+        }
+        return order.getCity();
+    }
+
+    /**
+     * Get customer street address - prefer User info, fallback to Order.
+     */
+    private String getCustomerStreetAddress(Order order) {
+        if (order.getUser() != null && order.getUser().getStreetAddress() != null && !order.getUser().getStreetAddress().isEmpty()) {
+            return order.getUser().getStreetAddress();
+        }
+        return order.getStreetAddress();
+    }
+
+    /**
+     * Get customer postal code - prefer User info, fallback to Order.
+     */
+    private String getCustomerPostalCode(Order order) {
+        if (order.getUser() != null && order.getUser().getPostalCode() != null && !order.getUser().getPostalCode().isEmpty()) {
+            return order.getUser().getPostalCode();
+        }
+        return order.getPostalCode();
+    }
+
+    /**
+     * Get delivery preference for ZR Express.
+     * Maps User's defaultShippingMethod if available, falls back to order's isStopDesk.
+     * SHIPPING_PROVIDER → "pickup-point", HOME_DELIVERY → "home"
+     */
+    private String getDeliveryPreference(Order order, boolean isPickupPointOrder) {
+        if (order.getUser() != null && order.getUser().getDefaultShippingMethod() != null) {
+            return switch (order.getUser().getDefaultShippingMethod()) {
+                case SHIPPING_PROVIDER -> "pickup-point";
+                case HOME_DELIVERY -> "home";
+            };
+        }
+        // Fallback to order type
+        return isPickupPointOrder ? "pickup-point" : "home";
     }
 
     /**
@@ -714,27 +806,59 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
-     * Create a new customer in ZR Express.
+     * Create a new customer in ZR Express with full info.
+     * Uses User info if available, falls back to Order info.
      *
-     * @param name Customer name
-     * @param phone Customer phone (formatted)
+     * @param order The order containing customer info
+     * @param cityTerritoryId Resolved city territory UUID
+     * @param districtTerritoryId Resolved district territory UUID
      * @return Customer UUID if created, null otherwise
      */
-    private String createCustomer(String name, String phone) {
+    private String createCustomer(Order order, String cityTerritoryId, String districtTerritoryId) {
         try {
             HttpHeaders headers = createHeaders();
+
+            String name = getCustomerName(order);
+            String phone = formatPhoneForZrExpress(getCustomerPhone(order));
+            String wilaya = getCustomerWilaya(order);
+            String city = getCustomerCity(order);
+            String streetAddress = getCustomerStreetAddress(order);
+            String postalCode = getCustomerPostalCode(order);
+            boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
 
             Map<String, Object> customerRequest = new HashMap<>();
             customerRequest.put("name", name);
 
+            // Phone
             Map<String, String> phoneDto = new HashMap<>();
             phoneDto.put("number1", phone);
             customerRequest.put("phone", phoneDto);
 
+            // Delivery preference - prefer User's default, fallback to order type
+            String deliveryPreference = getDeliveryPreference(order, isPickupPoint);
+            customerRequest.put("deliveryPreference", deliveryPreference);
+
+            // Build address
+            Map<String, Object> address = new HashMap<>();
+            address.put("street", streetAddress != null ? streetAddress : "N/A");
+            address.put("city", wilaya);
+            address.put("cityTerritoryId", cityTerritoryId);
+            address.put("district", city);
+            address.put("districtTerritoryId", districtTerritoryId);
+            if (postalCode != null && !postalCode.isEmpty()) {
+                address.put("postalCode", postalCode);
+            }
+            address.put("country", "Algeria");
+            address.put("isPrimary", true);
+
+            // Add address to customer
+            customerRequest.put("addresses", List.of(address));
+
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(customerRequest, headers);
             String url = shippingProperties.getZrExpress().getBaseUrl() + "/customers/individual";
 
-            LOG.debug("Creating ZR Express customer: name={}, phone={}", name, phone);
+            LOG.debug("Creating ZR Express customer: name={}, phone={}, wilaya={}, city={}",
+                name, phone, wilaya, city);
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 url,
