@@ -252,7 +252,7 @@ public class ZrExpressService implements ShippingProviderService {
 
         // CONFIRMED statuses (preparation phase) - check BEFORE shipped
         // "pret_a_expedier" = ready to ship, not yet shipped
-        if (
+        if (normalized.contains("pret") ||
             normalized.contains("ready") ||
             normalized.contains("prepara") ||
             normalized.contains("pending") ||
