@@ -5,6 +5,9 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Interface defining operations for shipping providers (Yalidine, ZR Express).
@@ -43,4 +46,21 @@ public interface ShippingProviderService {
      * @return the corresponding OrderStatus, or null if no mapping applies
      */
     OrderStatus mapProviderStatus(String statusCode, String event);
+
+    /**
+     * Fetch the current status of an order from the provider's API.
+     *
+     * @param order the order to fetch status for (must have tracking number)
+     * @return Optional containing the mapped OrderStatus, or empty if unavailable
+     */
+    Optional<OrderStatus> fetchOrderStatus(Order order);
+
+    /**
+     * Fetch the current status of multiple orders from the provider's API in a single batch request.
+     * This is more efficient than calling fetchOrderStatus for each order individually.
+     *
+     * @param orders the list of orders to fetch status for (must have tracking numbers)
+     * @return Map of tracking number to OrderStatus for orders where status was successfully fetched
+     */
+    Map<String, OrderStatus> fetchOrderStatuses(List<Order> orders);
 }

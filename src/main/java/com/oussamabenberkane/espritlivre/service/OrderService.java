@@ -16,6 +16,7 @@ import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.OrderDTO;
 import com.oussamabenberkane.espritlivre.service.dto.OrderItemDTO;
+import com.oussamabenberkane.espritlivre.service.dto.OrderPageResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
 import com.oussamabenberkane.espritlivre.service.mapper.OrderMapper;
 import com.oussamabenberkane.espritlivre.service.shipping.ShippingProviderFactory;
@@ -75,6 +76,8 @@ public class OrderService {
 
     private final ShippingProviderFactory shippingProviderFactory;
 
+    private final OrderStatusEnrichmentService orderStatusEnrichmentService;
+
     public OrderService(
         OrderRepository orderRepository,
         OrderMapper orderMapper,
@@ -84,7 +87,8 @@ public class OrderService {
         BookPackRepository bookPackRepository,
         MailService mailService,
         ApplicationProperties applicationProperties,
-        ShippingProviderFactory shippingProviderFactory
+        ShippingProviderFactory shippingProviderFactory,
+        OrderStatusEnrichmentService orderStatusEnrichmentService
     ) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
@@ -95,6 +99,7 @@ public class OrderService {
         this.mailService = mailService;
         this.applicationProperties = applicationProperties;
         this.shippingProviderFactory = shippingProviderFactory;
+        this.orderStatusEnrichmentService = orderStatusEnrichmentService;
     }
 
     /**
@@ -414,7 +419,7 @@ public class OrderService {
      * @return the list of entities.
      */
     @Transactional(readOnly = true)
-    public Page<OrderDTO> findAll(
+    public OrderPageResponse findAll(
         Pageable pageable,
         String search,
         OrderStatus status,
@@ -427,7 +432,10 @@ public class OrderService {
             search, status, dateFrom, dateTo, minAmount, maxAmount);
 
         Specification<Order> spec = buildOrderSpecification(search, status, dateFrom, dateTo, minAmount, maxAmount);
-        return orderRepository.findAll(spec, pageable).map(orderMapper::toDto);
+        Page<OrderDTO> orders = orderRepository.findAll(spec, pageable).map(orderMapper::toDto);
+
+        // Enrich with live status from shipping providers
+        return orderStatusEnrichmentService.enrichWithLiveStatus(orders);
     }
 
     /**
@@ -443,7 +451,7 @@ public class OrderService {
      * @return the list of entities.
      */
     @Transactional(readOnly = true)
-    public Page<OrderDTO> findAllForCurrentUser(
+    public OrderPageResponse findAllForCurrentUser(
         Pageable pageable,
         String search,
         OrderStatus status,
@@ -455,7 +463,10 @@ public class OrderService {
         LOG.debug("Request to get orders for current user with filters - search: {}", search);
 
         Specification<Order> spec = buildOrderSpecification(search, status, dateFrom, dateTo, minAmount, maxAmount);
-        return orderRepository.findByCurrentUser(spec, pageable).map(orderMapper::toDto);
+        Page<OrderDTO> orders = orderRepository.findByCurrentUser(spec, pageable).map(orderMapper::toDto);
+
+        // Enrich with live status from shipping providers
+        return orderStatusEnrichmentService.enrichWithLiveStatus(orders);
     }
 
     /**

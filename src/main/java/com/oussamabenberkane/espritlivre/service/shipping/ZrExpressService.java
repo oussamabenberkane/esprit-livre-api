@@ -9,11 +9,13 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -154,8 +156,160 @@ public class ZrExpressService implements ShippingProviderService {
 
     @Override
     public OrderStatus mapProviderStatus(String statusCode, String event) {
-        // ZR Express status mapping deferred to later phase
+        if (statusCode == null && event == null) {
+            return null;
+        }
+
+        // Handle by status name (state.name from API)
+        String statusToCheck = statusCode != null ? statusCode : event;
+        return mapZrExpressStateName(statusToCheck);
+    }
+
+    @Override
+    public Optional<OrderStatus> fetchOrderStatus(Order order) {
+        if (order.getTrackingNumber() == null || order.getTrackingNumber().isBlank()) {
+            return Optional.empty();
+        }
+
+        if (!shippingProperties.getZrExpress().isEnabled()) {
+            LOG.debug("ZR Express integration is disabled, skipping status fetch for order: {}", order.getUniqueId());
+            return Optional.empty();
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/parcels/" + order.getTrackingNumber();
+            LOG.debug("Fetching ZR Express parcel status for tracking: {}", order.getTrackingNumber());
+
+            ResponseEntity<ZrExpressGetParcelResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                ZrExpressGetParcelResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                ZrExpressGetParcelResponse parcel = response.getBody();
+                if (parcel.getState() != null && parcel.getState().getName() != null) {
+                    String stateName = parcel.getState().getName();
+                    OrderStatus mappedStatus = mapZrExpressStateName(stateName);
+                    if (mappedStatus != null) {
+                        LOG.debug("ZR Express status for order {}: {} -> {}",
+                            order.getUniqueId(), stateName, mappedStatus);
+                        return Optional.of(mappedStatus);
+                    }
+                }
+            }
+
+            return Optional.empty();
+
+        } catch (HttpClientErrorException e) {
+            LOG.debug("ZR Express API error fetching status for order {}: {} - {}",
+                order.getUniqueId(), e.getStatusCode(), e.getResponseBodyAsString());
+            return Optional.empty();
+        } catch (HttpServerErrorException e) {
+            LOG.debug("ZR Express server error fetching status for order {}: {}",
+                order.getUniqueId(), e.getStatusCode());
+            return Optional.empty();
+        } catch (Exception e) {
+            LOG.debug("Error fetching ZR Express status for order {}: {}", order.getUniqueId(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Map ZR Express state.name to internal OrderStatus.
+     * Uses loose contains matching to handle various status formats.
+     * Order of checks matters: more specific matches first.
+     */
+    private OrderStatus mapZrExpressStateName(String stateName) {
+        if (stateName == null || stateName.isBlank()) {
+            return null;
+        }
+
+        // Normalize: lowercase, trim, remove accents, replace underscores with spaces
+        String normalized = normalizeLocationName(stateName).replace("_", " ");
+
+        // DELIVERED status (check first - final state)
+        if (normalized.contains("livre") ||
+            normalized.contains("deliver") ||
+            normalized.contains("recouvert")) {
+            return OrderStatus.DELIVERED;
+        }
+
+        // CANCELLED/RETURNED statuses
+        if (normalized.contains("annul") ||
+            normalized.contains("retour") ||
+            normalized.contains("echec") ||
+            normalized.contains("cancel") ||
+            normalized.contains("return") ||
+            normalized.contains("fail") ||
+            normalized.contains("refuse")) {
+            return OrderStatus.CANCELLED;
+        }
+
+        // CONFIRMED statuses (preparation phase) - check BEFORE shipped
+        // "pret_a_expedier" = ready to ship, not yet shipped
+        if (
+            normalized.contains("ready") ||
+            normalized.contains("prepara") ||
+            normalized.contains("pending") ||
+            normalized.contains("created") ||
+            normalized.contains("attente") ||
+            normalized.contains("commande") ||
+            normalized.contains("recu") ||
+            normalized.contains("nouveau") ||
+            normalized.contains("new")) {
+            return OrderStatus.CONFIRMED;
+        }
+
+        // SHIPPED statuses (in transit) - checked after CONFIRMED
+        if (normalized.contains("transit") ||
+            normalized.contains("ramass") ||
+            normalized.contains("exped") ||
+            normalized.contains("picked") ||
+            normalized.contains("dispatch") ||
+            normalized.contains("shipping") ||
+            normalized.contains("centre") ||
+            normalized.contains("wilaya") ||
+            normalized.contains("hub") ||
+            normalized.contains("transfert") ||
+            normalized.contains("sorti")) {
+            return OrderStatus.SHIPPED;
+        }
+
+        LOG.debug("Unknown ZR Express status: {}", stateName);
         return null;
+    }
+
+    @Override
+    public Map<String, OrderStatus> fetchOrderStatuses(List<Order> orders) {
+        Map<String, OrderStatus> results = new HashMap<>();
+
+        if (orders == null || orders.isEmpty()) {
+            return results;
+        }
+
+        if (!shippingProperties.getZrExpress().isEnabled()) {
+            LOG.debug("ZR Express integration is disabled, skipping batch status fetch");
+            return results;
+        }
+
+        LOG.debug("Fetching ZR Express status for {} parcels", orders.size());
+
+        // ZR Express doesn't support batch filtering by tracking number,
+        // so we fetch each parcel individually using the single-parcel endpoint
+        for (Order order : orders) {
+            Optional<OrderStatus> status = fetchOrderStatus(order);
+            if (status.isPresent()) {
+                results.put(order.getTrackingNumber(), status.get());
+            }
+        }
+
+        LOG.debug("ZR Express fetch completed: {}/{} statuses retrieved", results.size(), orders.size());
+        return results;
     }
 
     /**

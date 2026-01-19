@@ -12,11 +12,16 @@ import com.oussamabenberkane.espritlivre.service.dto.shipping.RelayPointDTO;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineCentersResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelRequest;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelStatusResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelsResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,6 +165,194 @@ public class YalidineService implements ShippingProviderService {
             }
         }
 
+        return null;
+    }
+
+    @Override
+    public Optional<OrderStatus> fetchOrderStatus(Order order) {
+        if (order.getTrackingNumber() == null || order.getTrackingNumber().isBlank()) {
+            return Optional.empty();
+        }
+
+        if (!shippingProperties.getYalidine().isEnabled()) {
+            LOG.debug("Yalidine integration is disabled, skipping status fetch for order: {}", order.getUniqueId());
+            return Optional.empty();
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getYalidine().getBaseUrl() + "/parcels/" + order.getTrackingNumber();
+            LOG.debug("Fetching Yalidine parcel status for tracking: {}", order.getTrackingNumber());
+
+            ResponseEntity<YalidineParcelStatusResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                YalidineParcelStatusResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                String lastStatus = response.getBody().getLastStatus();
+                if (lastStatus != null) {
+                    OrderStatus mappedStatus = mapYalidineLastStatus(lastStatus);
+                    if (mappedStatus != null) {
+                        LOG.debug("Yalidine status for order {}: {} -> {}",
+                            order.getUniqueId(), lastStatus, mappedStatus);
+                        return Optional.of(mappedStatus);
+                    }
+                }
+            }
+
+            return Optional.empty();
+
+        } catch (HttpClientErrorException e) {
+            LOG.debug("Yalidine API error fetching status for order {}: {} - {}",
+                order.getUniqueId(), e.getStatusCode(), e.getResponseBodyAsString());
+            return Optional.empty();
+        } catch (HttpServerErrorException e) {
+            LOG.debug("Yalidine server error fetching status for order {}: {}",
+                order.getUniqueId(), e.getStatusCode());
+            return Optional.empty();
+        } catch (Exception e) {
+            LOG.debug("Error fetching Yalidine status for order {}: {}", order.getUniqueId(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Map<String, OrderStatus> fetchOrderStatuses(List<Order> orders) {
+        Map<String, OrderStatus> results = new HashMap<>();
+
+        if (orders == null || orders.isEmpty()) {
+            return results;
+        }
+
+        if (!shippingProperties.getYalidine().isEnabled()) {
+            LOG.debug("Yalidine integration is disabled, skipping batch status fetch");
+            return results;
+        }
+
+        // Filter orders with valid tracking numbers
+        List<String> trackingNumbers = orders.stream()
+            .filter(o -> o.getTrackingNumber() != null && !o.getTrackingNumber().isBlank())
+            .map(Order::getTrackingNumber)
+            .toList();
+
+        if (trackingNumbers.isEmpty()) {
+            return results;
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            // Build URL with comma-separated tracking numbers
+            String trackingParam = String.join(",", trackingNumbers);
+            String url = shippingProperties.getYalidine().getBaseUrl() + "/parcels/?tracking=" + trackingParam;
+            LOG.debug("Fetching Yalidine batch status for {} parcels", trackingNumbers.size());
+
+            ResponseEntity<YalidineParcelsResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                YalidineParcelsResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                YalidineParcelsResponse parcelsResponse = response.getBody();
+                if (parcelsResponse.getData() != null) {
+                    for (YalidineParcelStatusResponse parcel : parcelsResponse.getData()) {
+                        if (parcel.getTracking() != null && parcel.getLastStatus() != null) {
+                            OrderStatus mappedStatus = mapYalidineLastStatus(parcel.getLastStatus());
+                            if (mappedStatus != null) {
+                                results.put(parcel.getTracking(), mappedStatus);
+                                LOG.debug("Yalidine batch status: {} -> {}", parcel.getTracking(), mappedStatus);
+                            }
+                        }
+                    }
+                }
+            }
+
+            LOG.debug("Yalidine batch fetch completed: {}/{} statuses retrieved",
+                results.size(), trackingNumbers.size());
+            return results;
+
+        } catch (HttpClientErrorException e) {
+            LOG.debug("Yalidine API error in batch fetch: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return results;
+        } catch (HttpServerErrorException e) {
+            LOG.debug("Yalidine server error in batch fetch: {}", e.getStatusCode());
+            return results;
+        } catch (Exception e) {
+            LOG.debug("Error in Yalidine batch status fetch: {}", e.getMessage());
+            return results;
+        }
+    }
+
+    /**
+     * Map Yalidine last_status string to internal OrderStatus.
+     *
+     * Status mapping based on Yalidine API:
+     * - CONFIRMED: En préparation, Pas encore expédié, Prêt à expédier, A vérifier, Pas encore ramassé
+     * - SHIPPED: Ramassé, En transit, Expédié, Sorti en livraison, Centre, Transfert, Vers Wilaya,
+     *            Reçu à Wilaya, Prêt pour livreur, En passation, Bloqué, Débloqué, En localisation,
+     *            En attente du client, En attente, En alerte, Tentative échouée
+     * - DELIVERED: Livré
+     * - CANCELLED: Retourné au vendeur, Echèc livraison, Retour vers centre, Retourné au centre,
+     *              Retour transfert, Retour groupé, Retour à retirer, Retour vers vendeur, Echange échoué
+     */
+    private OrderStatus mapYalidineLastStatus(String lastStatus) {
+        if (lastStatus == null || lastStatus.isBlank()) {
+            return null;
+        }
+
+        // Normalize: lowercase and trim
+        String normalized = lastStatus.toLowerCase().trim();
+
+        // CONFIRMED statuses (preparation phase)
+        if (normalized.contains("préparation") ||
+            normalized.equals("pas encore expédié") ||
+            normalized.equals("prêt à expédier") ||
+            normalized.equals("a vérifier") ||
+            normalized.equals("pas encore ramassé")) {
+            return OrderStatus.CONFIRMED;
+        }
+
+        // DELIVERED status
+        if (normalized.equals("livré")) {
+            return OrderStatus.DELIVERED;
+        }
+
+        // CANCELLED/RETURNED statuses
+        if (normalized.contains("retour") ||
+            normalized.contains("retourné") ||
+            normalized.equals("echèc livraison") ||
+            normalized.equals("echange échoué")) {
+            return OrderStatus.CANCELLED;
+        }
+
+        // SHIPPED statuses (in transit)
+        if (normalized.equals("ramassé") ||
+            normalized.contains("transit") ||
+            normalized.equals("expédié") ||
+            normalized.contains("livraison") ||
+            normalized.equals("centre") ||
+            normalized.equals("transfert") ||
+            normalized.contains("wilaya") ||
+            normalized.equals("prêt pour livreur") ||
+            normalized.equals("en passation") ||
+            normalized.equals("bloqué") ||
+            normalized.equals("débloqué") ||
+            normalized.equals("en localisation") ||
+            normalized.contains("attente") ||
+            normalized.equals("en alerte") ||
+            normalized.contains("échouée")) {
+            return OrderStatus.SHIPPED;
+        }
+
+        LOG.debug("Unknown Yalidine status: {}", lastStatus);
         return null;
     }
 
