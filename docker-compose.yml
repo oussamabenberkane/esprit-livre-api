@@ -7,7 +7,7 @@ services:
     container_name: espritlivre-postgres
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5432:5432"  # Only localhost for SSH tunnel access
+      - "127.0.0.1:5433:5432"  # Only localhost for SSH tunnel access (5433 to avoid conflicts)
     environment:
       POSTGRES_USER: ${DB_USER:-espritlivre}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
