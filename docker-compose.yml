@@ -58,9 +58,7 @@ services:
       - ./src/main/docker/realm-config:/opt/keycloak/data/import:ro
       - keycloak_data:/opt/keycloak/data
     networks:
-      backend:
-        aliases:
-          - auth.espritlivre.com
+      - backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,8 +89,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-espritlivre}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-espritlivre}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      # OAuth2/Keycloak (must match what Keycloak returns in its metadata)
-      OAUTH_ISSUER_URI: http://auth.espritlivre.com:8080/realms/jhipster
+      # OAuth2/Keycloak (must match token issuer - external HTTPS URL)
+      OAUTH_ISSUER_URI: https://auth.espritlivre.com/realms/jhipster
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_ID: ${OAUTH_CLIENT_ID:-web_app}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:?OAUTH_CLIENT_SECRET is required}
       # Application
@@ -203,7 +201,9 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_cache:/var/cache/nginx
     networks:
-      - backend
+      backend:
+        aliases:
+          - auth.espritlivre.com
     depends_on:
       - api
       - keycloak
