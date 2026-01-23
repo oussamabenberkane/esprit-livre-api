@@ -90,7 +90,7 @@ Before first deployment, create the Keycloak database:
 
 ```bash
 # Start only PostgreSQL first
-docker compose -f docker-compose.prod.yml up -d postgres
+docker compose -f docker-compose.yml up -d postgres
 
 # Wait for it to be ready
 sleep 10
@@ -105,10 +105,10 @@ docker exec -it espritlivre-postgres psql -U espritlivre -c "CREATE DATABASE key
 cd ~/espritlivre/api
 
 # Build and start all services
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml up -d --build
 
 # Watch the logs
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.yml logs -f
 ```
 
 ### 6. Verify Deployment
@@ -117,7 +117,7 @@ Check each service:
 
 ```bash
 # Check all containers are running
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.yml ps
 
 # Test endpoints
 curl -k https://espritlivre.com
@@ -160,21 +160,21 @@ docker exec -it espritlivre-postgres psql -U espritlivre -d espritlivre -f /tmp/
 
 ```bash
 # View logs
-docker compose -f docker-compose.prod.yml logs -f api
-docker compose -f docker-compose.prod.yml logs -f keycloak
-docker compose -f docker-compose.prod.yml logs -f nginx
+docker compose -f docker-compose.yml logs -f api
+docker compose -f docker-compose.yml logs -f keycloak
+docker compose -f docker-compose.yml logs -f nginx
 
 # Restart a service
-docker compose -f docker-compose.prod.yml restart api
+docker compose -f docker-compose.yml restart api
 
 # Rebuild and restart a service
-docker compose -f docker-compose.prod.yml up -d --build api
+docker compose -f docker-compose.yml up -d --build api
 
 # Stop all services
-docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.yml down
 
 # Stop and remove volumes (CAUTION: destroys data)
-docker compose -f docker-compose.prod.yml down -v
+docker compose -f docker-compose.yml down -v
 
 # Check resource usage
 docker stats
@@ -198,7 +198,7 @@ cd admin && git pull && cd ..
 
 # Rebuild and restart
 cd api
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml up -d --build
 ```
 
 ## Backup Strategy
@@ -238,7 +238,7 @@ chmod +x ~/backup.sh
 
 ```bash
 # Check logs
-docker compose -f docker-compose.prod.yml logs api
+docker compose -f docker-compose.yml logs api
 
 # Check if port is in use
 sudo netstat -tulpn | grep :80
@@ -249,7 +249,7 @@ sudo netstat -tulpn | grep :443
 
 ```bash
 # Check if postgres is healthy
-docker compose -f docker-compose.prod.yml ps postgres
+docker compose -f docker-compose.yml ps postgres
 
 # Test connection from API container
 docker exec -it espritlivre-api sh -c "curl -v postgres:5432"
@@ -259,7 +259,7 @@ docker exec -it espritlivre-api sh -c "curl -v postgres:5432"
 
 ```bash
 # Check Keycloak logs
-docker compose -f docker-compose.prod.yml logs keycloak
+docker compose -f docker-compose.yml logs keycloak
 
 # Verify Keycloak is healthy
 docker exec -it espritlivre-keycloak /opt/keycloak/bin/kcadm.sh config credentials \
