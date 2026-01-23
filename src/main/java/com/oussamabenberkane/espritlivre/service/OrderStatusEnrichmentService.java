@@ -94,7 +94,7 @@ public class OrderStatusEnrichmentService {
                 .toList();
 
             // Batch fetch statuses (single API call)
-            Map<String, OrderStatus> providerStatuses = serviceOpt.get().fetchOrderStatuses(orderEntities);
+            Map<String, OrderStatus> providerStatuses = serviceOpt.orElseThrow().fetchOrderStatuses(orderEntities);
             allStatuses.putAll(providerStatuses);
 
             LOG.debug("Provider {} batch fetch: {}/{} statuses retrieved",

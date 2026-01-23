@@ -325,7 +325,7 @@ public class OrderService {
                 return "Shipping provider not configured: " + order.getShippingProvider();
             }
 
-            ShippingProviderService service = serviceOpt.get();
+            ShippingProviderService service = serviceOpt.orElseThrow();
             ShippingResult result = service.createParcel(order);
 
             if (result.success()) {
