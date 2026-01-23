@@ -104,6 +104,10 @@ services:
       ZR_EXPRESS_ENABLED: ${ZR_EXPRESS_ENABLED:-true}
       ZR_EXPRESS_TENANT_ID: ${ZR_EXPRESS_TENANT_ID:-}
       ZR_EXPRESS_API_KEY: ${ZR_EXPRESS_API_KEY:-}
+      # Keycloak Admin API (for user sync)
+      KEYCLOAK_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+      KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
       # Mail (configure your SMTP)
       SPRING_MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       SPRING_MAIL_PORT: ${MAIL_PORT:-587}
