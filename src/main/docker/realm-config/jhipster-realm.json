@@ -781,9 +781,13 @@
         "http://localhost:*",
         "https://127.0.0.1:*",
         "https://localhost:*",
-        "https://oauth.pstmn.io/v1/callback"
+        "https://oauth.pstmn.io/v1/callback",
+        "https://espritlivre.com/*",
+        "https://www.espritlivre.com/*",
+        "https://admin.espritlivre.com/*",
+        "https://api.espritlivre.com/*"
       ],
-      "webOrigins": ["http://localhost:5173", "http://localhost:5174"],
+      "webOrigins": ["http://localhost:5173", "http://localhost:5174", "https://espritlivre.com", "https://www.espritlivre.com", "https://admin.espritlivre.com", "https://api.espritlivre.com"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
