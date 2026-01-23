@@ -6,6 +6,8 @@ services:
     image: postgres:17
     container_name: espritlivre-postgres
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"  # Only localhost for SSH tunnel access
     environment:
       POSTGRES_USER: ${DB_USER:-espritlivre}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
