@@ -41,7 +41,13 @@ RUN groupadd -r espritlivre && useradd -r -g espritlivre espritlivre
 COPY --from=builder /app/target/esprit-livre-*.jar app.jar
 
 # Create directories for media files and logs
-RUN mkdir -p /app/media /app/logs && chown -R espritlivre:espritlivre /app
+RUN mkdir -p /app/media/books /app/media/book-packs /app/media/authors /app/media/categories /app/media/users /app/logs
+
+# Copy initial media files (default placeholder, etc.)
+COPY --from=builder /app/src/main/resources/media/ /app/media/
+
+# Set ownership
+RUN chown -R espritlivre:espritlivre /app
 
 # Declare volumes for persistent data
 VOLUME ["/app/media", "/app/logs"]

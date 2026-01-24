@@ -96,6 +96,8 @@ services:
       # Application
       APPLICATION_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@espritlivre.com}
       APPLICATION_ADMIN_PANEL_URL: https://admin.${DOMAIN:-espritlivre.com}
+      # Media storage
+      MEDIA_ROOT_DIR: /app/media
       # Shipping providers
       YALIDINE_ENABLED: ${YALIDINE_ENABLED:-false}
       YALIDINE_API_ID: ${YALIDINE_API_ID:-}

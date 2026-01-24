@@ -8,6 +8,9 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -26,13 +29,26 @@ public class FileStorageService {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileStorageService.class);
 
-    private static final String MEDIA_ROOT_DIR = "src/main/resources/media";
-    private static final String BOOKS_DIR = MEDIA_ROOT_DIR + "/books";
-    private static final String BOOK_PACKS_DIR = MEDIA_ROOT_DIR + "/book-packs";
-    private static final String AUTHORS_DIR = MEDIA_ROOT_DIR + "/authors";
-    private static final String CATEGORIES_DIR = MEDIA_ROOT_DIR + "/categories";
-    private static final String USERS_DIR = MEDIA_ROOT_DIR + "/users";
-    private static final String DEFAULT_PLACEHOLDER_PATH = MEDIA_ROOT_DIR + "/default.png";
+    @Value("${media.root-dir:src/main/resources/media}")
+    private String mediaRootDir;
+
+    private String booksDir;
+    private String bookPacksDir;
+    private String authorsDir;
+    private String categoriesDir;
+    private String usersDir;
+    private String defaultPlaceholderPath;
+
+    @PostConstruct
+    public void init() {
+        this.booksDir = mediaRootDir + "/books";
+        this.bookPacksDir = mediaRootDir + "/book-packs";
+        this.authorsDir = mediaRootDir + "/authors";
+        this.categoriesDir = mediaRootDir + "/categories";
+        this.usersDir = mediaRootDir + "/users";
+        this.defaultPlaceholderPath = mediaRootDir + "/default.png";
+        LOG.info("FileStorageService initialized with media root: {}", mediaRootDir);
+    }
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
@@ -59,7 +75,7 @@ public class FileStorageService {
      */
     public String storeBookCover(MultipartFile file, Long bookId) throws IOException {
         LOG.debug("Request to store book cover for book ID: {}", bookId);
-        return storeImage(file, BOOKS_DIR, "cover_" + bookId, "/media/books/", "book");
+        return storeImage(file, booksDir, "cover_" + bookId, "/media/books/", "book");
     }
 
     /**
@@ -72,7 +88,7 @@ public class FileStorageService {
      */
     public String storeBookPackCover(MultipartFile file, Long bookPackId) throws IOException {
         LOG.debug("Request to store book pack cover for book pack ID: {}", bookPackId);
-        return storeImage(file, BOOK_PACKS_DIR, "pack_" + bookPackId, "/media/book-packs/", "bookPack");
+        return storeImage(file, bookPacksDir, "pack_" + bookPackId, "/media/book-packs/", "bookPack");
     }
 
     /**
@@ -85,7 +101,7 @@ public class FileStorageService {
      */
     public String storeAuthorPicture(MultipartFile file, Long authorId) throws IOException {
         LOG.debug("Request to store author picture for author ID: {}", authorId);
-        return storeImage(file, AUTHORS_DIR, "author_" + authorId, "/media/authors/", "author");
+        return storeImage(file, authorsDir, "author_" + authorId, "/media/authors/", "author");
     }
 
     /**
@@ -98,7 +114,7 @@ public class FileStorageService {
      */
     public String storeCategoryImage(MultipartFile file, Long tagId) throws IOException {
         LOG.debug("Request to store category image for tag ID: {}", tagId);
-        return storeImage(file, CATEGORIES_DIR, "category_" + tagId, "/media/categories/", "tag");
+        return storeImage(file, categoriesDir, "category_" + tagId, "/media/categories/", "tag");
     }
 
     /**
@@ -111,7 +127,7 @@ public class FileStorageService {
      */
     public String storeUserPicture(MultipartFile file, String userId) throws IOException {
         LOG.debug("Request to store user picture for user ID: {}", userId);
-        return storeImage(file, USERS_DIR, "user_" + userId, "/media/users/", "user");
+        return storeImage(file, usersDir, "user_" + userId, "/media/users/", "user");
     }
 
     /**
@@ -123,7 +139,7 @@ public class FileStorageService {
      */
     public String storeAdminPicture(MultipartFile file) throws IOException {
         LOG.debug("Request to store admin picture");
-        return storeImage(file, USERS_DIR, "admin", "/media/users/", "admin");
+        return storeImage(file, usersDir, "admin", "/media/users/", "admin");
     }
 
     /**
@@ -173,7 +189,7 @@ public class FileStorageService {
      * @param coverImageUrl the relative URL path to the cover image
      */
     public void deleteBookCover(String coverImageUrl) {
-        deleteImage(coverImageUrl, BOOKS_DIR);
+        deleteImage(coverImageUrl, booksDir);
     }
 
     /**
@@ -182,7 +198,7 @@ public class FileStorageService {
      * @param coverImageUrl the relative URL path to the cover image
      */
     public void deleteBookPackCover(String coverImageUrl) {
-        deleteImage(coverImageUrl, BOOK_PACKS_DIR);
+        deleteImage(coverImageUrl, bookPacksDir);
     }
 
     /**
@@ -191,7 +207,7 @@ public class FileStorageService {
      * @param profilePictureUrl the relative URL path to the profile picture
      */
     public void deleteAuthorPicture(String profilePictureUrl) {
-        deleteImage(profilePictureUrl, AUTHORS_DIR);
+        deleteImage(profilePictureUrl, authorsDir);
     }
 
     /**
@@ -200,7 +216,7 @@ public class FileStorageService {
      * @param imageUrl the relative URL path to the category image
      */
     public void deleteCategoryImage(String imageUrl) {
-        deleteImage(imageUrl, CATEGORIES_DIR);
+        deleteImage(imageUrl, categoriesDir);
     }
 
     /**
@@ -209,7 +225,7 @@ public class FileStorageService {
      * @param profilePictureUrl the relative URL path to the profile picture
      */
     public void deleteUserPicture(String profilePictureUrl) {
-        deleteImage(profilePictureUrl, USERS_DIR);
+        deleteImage(profilePictureUrl, usersDir);
     }
 
     /**
@@ -219,7 +235,7 @@ public class FileStorageService {
     public void deleteAllAdminPictures() {
         LOG.debug("Request to delete all admin pictures");
 
-        Path usersPath = Path.of(USERS_DIR);
+        Path usersPath = Path.of(usersDir);
         if (!Files.exists(usersPath)) {
             return;
         }
@@ -381,15 +397,15 @@ public class FileStorageService {
             // Determine the directory based on the URL prefix
             String directory;
             if (imageUrl.startsWith("/media/books/")) {
-                directory = BOOKS_DIR;
+                directory = booksDir;
             } else if (imageUrl.startsWith("/media/book-packs/")) {
-                directory = BOOK_PACKS_DIR;
+                directory = bookPacksDir;
             } else if (imageUrl.startsWith("/media/authors/")) {
-                directory = AUTHORS_DIR;
+                directory = authorsDir;
             } else if (imageUrl.startsWith("/media/categories/")) {
-                directory = CATEGORIES_DIR;
+                directory = categoriesDir;
             } else if (imageUrl.startsWith("/media/users/")) {
-                directory = USERS_DIR;
+                directory = usersDir;
             } else {
                 throw new IOException("Invalid image URL: " + imageUrl);
             }
@@ -436,17 +452,17 @@ public class FileStorageService {
      */
     public Resource loadPlaceholderImage() throws IOException {
         try {
-            Path filePath = Path.of(DEFAULT_PLACEHOLDER_PATH).normalize();
+            Path filePath = Path.of(defaultPlaceholderPath).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {
                 LOG.debug("Placeholder image loaded successfully");
                 return resource;
             } else {
-                throw new IOException("Placeholder image not found or not readable: " + DEFAULT_PLACEHOLDER_PATH);
+                throw new IOException("Placeholder image not found or not readable: " + defaultPlaceholderPath);
             }
         } catch (MalformedURLException e) {
-            throw new IOException("Malformed placeholder path: " + DEFAULT_PLACEHOLDER_PATH, e);
+            throw new IOException("Malformed placeholder path: " + defaultPlaceholderPath, e);
         }
     }
 }
