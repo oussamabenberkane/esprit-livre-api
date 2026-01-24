@@ -160,3 +160,9 @@ frontend-auth-prompt.md
 # Media Files
 ######################
 src/main/resources/media/
+
+######################
+# Production Secrets
+######################
+.env
+nginx/ssl/

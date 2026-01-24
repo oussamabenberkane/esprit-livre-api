@@ -67,7 +67,7 @@ public class ShippingWebhookResource {
             return ResponseEntity.ok().build();
         }
 
-        Order order = orderOpt.get();
+        Order order = orderOpt.orElseThrow();
 
         // 3. Map status and update order if status changed
         OrderStatus newStatus = yalidineService.mapProviderStatus(payload.statusCode(), payload.event());

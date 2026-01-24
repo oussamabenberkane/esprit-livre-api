@@ -31,6 +31,18 @@ spring:
       enabled: false
     livereload:
       enabled: false
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     url: jdbc:postgresql://localhost:5432/espritLivre
@@ -67,6 +79,8 @@ spring:
 server:
   port: 8080
   shutdown: graceful # see https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-graceful-shutdown
+  # Required for running behind nginx reverse proxy (X-Forwarded-* headers)
+  forward-headers-strategy: native
   compression:
     enabled: true
     mime-types: text/html,text/xml,text/plain,text/css,application/javascript,application/json,image/svg+xml
@@ -102,6 +116,13 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
+media:
+  root-dir: ${MEDIA_ROOT_DIR:/app/media}
+
 application:
-  admin-email: ${ADMIN_EMAIL:oussamabenberkane.pro@gmail.com}
-  admin-panel-url: ${ADMIN_PANEL_URL:http://localhost:8080/admin}
+  admin-email: ${ADMIN_EMAIL:admin@espritlivre.com}
+  admin-panel-url: ${APPLICATION_ADMIN_PANEL_URL:https://admin.espritlivre.com}
+  keycloak:
+    admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}

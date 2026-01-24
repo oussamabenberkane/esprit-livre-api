@@ -153,7 +153,7 @@ spring:
       client:
         provider:
           oidc:
-            issuer-uri: http://localhost:9080/realms/jhipster
+            issuer-uri: ${OAUTH_ISSUER_URI:http://localhost:9080/realms/jhipster}
         registration:
           oidc:
             client-id: web_app
@@ -199,14 +199,14 @@ info:
 jhipster:
   clientApp:
     name: 'espritLivreApp'
-  # By default CORS is disabled. Uncomment to enable.
-  # cors:
-  #   allowed-origins: "http://localhost:8100,http://localhost:9000"
-  #   allowed-methods: "*"
-  #   allowed-headers: "*"
-  #   exposed-headers: "Authorization,Link,X-Total-Count,X-${jhipster.clientApp.name}-alert,X-${jhipster.clientApp.name}-error,X-${jhipster.clientApp.name}-params"
-  #   allow-credentials: true
-  #   max-age: 1800
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8100,http://localhost:9000,http://localhost:5173,http://localhost:5174}
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:https://*.espritlivre.com}
+    allowed-methods: "*"
+    allowed-headers: "*"
+    exposed-headers: "Authorization,Link,X-Total-Count,X-${jhipster.clientApp.name}-alert,X-${jhipster.clientApp.name}-error,X-${jhipster.clientApp.name}-params"
+    allow-credentials: true
+    max-age: 1800
   mail:
     from: oussamabenberkane.pro@gmail.com
   api-docs:

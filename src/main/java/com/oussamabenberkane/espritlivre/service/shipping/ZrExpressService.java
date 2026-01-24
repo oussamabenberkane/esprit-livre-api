@@ -303,9 +303,7 @@ public class ZrExpressService implements ShippingProviderService {
         // so we fetch each parcel individually using the single-parcel endpoint
         for (Order order : orders) {
             Optional<OrderStatus> status = fetchOrderStatus(order);
-            if (status.isPresent()) {
-                results.put(order.getTrackingNumber(), status.get());
-            }
+            status.ifPresent(s -> results.put(order.getTrackingNumber(), s));
         }
 
         LOG.debug("ZR Express fetch completed: {}/{} statuses retrieved", results.size(), orders.size());
