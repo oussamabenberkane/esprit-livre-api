@@ -166,3 +166,5 @@ src/main/resources/media/
 ######################
 .env
 nginx/ssl/
+
+el.env
