@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Add delivery fee fields to Book, BookPack, and Order entities
+    -->
+    <changeSet id="20260214000000-1" author="claude">
+        <comment>Add delivery fee fields to Book entity</comment>
+        <addColumn tableName="book">
+            <column name="delivery_fee" type="decimal(21,2)" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+            <column name="automatic_delivery_fee" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260214000000-2" author="claude">
+        <comment>Add delivery fee fields to BookPack entity</comment>
+        <addColumn tableName="book_pack">
+            <column name="delivery_fee" type="decimal(21,2)" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+            <column name="automatic_delivery_fee" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260214000000-3" author="claude">
+        <comment>Add delivery fee audit fields to Order entity</comment>
+        <addColumn tableName="jhi_order">
+            <column name="delivery_fee_method" type="varchar(20)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="delivery_fee_provider" type="varchar(20)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

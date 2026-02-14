@@ -71,6 +71,12 @@ public class Book implements Serializable {
     @Column(name = "deleted_by", length = 50)
     private String deletedBy;
 
+    @Column(name = "delivery_fee", precision = 21, scale = 2)
+    private BigDecimal deliveryFee;
+
+    @Column(name = "automatic_delivery_fee")
+    private Boolean automaticDeliveryFee;
+
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "books")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
@@ -278,6 +284,32 @@ public class Book implements Serializable {
         return this;
     }
 
+    public BigDecimal getDeliveryFee() {
+        return this.deliveryFee;
+    }
+
+    public Book deliveryFee(BigDecimal deliveryFee) {
+        this.setDeliveryFee(deliveryFee);
+        return this;
+    }
+
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public Boolean getAutomaticDeliveryFee() {
+        return this.automaticDeliveryFee;
+    }
+
+    public Book automaticDeliveryFee(Boolean automaticDeliveryFee) {
+        this.setAutomaticDeliveryFee(automaticDeliveryFee);
+        return this;
+    }
+
+    public void setAutomaticDeliveryFee(Boolean automaticDeliveryFee) {
+        this.automaticDeliveryFee = automaticDeliveryFee;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @PrePersist
@@ -317,6 +349,8 @@ public class Book implements Serializable {
             ", description='" + getDescription() + "'" +
             ", active='" + getActive() + "'" +
             ", language='" + getLanguage() + "'" +
+            ", deliveryFee=" + getDeliveryFee() +
+            ", automaticDeliveryFee=" + getAutomaticDeliveryFee() +
             ", createdAt='" + getCreatedAt() + "'" +
             ", updatedAt='" + getUpdatedAt() + "'" +
             "}";

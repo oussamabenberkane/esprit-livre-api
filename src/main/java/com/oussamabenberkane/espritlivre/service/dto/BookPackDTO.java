@@ -32,6 +32,10 @@ public class BookPackDTO implements Serializable {
 
     private Instant lastModifiedDate;
 
+    private BigDecimal deliveryFee;
+
+    private Boolean automaticDeliveryFee;
+
     @NotNull
     @Size(min = 2)
     private Set<BookDTO> books = new HashSet<>();
@@ -98,6 +102,22 @@ public class BookPackDTO implements Serializable {
 
     public void setBooks(Set<BookDTO> books) {
         this.books = books;
+    }
+
+    public BigDecimal getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public Boolean getAutomaticDeliveryFee() {
+        return automaticDeliveryFee;
+    }
+
+    public void setAutomaticDeliveryFee(Boolean automaticDeliveryFee) {
+        this.automaticDeliveryFee = automaticDeliveryFee;
     }
 
     @Override

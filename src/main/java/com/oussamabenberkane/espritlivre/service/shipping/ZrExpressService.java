@@ -8,7 +8,16 @@ import com.oussamabenberkane.espritlivre.domain.OrderItem;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
-import com.oussamabenberkane.espritlivre.service.dto.shipping.*;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.DeliveryFeeResult;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.RelayPointDTO;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressGetParcelResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressHubResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelRequest;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressRateResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressSearchRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -1049,5 +1058,144 @@ public class ZrExpressService implements ShippingProviderService {
             return false;
         }
         return normalizeLocationName(name1).equals(normalizeLocationName(name2));
+    }
+
+    /**
+     * Get delivery fee for a specific destination territory.
+     *
+     * @param wilayaName Destination wilaya name (e.g., "Bejaia", "Alger")
+     * @param communeName Commune/district name within the wilaya
+     * @param isStopDesk Whether this is a pickup point (stop desk) delivery
+     * @return DeliveryFeeResult with the calculated fee or error
+     */
+    public DeliveryFeeResult getDeliveryFee(String wilayaName, String communeName, boolean isStopDesk) {
+        if (!shippingProperties.getZrExpress().isEnabled()) {
+            LOG.warn("ZR Express integration is disabled");
+            return DeliveryFeeResult.failure("ZR Express integration is disabled");
+        }
+
+        if (wilayaName == null || wilayaName.isBlank()) {
+            return DeliveryFeeResult.failure("Destination wilaya name is required");
+        }
+
+        try {
+            // First resolve the territory ID from wilaya/commune name
+            String cityTerritoryId = resolveCityTerritoryId(wilayaName);
+            if (cityTerritoryId == null) {
+                return DeliveryFeeResult.failure("Could not resolve wilaya: " + wilayaName);
+            }
+
+            // Try to get district territory if commune provided
+            String territoryId = cityTerritoryId;
+            if (communeName != null && !communeName.isBlank()) {
+                String districtTerritoryId = resolveDistrictTerritoryId(cityTerritoryId, communeName);
+                if (districtTerritoryId != null) {
+                    territoryId = districtTerritoryId;
+                }
+            }
+
+            // Now fetch the rate for this territory
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getZrExpress().getBaseUrl() +
+                "/delivery-pricing/rates/" + territoryId;
+
+            LOG.debug("Fetching ZR Express rate from: {}", url);
+
+            ResponseEntity<ZrExpressRateResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                ZrExpressRateResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                ZrExpressRateResponse rateResponse = response.getBody();
+
+                BigDecimal fee = rateResponse.getDeliveryFee(isStopDesk);
+                if (fee != null) {
+                    LOG.debug("ZR Express delivery fee for territory {}: {} DA (stopDesk={})",
+                        territoryId, fee, isStopDesk);
+                    return DeliveryFeeResult.automatic(fee, ShippingProvider.ZR);
+                } else {
+                    return DeliveryFeeResult.failure("No delivery prices found for territory: " + territoryId);
+                }
+            } else {
+                LOG.error("ZR Express rate API returned unexpected response: status={}", response.getStatusCode());
+                return DeliveryFeeResult.failure("ZR Express API returned unexpected response");
+            }
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("ZR Express rate API client error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return DeliveryFeeResult.failure("ZR Express API error: " + e.getResponseBodyAsString());
+        } catch (HttpServerErrorException e) {
+            LOG.error("ZR Express rate API server error: {}", e.getStatusCode());
+            return DeliveryFeeResult.failure("ZR Express server error");
+        } catch (Exception e) {
+            LOG.error("Error fetching ZR Express delivery fee", e);
+            return DeliveryFeeResult.failure("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get delivery fee using territory ID directly.
+     *
+     * @param territoryId The ZR Express territory UUID
+     * @param isStopDesk Whether this is a pickup point delivery
+     * @return DeliveryFeeResult with the calculated fee or error
+     */
+    public DeliveryFeeResult getDeliveryFeeByTerritoryId(String territoryId, boolean isStopDesk) {
+        if (!shippingProperties.getZrExpress().isEnabled()) {
+            LOG.warn("ZR Express integration is disabled");
+            return DeliveryFeeResult.failure("ZR Express integration is disabled");
+        }
+
+        if (territoryId == null || territoryId.isBlank()) {
+            return DeliveryFeeResult.failure("Territory ID is required");
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getZrExpress().getBaseUrl() +
+                "/delivery-pricing/rates/" + territoryId;
+
+            LOG.debug("Fetching ZR Express rate from: {}", url);
+
+            ResponseEntity<ZrExpressRateResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                ZrExpressRateResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                ZrExpressRateResponse rateResponse = response.getBody();
+
+                BigDecimal fee = rateResponse.getDeliveryFee(isStopDesk);
+                if (fee != null) {
+                    LOG.debug("ZR Express delivery fee for territory {}: {} DA (stopDesk={})",
+                        territoryId, fee, isStopDesk);
+                    return DeliveryFeeResult.automatic(fee, ShippingProvider.ZR);
+                } else {
+                    return DeliveryFeeResult.failure("No delivery prices found for territory: " + territoryId);
+                }
+            } else {
+                LOG.error("ZR Express rate API returned unexpected response: status={}", response.getStatusCode());
+                return DeliveryFeeResult.failure("ZR Express API returned unexpected response");
+            }
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("ZR Express rate API client error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return DeliveryFeeResult.failure("ZR Express API error: " + e.getResponseBodyAsString());
+        } catch (HttpServerErrorException e) {
+            LOG.error("ZR Express rate API server error: {}", e.getStatusCode());
+            return DeliveryFeeResult.failure("ZR Express server error");
+        } catch (Exception e) {
+            LOG.error("Error fetching ZR Express delivery fee", e);
+            return DeliveryFeeResult.failure("Unexpected error: " + e.getMessage());
+        }
     }
 }
