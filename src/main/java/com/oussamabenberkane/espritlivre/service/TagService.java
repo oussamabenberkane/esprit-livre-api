@@ -194,7 +194,13 @@ public class TagService {
             // Assign random color to ETIQUETTE tags if not provided
             if (tagDTO.getType() == TagType.ETIQUETTE && (tagDTO.getColorHex() == null || tagDTO.getColorHex().isEmpty())) {
                 tagDTO.setColorHex(getRandomColor());
-            } 
+            }
+
+            // Auto-increment order for MAIN_DISPLAY tags
+            if (tagDTO.getType() == TagType.MAIN_DISPLAY) {
+                Integer maxOrder = tagRepository.findMaxOrderForMainDisplay().orElse(0);
+                tagDTO.setOrder(maxOrder + 1);
+            }
 
             tag = tagMapper.toEntity(tagDTO);
             tag = tagRepository.save(tag);
@@ -296,6 +302,10 @@ public class TagService {
             tag.setActive(false);
             tag.setDeletedAt(Instant.now());
             SecurityUtils.getCurrentUserLogin().ifPresent(tag::setDeletedBy);
+            // Clear order for MAIN_DISPLAY tags to free up the unique constraint
+            if (tag.getType() == TagType.MAIN_DISPLAY) {
+                tag.setOrder(null);
+            }
             tagRepository.save(tag);
         });
     }
@@ -397,5 +407,71 @@ public class TagService {
      */
     private String getRandomColor() {
         return COLOR_PALETTE.get(random.nextInt(COLOR_PALETTE.size()));
+    }
+
+    /**
+     * Reorder MAIN_DISPLAY tags based on the provided ordered list of tag IDs.
+     *
+     * @param tagIds the ordered list of tag IDs.
+     * @return the list of reordered tag DTOs.
+     */
+    public List<TagDTO> reorderMainDisplayTags(List<Long> tagIds) {
+        LOG.debug("Request to reorder MAIN_DISPLAY tags: {}", tagIds);
+
+        if (tagIds == null || tagIds.isEmpty()) {
+            throw new BadRequestAlertException("Tag IDs list cannot be empty", "tag", "emptytagids");
+        }
+
+        // Fetch all tags by IDs
+        List<Tag> tags = tagRepository.findAllByIdIn(tagIds);
+
+        // Validate all tags exist
+        if (tags.size() != tagIds.size()) {
+            throw new BadRequestAlertException("Some tags were not found", "tag", "tagsnotfound");
+        }
+
+        // Validate all tags are MAIN_DISPLAY and active
+        for (Tag tag : tags) {
+            if (tag.getType() != TagType.MAIN_DISPLAY) {
+                throw new BadRequestAlertException("Tag " + tag.getId() + " is not a MAIN_DISPLAY tag", "tag", "invalidtagtype");
+            }
+            if (tag.getActive() == null || !tag.getActive()) {
+                throw new BadRequestAlertException("Tag " + tag.getId() + " is not active", "tag", "taginactive");
+            }
+        }
+
+        // First, set all orders to null to avoid unique constraint violations during reordering
+        for (Tag tag : tags) {
+            tag.setOrder(null);
+        }
+        tagRepository.saveAll(tags);
+        tagRepository.flush();
+
+        // Update order sequentially based on the provided order
+        for (int i = 0; i < tagIds.size(); i++) {
+            Long tagId = tagIds.get(i);
+            Tag tag = tags.stream()
+                .filter(t -> t.getId().equals(tagId))
+                .findFirst()
+                .orElseThrow();
+            tag.setOrder(i + 1);
+        }
+
+        tags = tagRepository.saveAll(tags);
+        return tags.stream().map(tagMapper::toDto).collect(Collectors.toList());
+    }
+
+    /**
+     * Get all MAIN_DISPLAY tags ordered by their order field.
+     *
+     * @return the list of ordered tag DTOs.
+     */
+    @Transactional(readOnly = true)
+    public List<TagDTO> getMainDisplayTagsOrdered() {
+        LOG.debug("Request to get all MAIN_DISPLAY tags ordered");
+        return tagRepository.findAllMainDisplayTagsOrdered()
+            .stream()
+            .map(tagMapper::toDto)
+            .collect(Collectors.toList());
     }
 }

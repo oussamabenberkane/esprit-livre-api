@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.repository;
 
 import com.oussamabenberkane.espritlivre.domain.Tag;
+import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import com.oussamabenberkane.espritlivre.service.specs.TagSpecifications;
 import java.util.List;
 import java.util.Optional;
@@ -54,4 +55,13 @@ public interface TagRepository extends TagRepositoryWithBagRelationships, JpaRep
     default Page<Tag> findAllWithEagerRelationships(Pageable pageable) {
         return this.fetchBagRelationships(this.findAll(pageable));
     }
+
+    @Query("SELECT MAX(t.order) FROM Tag t WHERE t.type = 'MAIN_DISPLAY' AND t.active = true")
+    Optional<Integer> findMaxOrderForMainDisplay();
+
+    @Query("SELECT t FROM Tag t WHERE t.type = 'MAIN_DISPLAY' AND t.active = true ORDER BY t.order ASC")
+    List<Tag> findAllMainDisplayTagsOrdered();
+
+    @Query("SELECT t FROM Tag t WHERE t.id IN :ids")
+    List<Tag> findAllByIdIn(List<Long> ids);
 }

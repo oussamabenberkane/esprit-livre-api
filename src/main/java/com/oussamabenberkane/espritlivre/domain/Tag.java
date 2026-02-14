@@ -52,6 +52,9 @@ public class Tag implements Serializable {
     @Column(name = "deleted_by", length = 50)
     private String deletedBy;
 
+    @Column(name = "tag_order")
+    private Integer order;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "rel_tag__book", joinColumns = @JoinColumn(name = "tag_id"), inverseJoinColumns = @JoinColumn(name = "book_id"))
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -177,6 +180,19 @@ public class Tag implements Serializable {
         this.deletedBy = deletedBy;
     }
 
+    public Integer getOrder() {
+        return this.order;
+    }
+
+    public Tag order(Integer order) {
+        this.setOrder(order);
+        return this;
+    }
+
+    public void setOrder(Integer order) {
+        this.order = order;
+    }
+
     public Set<Book> getBooks() {
         return this.books;
     }
@@ -237,6 +253,7 @@ public class Tag implements Serializable {
             ", active='" + getActive() + "'" +
             ", colorHex='" + getColorHex() + "'" +
             ", imageUrl='" + getImageUrl() + "'" +
+            ", order=" + getOrder() +
             "}";
     }
 }

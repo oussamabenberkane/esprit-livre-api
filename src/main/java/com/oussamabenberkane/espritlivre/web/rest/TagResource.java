@@ -281,4 +281,30 @@ public class TagResource {
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .body(result);
     }
+
+    /**
+     * {@code PUT  /tags/main-display/reorder} : Reorder MAIN_DISPLAY tags.
+     *
+     * @param tagIds the ordered list of tag IDs.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the reordered tags.
+     */
+    @PutMapping("/main-display/reorder")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<List<TagDTO>> reorderMainDisplayTags(@RequestBody List<Long> tagIds) {
+        LOG.debug("REST request to reorder MAIN_DISPLAY tags : {}", tagIds);
+        List<TagDTO> result = tagService.reorderMainDisplayTags(tagIds);
+        return ResponseEntity.ok().body(result);
+    }
+
+    /**
+     * {@code GET  /tags/main-display/ordered} : Get all MAIN_DISPLAY tags ordered.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the ordered tags.
+     */
+    @GetMapping("/main-display/ordered")
+    public ResponseEntity<List<TagDTO>> getMainDisplayTagsOrdered() {
+        LOG.debug("REST request to get all MAIN_DISPLAY tags ordered");
+        List<TagDTO> result = tagService.getMainDisplayTagsOrdered();
+        return ResponseEntity.ok().body(result);
+    }
 }
