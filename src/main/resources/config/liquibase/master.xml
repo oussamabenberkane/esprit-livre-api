@@ -45,5 +45,6 @@
     <include file="config/liquibase/changelog/20260214000000_add_delivery_fee_fields.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260214120000_add_unaccent_extension.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260215000000_add_order_to_tag.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260215100000_make_order_address_fields_optional.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

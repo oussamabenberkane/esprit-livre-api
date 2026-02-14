@@ -42,10 +42,8 @@ public class OrderDTO implements Serializable {
 
     private String streetAddress;
 
-    @NotNull
     private String wilaya;
 
-    @NotNull
     private String city;
 
     private String postalCode;

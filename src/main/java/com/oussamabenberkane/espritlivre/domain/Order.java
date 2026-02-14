@@ -67,12 +67,10 @@ public class Order implements Serializable {
     @Column(name = "street_address")
     private String streetAddress;
 
-    @NotNull
-    @Column(name = "wilaya", nullable = false)
+    @Column(name = "wilaya")
     private String wilaya;
 
-    @NotNull
-    @Column(name = "city", nullable = false)
+    @Column(name = "city")
     private String city;
 
     @Column(name = "postal_code")
