@@ -24,6 +24,8 @@ public class TagDTO implements Serializable {
 
     private String imageUrl;
 
+    private Integer order;
+
     public Long getId() {
         return id;
     }
@@ -80,6 +82,14 @@ public class TagDTO implements Serializable {
         this.imageUrl = imageUrl;
     }
 
+    public Integer getOrder() {
+        return order;
+    }
+
+    public void setOrder(Integer order) {
+        this.order = order;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -111,6 +121,7 @@ public class TagDTO implements Serializable {
             ", active='" + getActive() + "'" +
             ", colorHex='" + getColorHex() + "'" +
             ", imageUrl='" + getImageUrl() + "'" +
+            ", order=" + getOrder() +
             "}";
     }
 }

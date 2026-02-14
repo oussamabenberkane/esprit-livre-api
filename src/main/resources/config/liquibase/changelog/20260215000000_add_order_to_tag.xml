@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Add tag_order column to tag table -->
+    <changeSet id="20260215000000-1" author="claude">
+        <addColumn tableName="tag">
+            <column name="tag_order" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Create partial unique index for MAIN_DISPLAY active tags -->
+    <changeSet id="20260215000000-2" author="claude">
+        <sql>
+            CREATE UNIQUE INDEX idx_tag_order_main_display
+            ON tag (tag_order)
+            WHERE type = 'MAIN_DISPLAY' AND active = true;
+        </sql>
+        <rollback>
+            <sql>DROP INDEX IF EXISTS idx_tag_order_main_display;</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- Initialize existing MAIN_DISPLAY tags with sequential order values -->
+    <changeSet id="20260215000000-3" author="claude">
+        <sql>
+            WITH ordered_tags AS (
+                SELECT id, ROW_NUMBER() OVER (ORDER BY id) as rn
+                FROM tag
+                WHERE type = 'MAIN_DISPLAY' AND active = true
+            )
+            UPDATE tag
+            SET tag_order = ordered_tags.rn
+            FROM ordered_tags
+            WHERE tag.id = ordered_tags.id;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
