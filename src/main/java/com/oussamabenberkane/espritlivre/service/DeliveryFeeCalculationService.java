@@ -135,7 +135,7 @@ public class DeliveryFeeCalculationService {
             if (bookOpt.isEmpty()) {
                 return ItemFeeCalculation.failure("Book not found: " + item.getBookId());
             }
-            Book book = bookOpt.get();
+            Book book = bookOpt.orElseThrow();
             productName = book.getTitle();
             fixedFee = book.getDeliveryFee();
             useAutomatic = Boolean.TRUE.equals(book.getAutomaticDeliveryFee());
@@ -144,7 +144,7 @@ public class DeliveryFeeCalculationService {
             if (packOpt.isEmpty()) {
                 return ItemFeeCalculation.failure("BookPack not found: " + item.getBookPackId());
             }
-            BookPack pack = packOpt.get();
+            BookPack pack = packOpt.orElseThrow();
             productName = pack.getTitle();
             fixedFee = pack.getDeliveryFee();
             useAutomatic = Boolean.TRUE.equals(pack.getAutomaticDeliveryFee());
