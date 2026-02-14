@@ -399,6 +399,7 @@ public class ZrExpressService implements ShippingProviderService {
 
     /**
      * Get a specific hub by ID.
+     * Fetches all hubs and filters by ID since ZR Express doesn't support direct GET by ID.
      *
      * @param hubId The hub UUID
      * @return The relay point, or null if not found
@@ -413,36 +414,21 @@ public class ZrExpressService implements ShippingProviderService {
             return null;
         }
 
+        LOG.debug("Fetching ZR Express hub by ID: {}", hubId);
+
         try {
-            HttpHeaders headers = createHeaders();
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            // Fetch all hubs and filter by ID
+            List<ZrExpressHubResponse> hubs = fetchAllHubsRaw();
 
-            String url = shippingProperties.getZrExpress().getBaseUrl() + "/hubs/" + hubId;
+            return hubs.stream()
+                .filter(hub -> hubId.equals(hub.getId()))
+                .findFirst()
+                .map(ZrExpressHubResponse::toRelayPointDTO)
+                .orElseGet(() -> {
+                    LOG.warn("Hub not found with ID: {}", hubId);
+                    return null;
+                });
 
-            LOG.debug("Fetching ZR Express hub by ID: {}", hubId);
-
-            ResponseEntity<ZrExpressHubResponse> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                ZrExpressHubResponse.class
-            );
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody().toRelayPointDTO();
-            }
-
-            LOG.warn("Hub not found with ID: {}", hubId);
-            return null;
-
-        } catch (HttpClientErrorException e) {
-            LOG.error("ZR Express API client error fetching hub {}: {} - {}",
-                hubId, e.getStatusCode(), e.getResponseBodyAsString());
-            return null;
-        } catch (HttpServerErrorException e) {
-            LOG.error("ZR Express API server error fetching hub {}: {} - {}",
-                hubId, e.getStatusCode(), e.getResponseBodyAsString());
-            return null;
         } catch (Exception e) {
             LOG.error("Unexpected error fetching ZR Express hub {}", hubId, e);
             return null;

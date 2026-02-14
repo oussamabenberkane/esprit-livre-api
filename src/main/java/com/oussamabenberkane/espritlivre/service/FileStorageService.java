@@ -11,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.beans.factory.annotation.Value;
 
-import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -51,7 +50,7 @@ public class FileStorageService {
         LOG.info("FileStorageService initialized with media root: {}", mediaRootDir);
     }
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
         "image/jpeg",
         "image/jpg",
@@ -298,7 +297,7 @@ public class FileStorageService {
         // Validate file size
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new BadRequestAlertException(
-                "File size exceeds maximum limit of 10 MB",
+                "File size exceeds maximum limit of 5 MB",
                 entityName,
                 "filesizeexceeded"
             );
