@@ -58,11 +58,12 @@ public class DashboardService {
         // Get monthly sales (always current month regardless of timeRange)
         TimeRangeBounds monthBounds = getTimeRangeBounds("THIS_MONTH", now);
         BigDecimal monthlySales = dashboardRepository.sumSalesByDateRange(monthBounds.start, monthBounds.end);
+        BigDecimal grossMonthlySales = dashboardRepository.sumGrossSalesByDateRange(monthBounds.start, monthBounds.end);
 
         // Calculate growth metrics
         GrowthMetricsDTO growth = calculateGrowthMetrics(currentBounds, previousBounds, now);
 
-        return new DashboardStatsDTO(bestSellingBook, newUsers, totalOrders, monthlySales, growth);
+        return new DashboardStatsDTO(bestSellingBook, newUsers, totalOrders, monthlySales, grossMonthlySales, growth);
     }
 
     /**

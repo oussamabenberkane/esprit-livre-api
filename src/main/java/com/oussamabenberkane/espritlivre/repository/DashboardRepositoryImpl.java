@@ -99,9 +99,30 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     public BigDecimal sumSalesByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
         String sql =
             """
+            SELECT COALESCE(SUM(o.total_amount - COALESCE(o.shipping_cost, 0)), 0)
+            FROM jhi_order o
+            WHERE o.deleted_at IS NULL
+              AND o.status = 'DELIVERED'
+              AND o.created_at >= :startDate
+              AND o.created_at < :endDate
+            """;
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
+
+        Number result = (Number) query.getSingleResult();
+        return result != null ? new BigDecimal(result.toString()) : BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal sumGrossSalesByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
+        String sql =
+            """
             SELECT COALESCE(SUM(o.total_amount), 0)
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
+              AND o.status = 'DELIVERED'
               AND o.created_at >= :startDate
               AND o.created_at < :endDate
             """;
@@ -138,9 +159,10 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             """
             SELECT
                 TO_CHAR(o.created_at, 'HH24') as timePeriod,
-                COALESCE(SUM(o.total_amount), 0) as totalSales
+                COALESCE(SUM(o.total_amount - COALESCE(o.shipping_cost, 0)), 0) as totalSales
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
+              AND o.status = 'DELIVERED'
               AND o.created_at >= :startOfDay
               AND o.created_at < :endOfDay
             GROUP BY TO_CHAR(o.created_at, 'HH24')
@@ -176,9 +198,10 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             """
             SELECT
                 TO_CHAR(o.created_at, 'ID') as timePeriod,
-                COALESCE(SUM(o.total_amount), 0) as totalSales
+                COALESCE(SUM(o.total_amount - COALESCE(o.shipping_cost, 0)), 0) as totalSales
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
+              AND o.status = 'DELIVERED'
               AND o.created_at >= :startOfWeek
               AND o.created_at < :endOfWeek
             GROUP BY TO_CHAR(o.created_at, 'ID')
@@ -214,9 +237,10 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             """
             SELECT
                 TO_CHAR(o.created_at, 'IW') as timePeriod,
-                COALESCE(SUM(o.total_amount), 0) as totalSales
+                COALESCE(SUM(o.total_amount - COALESCE(o.shipping_cost, 0)), 0) as totalSales
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
+              AND o.status = 'DELIVERED'
               AND o.created_at >= :startOfMonth
               AND o.created_at < :endOfMonth
             GROUP BY TO_CHAR(o.created_at, 'IW')
@@ -252,9 +276,10 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             """
             SELECT
                 TO_CHAR(o.created_at, 'MM') as timePeriod,
-                COALESCE(SUM(o.total_amount), 0) as totalSales
+                COALESCE(SUM(o.total_amount - COALESCE(o.shipping_cost, 0)), 0) as totalSales
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
+              AND o.status = 'DELIVERED'
               AND o.created_at >= :startOfYear
               AND o.created_at < :endOfYear
             GROUP BY TO_CHAR(o.created_at, 'MM')

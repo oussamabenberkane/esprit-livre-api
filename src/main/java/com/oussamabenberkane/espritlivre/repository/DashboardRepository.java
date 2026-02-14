@@ -50,13 +50,24 @@ public interface DashboardRepository {
     Long countOrdersByDateRange(@Param("startDate") ZonedDateTime startDate, @Param("endDate") ZonedDateTime endDate);
 
     /**
-     * Calculate total sales amount within a time range.
+     * Calculate net sales amount (revenue minus shipping costs) within a time range.
+     * Only counts DELIVERED orders.
      *
      * @param startDate start of the time range
      * @param endDate   end of the time range
-     * @return total sales amount
+     * @return net sales amount
      */
     BigDecimal sumSalesByDateRange(@Param("startDate") ZonedDateTime startDate, @Param("endDate") ZonedDateTime endDate);
+
+    /**
+     * Calculate gross sales amount (total revenue including shipping) within a time range.
+     * Only counts DELIVERED orders.
+     *
+     * @param startDate start of the time range
+     * @param endDate   end of the time range
+     * @return gross sales amount
+     */
+    BigDecimal sumGrossSalesByDateRange(@Param("startDate") ZonedDateTime startDate, @Param("endDate") ZonedDateTime endDate);
 
     /**
      * Count new users registered within a time range.
