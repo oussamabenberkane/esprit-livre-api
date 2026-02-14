@@ -18,7 +18,7 @@ import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelReq
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressRateResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressSearchRequest;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -438,9 +438,10 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
-     * Search hubs by query string.
+     * Search hubs by query string with accent-insensitive matching.
+     * Supports searching "bejaia" to find "Béjaia", "tizi" to find "Tizi-Ouzou", etc.
      *
-     * @param query Search query (searches in name)
+     * @param query Search query (searches in name, address, commune name)
      * @param wilayaName Optional wilaya name to filter by
      * @return List of matching relay points
      */
@@ -453,19 +454,19 @@ public class ZrExpressService implements ShippingProviderService {
             return hubs;
         }
 
-        // Filter by query (search in name, address, commune name)
-        String lowerQuery = query.toLowerCase();
+        // Filter by query with accent-insensitive matching
+        String normalizedQuery = TextNormalizationUtils.normalizeForSearch(query);
         return hubs.stream()
             .filter(h -> {
                 boolean matches = false;
                 if (h.getName() != null) {
-                    matches = h.getName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(h.getName()).contains(normalizedQuery);
                 }
                 if (!matches && h.getAddress() != null) {
-                    matches = h.getAddress().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(h.getAddress()).contains(normalizedQuery);
                 }
                 if (!matches && h.getCommuneName() != null) {
-                    matches = h.getCommuneName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(h.getCommuneName()).contains(normalizedQuery);
                 }
                 return matches;
             })

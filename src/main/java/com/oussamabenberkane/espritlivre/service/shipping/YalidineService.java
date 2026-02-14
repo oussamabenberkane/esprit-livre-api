@@ -17,6 +17,7 @@ import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelRequ
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelStatusResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelsResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
+import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -581,9 +582,10 @@ public class YalidineService implements ShippingProviderService {
     }
 
     /**
-     * Search centers by query string.
+     * Search centers by query string with accent-insensitive matching.
+     * Supports searching "bejaia" to find "Béjaia", "tizi" to find "Tizi-Ouzou", etc.
      *
-     * @param query Search query (searches in name)
+     * @param query Search query (searches in name, address, commune name)
      * @param wilayaId Optional wilaya ID to filter by
      * @return List of matching relay points
      */
@@ -596,19 +598,19 @@ public class YalidineService implements ShippingProviderService {
             return centers;
         }
 
-        // Filter by query (search in name, address, commune name)
-        String lowerQuery = query.toLowerCase();
+        // Filter by query with accent-insensitive matching
+        String normalizedQuery = TextNormalizationUtils.normalizeForSearch(query);
         return centers.stream()
             .filter(c -> {
                 boolean matches = false;
                 if (c.getName() != null) {
-                    matches = c.getName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(c.getName()).contains(normalizedQuery);
                 }
                 if (!matches && c.getAddress() != null) {
-                    matches = c.getAddress().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(c.getAddress()).contains(normalizedQuery);
                 }
                 if (!matches && c.getCommuneName() != null) {
-                    matches = c.getCommuneName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(c.getCommuneName()).contains(normalizedQuery);
                 }
                 return matches;
             })

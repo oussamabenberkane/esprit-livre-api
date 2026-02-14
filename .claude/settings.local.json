@@ -16,7 +16,8 @@
       "WebFetch(domain:docs.zrexpress.app)",
       "WebFetch(domain:github.com)",
       "Bash(mvn compile:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(mvn test:*)"
     ],
     "deny": [],
     "ask": []

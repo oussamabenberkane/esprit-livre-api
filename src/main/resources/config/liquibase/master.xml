@@ -43,5 +43,6 @@
     <include file="config/liquibase/changelog/20260103000000_add_default_active_true.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260117000000_add_shipping_tracking_fields.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260214000000_add_delivery_fee_fields.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260214120000_add_unaccent_extension.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>
