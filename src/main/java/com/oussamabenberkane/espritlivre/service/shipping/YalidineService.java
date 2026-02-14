@@ -8,13 +8,16 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.DeliveryFeeResult;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.RelayPointDTO;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineCentersResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineFeesResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelRequest;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelStatusResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineParcelsResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
+import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -383,13 +386,8 @@ public class YalidineService implements ShippingProviderService {
             .isStopDesk(order.getIsStopDesk() != null ? order.getIsStopDesk() : false)
             .stopDeskId(order.getStopDeskId())
             .hasExchange(false)
-            // Required fields with defaults for books
             .doInsurance(false)
             .declaredValue(priceInt)
-            .length(20)  // Default dimensions for book packages
-            .width(15)
-            .height(5)
-            .weight(1)
             .build();
     }
 
@@ -584,9 +582,10 @@ public class YalidineService implements ShippingProviderService {
     }
 
     /**
-     * Search centers by query string.
+     * Search centers by query string with accent-insensitive matching.
+     * Supports searching "bejaia" to find "Béjaia", "tizi" to find "Tizi-Ouzou", etc.
      *
-     * @param query Search query (searches in name)
+     * @param query Search query (searches in name, address, commune name)
      * @param wilayaId Optional wilaya ID to filter by
      * @return List of matching relay points
      */
@@ -599,22 +598,174 @@ public class YalidineService implements ShippingProviderService {
             return centers;
         }
 
-        // Filter by query (search in name, address, commune name)
-        String lowerQuery = query.toLowerCase();
+        // Filter by query with accent-insensitive matching
+        String normalizedQuery = TextNormalizationUtils.normalizeForSearch(query);
         return centers.stream()
             .filter(c -> {
                 boolean matches = false;
                 if (c.getName() != null) {
-                    matches = c.getName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(c.getName()).contains(normalizedQuery);
                 }
                 if (!matches && c.getAddress() != null) {
-                    matches = c.getAddress().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(c.getAddress()).contains(normalizedQuery);
                 }
                 if (!matches && c.getCommuneName() != null) {
-                    matches = c.getCommuneName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(c.getCommuneName()).contains(normalizedQuery);
                 }
                 return matches;
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Get delivery fee for a specific destination.
+     *
+     * @param toWilayaId Destination wilaya ID (1-58)
+     * @param communeName Commune name within the wilaya
+     * @param isStopDesk Whether this is a stop desk (relay point) delivery
+     * @return DeliveryFeeResult with the calculated fee or error
+     */
+    public DeliveryFeeResult getDeliveryFee(Integer toWilayaId, String communeName, boolean isStopDesk) {
+        if (!shippingProperties.getYalidine().isEnabled()) {
+            LOG.warn("Yalidine integration is disabled");
+            return DeliveryFeeResult.failure("Yalidine integration is disabled");
+        }
+
+        if (toWilayaId == null) {
+            return DeliveryFeeResult.failure("Destination wilaya ID is required");
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            // Get origin wilaya ID from config (Bejaia = 6 by default)
+            Integer fromWilayaId = getWilayaIdFromName(shippingProperties.getOriginWilaya());
+
+            String url = shippingProperties.getYalidine().getBaseUrl() +
+                "/fees/?from_wilaya_id=" + fromWilayaId + "&to_wilaya_id=" + toWilayaId;
+
+            LOG.debug("Fetching Yalidine fees from: {}", url);
+
+            ResponseEntity<YalidineFeesResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                YalidineFeesResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                YalidineFeesResponse feesResponse = response.getBody();
+
+                // Try to find the commune's fee
+                BigDecimal fee = feesResponse.getDeliveryFeeByName(communeName, isStopDesk);
+
+                if (fee != null) {
+                    LOG.debug("Yalidine delivery fee for wilaya {} commune {}: {} DA (stopDesk={})",
+                        toWilayaId, communeName, fee, isStopDesk);
+                    return DeliveryFeeResult.automatic(fee, ShippingProvider.YALIDINE);
+                } else {
+                    // If commune not found, try to get any commune's fee as fallback
+                    if (feesResponse.getPerCommune() != null && !feesResponse.getPerCommune().isEmpty()) {
+                        YalidineFeesResponse.CommuneFees firstCommune =
+                            feesResponse.getPerCommune().values().iterator().next();
+                        Integer fallbackFee = isStopDesk ? firstCommune.getExpressDesk() : firstCommune.getExpressHome();
+                        if (fallbackFee != null) {
+                            LOG.warn("Commune '{}' not found in wilaya {}, using fallback fee: {} DA",
+                                communeName, toWilayaId, fallbackFee);
+                            return DeliveryFeeResult.automatic(BigDecimal.valueOf(fallbackFee), ShippingProvider.YALIDINE);
+                        }
+                    }
+                    return DeliveryFeeResult.failure("Could not find delivery fee for commune: " + communeName);
+                }
+            } else {
+                LOG.error("Yalidine fees API returned unexpected response: status={}", response.getStatusCode());
+                return DeliveryFeeResult.failure("Yalidine API returned unexpected response");
+            }
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("Yalidine fees API client error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return DeliveryFeeResult.failure("Yalidine API error: " + e.getResponseBodyAsString());
+        } catch (HttpServerErrorException e) {
+            LOG.error("Yalidine fees API server error: {}", e.getStatusCode());
+            return DeliveryFeeResult.failure("Yalidine server error");
+        } catch (Exception e) {
+            LOG.error("Error fetching Yalidine delivery fees", e);
+            return DeliveryFeeResult.failure("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get wilaya ID from wilaya name.
+     * Algeria has 58 wilayas, numbered 1-58.
+     */
+    private Integer getWilayaIdFromName(String wilayaName) {
+        if (wilayaName == null) {
+            return 6; // Default to Bejaia
+        }
+
+        // Map of common wilaya names to IDs
+        String normalized = wilayaName.toLowerCase().trim();
+        return switch (normalized) {
+            case "adrar" -> 1;
+            case "chlef" -> 2;
+            case "laghouat" -> 3;
+            case "oum el bouaghi" -> 4;
+            case "batna" -> 5;
+            case "bejaia", "béjaïa" -> 6;
+            case "biskra" -> 7;
+            case "bechar", "béchar" -> 8;
+            case "blida" -> 9;
+            case "bouira" -> 10;
+            case "tamanrasset" -> 11;
+            case "tebessa", "tébessa" -> 12;
+            case "tlemcen" -> 13;
+            case "tiaret" -> 14;
+            case "tizi ouzou" -> 15;
+            case "alger", "algiers" -> 16;
+            case "djelfa" -> 17;
+            case "jijel" -> 18;
+            case "setif", "sétif" -> 19;
+            case "saida", "saïda" -> 20;
+            case "skikda" -> 21;
+            case "sidi bel abbes", "sidi bel abbès" -> 22;
+            case "annaba" -> 23;
+            case "guelma" -> 24;
+            case "constantine" -> 25;
+            case "medea", "médéa" -> 26;
+            case "mostaganem" -> 27;
+            case "m'sila", "msila" -> 28;
+            case "mascara" -> 29;
+            case "ouargla" -> 30;
+            case "oran" -> 31;
+            case "el bayadh" -> 32;
+            case "illizi" -> 33;
+            case "bordj bou arreridj" -> 34;
+            case "boumerdes", "boumerdès" -> 35;
+            case "el tarf" -> 36;
+            case "tindouf" -> 37;
+            case "tissemsilt" -> 38;
+            case "el oued" -> 39;
+            case "khenchela" -> 40;
+            case "souk ahras" -> 41;
+            case "tipaza" -> 42;
+            case "mila" -> 43;
+            case "ain defla", "aïn defla" -> 44;
+            case "naama", "naâma" -> 45;
+            case "ain temouchent", "aïn témouchent" -> 46;
+            case "ghardaia", "ghardaïa" -> 47;
+            case "relizane" -> 48;
+            case "timimoun" -> 49;
+            case "bordj badji mokhtar" -> 50;
+            case "ouled djellal" -> 51;
+            case "beni abbes", "béni abbès" -> 52;
+            case "in salah" -> 53;
+            case "in guezzam" -> 54;
+            case "touggourt" -> 55;
+            case "djanet" -> 56;
+            case "el meghaier", "el m'ghair" -> 57;
+            case "el meniaa" -> 58;
+            default -> 6; // Default to Bejaia
+        };
     }
 }

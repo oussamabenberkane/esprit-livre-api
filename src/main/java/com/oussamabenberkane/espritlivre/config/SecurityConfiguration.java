@@ -64,6 +64,7 @@ public class SecurityConfiguration {
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/webhooks/**"))
+                    .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/delivery-fee/**"))
             )
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
@@ -95,6 +96,8 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*/image")).permitAll()
                     // Shipping provider webhooks (validated by security token in payload)
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/webhooks/**")).permitAll()
+                    // Public delivery fee calculation (guest checkout)
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/delivery-fee/**")).permitAll()
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).authenticated()
                     .requestMatchers(mvc.pattern("/websocket/**")).authenticated()

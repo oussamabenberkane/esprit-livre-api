@@ -1,6 +1,12 @@
-Yalidine: loading
-make sure stopDesk logic works: pending
-ZR: pending
-UniqueId when soft delete order: pending
-
-
+- Remove code postal
+- Choice between providers on point de relais uniquement, when a domicile auto choose ZR
+- Frais de livraison dependant on products minimum frais de livraison des produits (ajouter champs frais de livr livre et pack) -> on book creation choice between value or livreur for frais de livr
+- Le colis depasse pas les 5 kilos pour yalidine (only backend)
+- Lhadi admin when creating from admin make it client name
+- Ensure that we cant create normal commande without creating client first if true tell hadi
+- Telephone validation en temps reel
+- Recherche par num teleph marche pas quand ya un 0 (back only)
+- Revenu net (exclure la livraison) -> statistic revenu dashboard (back only)
+- remplacer euro with DA (Front)
+- Status ca marche pas commandes recentes
+- Remove limit for sections

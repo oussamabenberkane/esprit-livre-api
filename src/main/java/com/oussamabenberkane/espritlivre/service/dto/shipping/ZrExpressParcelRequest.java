@@ -155,12 +155,7 @@ public class ZrExpressParcelRequest {
 
         public ZrCustomer() {}
 
-        public ZrCustomer(String customerId) {
-            this.customerId = customerId;
-        }
-
-        public ZrCustomer(String customerId, String name, ZrPhone phone) {
-            this.customerId = customerId;
+        public ZrCustomer(String name, ZrPhone phone) {
             this.name = name;
             this.phone = phone;
         }
@@ -304,13 +299,8 @@ public class ZrExpressParcelRequest {
     public static class Builder {
         private final ZrExpressParcelRequest request = new ZrExpressParcelRequest();
 
-        public Builder customer(String customerId, String name, String phone) {
-            request.customer = new ZrCustomer(customerId, name, new ZrPhone(phone));
-            return this;
-        }
-
-        public Builder customer(String customerId) {
-            request.customer = new ZrCustomer(customerId);
+        public Builder customer(String name, String phone) {
+            request.customer = new ZrCustomer(name, new ZrPhone(phone));
             return this;
         }
 

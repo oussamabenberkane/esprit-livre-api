@@ -65,6 +65,12 @@ public class BookPack implements Serializable {
     @Column(name = "deleted_by", length = 50)
     private String deletedBy;
 
+    @Column(name = "delivery_fee", precision = 21, scale = 2)
+    private BigDecimal deliveryFee;
+
+    @Column(name = "automatic_delivery_fee")
+    private Boolean automaticDeliveryFee;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "rel_book_pack__books",
@@ -230,6 +236,32 @@ public class BookPack implements Serializable {
         return this;
     }
 
+    public BigDecimal getDeliveryFee() {
+        return this.deliveryFee;
+    }
+
+    public BookPack deliveryFee(BigDecimal deliveryFee) {
+        this.setDeliveryFee(deliveryFee);
+        return this;
+    }
+
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public Boolean getAutomaticDeliveryFee() {
+        return this.automaticDeliveryFee;
+    }
+
+    public BookPack automaticDeliveryFee(Boolean automaticDeliveryFee) {
+        this.setAutomaticDeliveryFee(automaticDeliveryFee);
+        return this;
+    }
+
+    public void setAutomaticDeliveryFee(Boolean automaticDeliveryFee) {
+        this.automaticDeliveryFee = automaticDeliveryFee;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @PrePersist
@@ -265,6 +297,8 @@ public class BookPack implements Serializable {
             ", description='" + getDescription() + "'" +
             ", coverUrl='" + getCoverUrl() + "'" +
             ", price=" + getPrice() +
+            ", deliveryFee=" + getDeliveryFee() +
+            ", automaticDeliveryFee=" + getAutomaticDeliveryFee() +
             ", createdDate='" + getCreatedDate() + "'" +
             ", lastModifiedDate='" + getLastModifiedDate() + "'" +
             "}";

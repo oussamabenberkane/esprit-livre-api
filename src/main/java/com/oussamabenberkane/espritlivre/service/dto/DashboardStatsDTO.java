@@ -14,6 +14,7 @@ public class DashboardStatsDTO implements Serializable {
     private NewUsersDTO newUsers;
     private Long totalOrders;
     private BigDecimal monthlySales;
+    private BigDecimal grossMonthlySales;
     private GrowthMetricsDTO growth;
 
     public DashboardStatsDTO() {}
@@ -23,12 +24,14 @@ public class DashboardStatsDTO implements Serializable {
         NewUsersDTO newUsers,
         Long totalOrders,
         BigDecimal monthlySales,
+        BigDecimal grossMonthlySales,
         GrowthMetricsDTO growth
     ) {
         this.bestSellingBook = bestSellingBook;
         this.newUsers = newUsers;
         this.totalOrders = totalOrders;
         this.monthlySales = monthlySales;
+        this.grossMonthlySales = grossMonthlySales;
         this.growth = growth;
     }
 
@@ -66,6 +69,14 @@ public class DashboardStatsDTO implements Serializable {
         this.monthlySales = monthlySales;
     }
 
+    public BigDecimal getGrossMonthlySales() {
+        return grossMonthlySales;
+    }
+
+    public void setGrossMonthlySales(BigDecimal grossMonthlySales) {
+        this.grossMonthlySales = grossMonthlySales;
+    }
+
     public GrowthMetricsDTO getGrowth() {
         return growth;
     }
@@ -86,6 +97,8 @@ public class DashboardStatsDTO implements Serializable {
             totalOrders +
             ", monthlySales=" +
             monthlySales +
+            ", grossMonthlySales=" +
+            grossMonthlySales +
             ", growth=" +
             growth +
             '}'

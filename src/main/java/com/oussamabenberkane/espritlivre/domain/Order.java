@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.oussamabenberkane.espritlivre.domain.enumeration.DeliveryFeeMethod;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
@@ -112,6 +113,14 @@ public class Order implements Serializable {
 
     @Column(name = "stopdesk_id", length = 100)
     private String stopDeskId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_fee_method", length = 20)
+    private DeliveryFeeMethod deliveryFeeMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_fee_provider", length = 20)
+    private ShippingProvider deliveryFeeProvider;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -526,6 +535,32 @@ public class Order implements Serializable {
         this.stopDeskId = stopDeskId;
     }
 
+    public DeliveryFeeMethod getDeliveryFeeMethod() {
+        return this.deliveryFeeMethod;
+    }
+
+    public Order deliveryFeeMethod(DeliveryFeeMethod deliveryFeeMethod) {
+        this.setDeliveryFeeMethod(deliveryFeeMethod);
+        return this;
+    }
+
+    public void setDeliveryFeeMethod(DeliveryFeeMethod deliveryFeeMethod) {
+        this.deliveryFeeMethod = deliveryFeeMethod;
+    }
+
+    public ShippingProvider getDeliveryFeeProvider() {
+        return this.deliveryFeeProvider;
+    }
+
+    public Order deliveryFeeProvider(ShippingProvider deliveryFeeProvider) {
+        this.setDeliveryFeeProvider(deliveryFeeProvider);
+        return this;
+    }
+
+    public void setDeliveryFeeProvider(ShippingProvider deliveryFeeProvider) {
+        this.deliveryFeeProvider = deliveryFeeProvider;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @PrePersist
@@ -563,6 +598,8 @@ public class Order implements Serializable {
             ", shippingCost=" + getShippingCost() +
             ", shippingProvider='" + getShippingProvider() + "'" +
             ", shippingMethod='" + getShippingMethod() + "'" +
+            ", deliveryFeeMethod='" + getDeliveryFeeMethod() + "'" +
+            ", deliveryFeeProvider='" + getDeliveryFeeProvider() + "'" +
             ", fullName='" + getFullName() + "'" +
             ", phone='" + getPhone() + "'" +
             ", email='" + getEmail() + "'" +

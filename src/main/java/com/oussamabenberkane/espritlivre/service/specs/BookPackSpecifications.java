@@ -6,6 +6,8 @@ import com.oussamabenberkane.espritlivre.domain.BookPack;
 import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
+import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -78,31 +80,47 @@ public class BookPackSpecifications {
         return hasTagOfType(TagType.MAIN_DISPLAY, mainDisplayId);
     }
 
+    /**
+     * Search book packs by text with accent-insensitive matching.
+     * Uses PostgreSQL unaccent() function for database-level accent normalization.
+     * Searches in: pack title, description, book titles, author names, tag names (EN and FR).
+     *
+     * @param searchTerm the search term
+     * @return the specification
+     */
     public static Specification<BookPack> searchByText(String searchTerm) {
         return (root, query, builder) -> {
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
                 return builder.conjunction();
             }
 
-            String searchPattern = "%" + searchTerm.toLowerCase().trim() + "%";
+            // Normalize search term to remove accents for consistent matching
+            String normalizedSearch = TextNormalizationUtils.normalizeForSearch(searchTerm);
+            String searchPattern = "%" + normalizedSearch + "%";
             query.distinct(true);
 
-            // Search in pack title and description
-            Predicate titleMatch = builder.like(builder.lower(root.get("title")), searchPattern);
-            Predicate descriptionMatch = builder.like(builder.lower(root.get("description")), searchPattern);
+            // Search in pack title and description with accent-insensitive matching
+            Expression<String> titleUnaccent = builder.function("unaccent", String.class, builder.lower(root.get("title")));
+            Expression<String> descriptionUnaccent = builder.function("unaccent", String.class, builder.lower(root.get("description")));
+            Predicate titleMatch = builder.like(titleUnaccent, searchPattern);
+            Predicate descriptionMatch = builder.like(descriptionUnaccent, searchPattern);
 
-            // Search in book titles
+            // Search in book titles with accent-insensitive matching
             Join<BookPack, Book> bookJoin = root.join("books", JoinType.LEFT);
-            Predicate bookTitleMatch = builder.like(builder.lower(bookJoin.get("title")), searchPattern);
+            Expression<String> bookTitleUnaccent = builder.function("unaccent", String.class, builder.lower(bookJoin.get("title")));
+            Predicate bookTitleMatch = builder.like(bookTitleUnaccent, searchPattern);
 
-            // Search in author names
+            // Search in author names with accent-insensitive matching
             Join<Book, Author> authorJoin = bookJoin.join("author", JoinType.LEFT);
-            Predicate authorMatch = builder.like(builder.lower(authorJoin.get("name")), searchPattern);
+            Expression<String> authorUnaccent = builder.function("unaccent", String.class, builder.lower(authorJoin.get("name")));
+            Predicate authorMatch = builder.like(authorUnaccent, searchPattern);
 
-            // Search in tag names
+            // Search in tag names with accent-insensitive matching
             Join<Book, Tag> tagJoin = bookJoin.join("tags", JoinType.LEFT);
-            Predicate tagNameEnMatch = builder.like(builder.lower(tagJoin.get("nameEn")), searchPattern);
-            Predicate tagNameFrMatch = builder.like(builder.lower(tagJoin.get("nameFr")), searchPattern);
+            Expression<String> tagNameEnUnaccent = builder.function("unaccent", String.class, builder.lower(tagJoin.get("nameEn")));
+            Expression<String> tagNameFrUnaccent = builder.function("unaccent", String.class, builder.lower(tagJoin.get("nameFr")));
+            Predicate tagNameEnMatch = builder.like(tagNameEnUnaccent, searchPattern);
+            Predicate tagNameFrMatch = builder.like(tagNameFrUnaccent, searchPattern);
 
             return builder.or(titleMatch, descriptionMatch, bookTitleMatch, authorMatch, tagNameEnMatch, tagNameFrMatch);
         };

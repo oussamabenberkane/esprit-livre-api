@@ -172,6 +172,10 @@ public class OrderService {
         order.setShippingCost(orderDTO.getShippingCost());
         order.setTotalAmount(orderDTO.getTotalAmount());
 
+        // Delivery fee audit info
+        order.setDeliveryFeeMethod(orderDTO.getDeliveryFeeMethod());
+        order.setDeliveryFeeProvider(orderDTO.getDeliveryFeeProvider());
+
         // Relay point (stop desk) info
         order.setIsStopDesk(orderDTO.getIsStopDesk());
         order.setStopDeskId(orderDTO.getStopDeskId());

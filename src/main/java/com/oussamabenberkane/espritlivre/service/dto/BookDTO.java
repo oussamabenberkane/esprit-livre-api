@@ -41,6 +41,10 @@ public class BookDTO implements Serializable {
 
     private Set<TagDTO> tags = new HashSet<>();
 
+    private BigDecimal deliveryFee;
+
+    private Boolean automaticDeliveryFee;
+
     private Long likeCount;
 
     private Boolean isLikedByCurrentUser;
@@ -155,6 +159,22 @@ public class BookDTO implements Serializable {
 
     public void setIsLikedByCurrentUser(Boolean isLikedByCurrentUser) {
         this.isLikedByCurrentUser = isLikedByCurrentUser;
+    }
+
+    public BigDecimal getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public Boolean getAutomaticDeliveryFee() {
+        return automaticDeliveryFee;
+    }
+
+    public void setAutomaticDeliveryFee(Boolean automaticDeliveryFee) {
+        this.automaticDeliveryFee = automaticDeliveryFee;
     }
 
     @Override

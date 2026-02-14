@@ -8,8 +8,17 @@ import com.oussamabenberkane.espritlivre.domain.OrderItem;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
-import com.oussamabenberkane.espritlivre.service.dto.shipping.*;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.DeliveryFeeResult;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.RelayPointDTO;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ShippingResult;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.YalidineWebhookPayload;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressGetParcelResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressHubResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelRequest;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressRateResponse;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressSearchRequest;
+import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,15 +89,8 @@ public class ZrExpressService implements ShippingProviderService {
                 return ShippingResult.failure("Could not resolve commune: " + order.getCity());
             }
 
-            // 2. Find or create customer (uses User info if available, falls back to Order)
-            String customerId = findOrCreateCustomer(order, cityTerritoryId, districtTerritoryId);
-            if (customerId == null) {
-                LOG.error("Could not find or create customer for order: {}", order.getUniqueId());
-                return ShippingResult.failure("Could not create customer in ZR Express");
-            }
-
-            // 3. Build parcel request
-            ZrExpressParcelRequest request = buildParcelRequest(order, customerId, cityTerritoryId, districtTerritoryId);
+            // 2. Build parcel request with inline customer info
+            ZrExpressParcelRequest request = buildParcelRequest(order, cityTerritoryId, districtTerritoryId);
             LOG.debug("Creating ZR Express parcel for order {}", order.getUniqueId());
 
             // Log the request for debugging
@@ -436,9 +438,10 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
-     * Search hubs by query string.
+     * Search hubs by query string with accent-insensitive matching.
+     * Supports searching "bejaia" to find "Béjaia", "tizi" to find "Tizi-Ouzou", etc.
      *
-     * @param query Search query (searches in name)
+     * @param query Search query (searches in name, address, commune name)
      * @param wilayaName Optional wilaya name to filter by
      * @return List of matching relay points
      */
@@ -451,19 +454,19 @@ public class ZrExpressService implements ShippingProviderService {
             return hubs;
         }
 
-        // Filter by query (search in name, address, commune name)
-        String lowerQuery = query.toLowerCase();
+        // Filter by query with accent-insensitive matching
+        String normalizedQuery = TextNormalizationUtils.normalizeForSearch(query);
         return hubs.stream()
             .filter(h -> {
                 boolean matches = false;
                 if (h.getName() != null) {
-                    matches = h.getName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(h.getName()).contains(normalizedQuery);
                 }
                 if (!matches && h.getAddress() != null) {
-                    matches = h.getAddress().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(h.getAddress()).contains(normalizedQuery);
                 }
                 if (!matches && h.getCommuneName() != null) {
-                    matches = h.getCommuneName().toLowerCase().contains(lowerQuery);
+                    matches = TextNormalizationUtils.normalizeForSearch(h.getCommuneName()).contains(normalizedQuery);
                 }
                 return matches;
             })
@@ -673,8 +676,9 @@ public class ZrExpressService implements ShippingProviderService {
     /**
      * Build parcel request from order.
      * Uses User info if available, falls back to Order info.
+     * Customer info is included inline (no separate customer creation needed).
      */
-    private ZrExpressParcelRequest buildParcelRequest(Order order, String customerId, String cityTerritoryId, String districtTerritoryId) {
+    private ZrExpressParcelRequest buildParcelRequest(Order order, String cityTerritoryId, String districtTerritoryId) {
         boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
         String deliveryType = isPickupPoint ? DELIVERY_TYPE_PICKUP_POINT : DELIVERY_TYPE_HOME;
 
@@ -687,11 +691,10 @@ public class ZrExpressService implements ShippingProviderService {
         List<ZrExpressParcelRequest.ZrOrderedProduct> orderedProducts = buildOrderedProducts(order);
 
         ZrExpressParcelRequest.Builder builder = ZrExpressParcelRequest.builder()
-            .customer(customerId, customerName, customerPhone)
+            .customer(customerName, customerPhone)
             .deliveryAddress(cityTerritoryId, districtTerritoryId, streetAddress != null ? streetAddress : "N/A")
             .deliveryType(deliveryType)
             .amount(order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0)
-            .weight(1.0) // Default weight for books
             .externalId(order.getUniqueId())
             .description(buildProductList(order))
             .orderedProducts(orderedProducts);
@@ -783,246 +786,27 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
-     * Find or create a customer in ZR Express.
-     * First searches by phone number, creates new customer if not found.
-     * Uses User info if available, falls back to Order info.
-     *
-     * @param order The order containing customer info
-     * @param cityTerritoryId Resolved city territory UUID
-     * @param districtTerritoryId Resolved district territory UUID
-     * @return Customer UUID, or null if failed
-     */
-    private String findOrCreateCustomer(Order order, String cityTerritoryId, String districtTerritoryId) {
-        String phone = formatPhoneForZrExpress(getCustomerPhone(order));
-
-        // First, try to find existing customer by phone
-        String existingCustomerId = searchCustomerByPhone(phone);
-        if (existingCustomerId != null) {
-            LOG.debug("Found existing ZR Express customer: {}", existingCustomerId);
-            return existingCustomerId;
-        }
-
-        // Customer not found, create new one with full info
-        LOG.debug("Customer not found, creating new customer with phone: {}", phone);
-        return createCustomer(order, cityTerritoryId, districtTerritoryId);
-    }
-
-    /**
-     * Get customer name - prefer User info, fallback to Order.
+     * Get customer name from order info.
+     * Always uses order.fullName as it contains the actual recipient info.
      */
     private String getCustomerName(Order order) {
-        if (order.getUser() != null) {
-            String firstName = order.getUser().getFirstName();
-            String lastName = order.getUser().getLastName();
-            if (firstName != null || lastName != null) {
-                String fullName = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
-                if (!fullName.isEmpty()) {
-                    return fullName;
-                }
-            }
-        }
         return order.getFullName();
     }
 
     /**
-     * Get customer phone - prefer User info, fallback to Order.
+     * Get customer phone from order info.
+     * Always uses order.phone as it contains the actual recipient info.
      */
     private String getCustomerPhone(Order order) {
-        if (order.getUser() != null && order.getUser().getPhone() != null && !order.getUser().getPhone().isEmpty()) {
-            return order.getUser().getPhone();
-        }
         return order.getPhone();
     }
 
     /**
-     * Get customer wilaya - prefer User info, fallback to Order.
-     */
-    private String getCustomerWilaya(Order order) {
-        if (order.getUser() != null && order.getUser().getWilaya() != null && !order.getUser().getWilaya().isEmpty()) {
-            return order.getUser().getWilaya();
-        }
-        return order.getWilaya();
-    }
-
-    /**
-     * Get customer city/commune - prefer User info, fallback to Order.
-     */
-    private String getCustomerCity(Order order) {
-        if (order.getUser() != null && order.getUser().getCity() != null && !order.getUser().getCity().isEmpty()) {
-            return order.getUser().getCity();
-        }
-        return order.getCity();
-    }
-
-    /**
-     * Get customer street address - prefer User info, fallback to Order.
+     * Get customer street address from order info.
+     * Always uses order.streetAddress as it contains the actual delivery address.
      */
     private String getCustomerStreetAddress(Order order) {
-        if (order.getUser() != null && order.getUser().getStreetAddress() != null && !order.getUser().getStreetAddress().isEmpty()) {
-            return order.getUser().getStreetAddress();
-        }
         return order.getStreetAddress();
-    }
-
-    /**
-     * Get customer postal code - prefer User info, fallback to Order.
-     */
-    private String getCustomerPostalCode(Order order) {
-        if (order.getUser() != null && order.getUser().getPostalCode() != null && !order.getUser().getPostalCode().isEmpty()) {
-            return order.getUser().getPostalCode();
-        }
-        return order.getPostalCode();
-    }
-
-    /**
-     * Get delivery preference for ZR Express.
-     * Maps User's defaultShippingMethod if available, falls back to order's isStopDesk.
-     * SHIPPING_PROVIDER → "pickup-point", HOME_DELIVERY → "home"
-     */
-    private String getDeliveryPreference(Order order, boolean isPickupPointOrder) {
-        if (order.getUser() != null && order.getUser().getDefaultShippingMethod() != null) {
-            return switch (order.getUser().getDefaultShippingMethod()) {
-                case SHIPPING_PROVIDER -> "pickup-point";
-                case HOME_DELIVERY -> "home";
-            };
-        }
-        // Fallback to order type
-        return isPickupPointOrder ? "pickup-point" : "home";
-    }
-
-    /**
-     * Search for customer by phone number.
-     *
-     * @param phone Phone number to search
-     * @return Customer UUID if found, null otherwise
-     */
-    private String searchCustomerByPhone(String phone) {
-        try {
-            HttpHeaders headers = createHeaders();
-
-            Map<String, Object> searchRequest = new HashMap<>();
-            searchRequest.put("keyword", phone);
-            searchRequest.put("pageSize", 10);
-            searchRequest.put("pageNumber", 1);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(searchRequest, headers);
-            String url = shippingProperties.getZrExpress().getBaseUrl() + "/customers/search";
-
-            LOG.debug("Searching ZR Express customer by phone: {}", phone);
-
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                entity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-            );
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Object itemsObj = response.getBody().get("items");
-                if (itemsObj != null) {
-                    List<Map<String, Object>> items = objectMapper.convertValue(
-                        itemsObj,
-                        new TypeReference<List<Map<String, Object>>>() {}
-                    );
-                    if (!items.isEmpty()) {
-                        // Return first matching customer's ID
-                        Object id = items.get(0).get("id");
-                        if (id != null) {
-                            return id.toString();
-                        }
-                    }
-                }
-            }
-
-            LOG.debug("No customer found with phone: {}", phone);
-            return null;
-
-        } catch (Exception e) {
-            LOG.error("Error searching for customer by phone: {}", phone, e);
-            return null;
-        }
-    }
-
-    /**
-     * Create a new customer in ZR Express with full info.
-     * Uses User info if available, falls back to Order info.
-     *
-     * @param order The order containing customer info
-     * @param cityTerritoryId Resolved city territory UUID
-     * @param districtTerritoryId Resolved district territory UUID
-     * @return Customer UUID if created, null otherwise
-     */
-    private String createCustomer(Order order, String cityTerritoryId, String districtTerritoryId) {
-        try {
-            HttpHeaders headers = createHeaders();
-
-            String name = getCustomerName(order);
-            String phone = formatPhoneForZrExpress(getCustomerPhone(order));
-            String wilaya = getCustomerWilaya(order);
-            String city = getCustomerCity(order);
-            String streetAddress = getCustomerStreetAddress(order);
-            String postalCode = getCustomerPostalCode(order);
-            boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
-
-            Map<String, Object> customerRequest = new HashMap<>();
-            customerRequest.put("name", name);
-
-            // Phone
-            Map<String, String> phoneDto = new HashMap<>();
-            phoneDto.put("number1", phone);
-            customerRequest.put("phone", phoneDto);
-
-            // Delivery preference - prefer User's default, fallback to order type
-            String deliveryPreference = getDeliveryPreference(order, isPickupPoint);
-            customerRequest.put("deliveryPreference", deliveryPreference);
-
-            // Build address
-            Map<String, Object> address = new HashMap<>();
-            address.put("street", streetAddress != null ? streetAddress : "N/A");
-            address.put("city", wilaya);
-            address.put("cityTerritoryId", cityTerritoryId);
-            address.put("district", city);
-            address.put("districtTerritoryId", districtTerritoryId);
-            if (postalCode != null && !postalCode.isEmpty()) {
-                address.put("postalCode", postalCode);
-            }
-            address.put("country", "Algeria");
-            address.put("isPrimary", true);
-
-            // Add address to customer
-            customerRequest.put("addresses", List.of(address));
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(customerRequest, headers);
-            String url = shippingProperties.getZrExpress().getBaseUrl() + "/customers/individual";
-
-            LOG.debug("Creating ZR Express customer: name={}, phone={}, wilaya={}, city={}",
-                name, phone, wilaya, city);
-
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                entity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-            );
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Object id = response.getBody().get("id");
-                if (id != null) {
-                    LOG.info("Created ZR Express customer: {}", id);
-                    return id.toString();
-                }
-            }
-
-            LOG.error("Failed to create ZR Express customer - no ID in response");
-            return null;
-
-        } catch (HttpClientErrorException e) {
-            LOG.error("ZR Express API error creating customer: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            return null;
-        } catch (Exception e) {
-            LOG.error("Error creating ZR Express customer", e);
-            return null;
-        }
     }
 
     /**
@@ -1049,5 +833,144 @@ public class ZrExpressService implements ShippingProviderService {
             return false;
         }
         return normalizeLocationName(name1).equals(normalizeLocationName(name2));
+    }
+
+    /**
+     * Get delivery fee for a specific destination territory.
+     *
+     * @param wilayaName Destination wilaya name (e.g., "Bejaia", "Alger")
+     * @param communeName Commune/district name within the wilaya
+     * @param isStopDesk Whether this is a pickup point (stop desk) delivery
+     * @return DeliveryFeeResult with the calculated fee or error
+     */
+    public DeliveryFeeResult getDeliveryFee(String wilayaName, String communeName, boolean isStopDesk) {
+        if (!shippingProperties.getZrExpress().isEnabled()) {
+            LOG.warn("ZR Express integration is disabled");
+            return DeliveryFeeResult.failure("ZR Express integration is disabled");
+        }
+
+        if (wilayaName == null || wilayaName.isBlank()) {
+            return DeliveryFeeResult.failure("Destination wilaya name is required");
+        }
+
+        try {
+            // First resolve the territory ID from wilaya/commune name
+            String cityTerritoryId = resolveCityTerritoryId(wilayaName);
+            if (cityTerritoryId == null) {
+                return DeliveryFeeResult.failure("Could not resolve wilaya: " + wilayaName);
+            }
+
+            // Try to get district territory if commune provided
+            String territoryId = cityTerritoryId;
+            if (communeName != null && !communeName.isBlank()) {
+                String districtTerritoryId = resolveDistrictTerritoryId(cityTerritoryId, communeName);
+                if (districtTerritoryId != null) {
+                    territoryId = districtTerritoryId;
+                }
+            }
+
+            // Now fetch the rate for this territory
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getZrExpress().getBaseUrl() +
+                "/delivery-pricing/rates/" + territoryId;
+
+            LOG.debug("Fetching ZR Express rate from: {}", url);
+
+            ResponseEntity<ZrExpressRateResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                ZrExpressRateResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                ZrExpressRateResponse rateResponse = response.getBody();
+
+                BigDecimal fee = rateResponse.getDeliveryFee(isStopDesk);
+                if (fee != null) {
+                    LOG.debug("ZR Express delivery fee for territory {}: {} DA (stopDesk={})",
+                        territoryId, fee, isStopDesk);
+                    return DeliveryFeeResult.automatic(fee, ShippingProvider.ZR);
+                } else {
+                    return DeliveryFeeResult.failure("No delivery prices found for territory: " + territoryId);
+                }
+            } else {
+                LOG.error("ZR Express rate API returned unexpected response: status={}", response.getStatusCode());
+                return DeliveryFeeResult.failure("ZR Express API returned unexpected response");
+            }
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("ZR Express rate API client error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return DeliveryFeeResult.failure("ZR Express API error: " + e.getResponseBodyAsString());
+        } catch (HttpServerErrorException e) {
+            LOG.error("ZR Express rate API server error: {}", e.getStatusCode());
+            return DeliveryFeeResult.failure("ZR Express server error");
+        } catch (Exception e) {
+            LOG.error("Error fetching ZR Express delivery fee", e);
+            return DeliveryFeeResult.failure("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get delivery fee using territory ID directly.
+     *
+     * @param territoryId The ZR Express territory UUID
+     * @param isStopDesk Whether this is a pickup point delivery
+     * @return DeliveryFeeResult with the calculated fee or error
+     */
+    public DeliveryFeeResult getDeliveryFeeByTerritoryId(String territoryId, boolean isStopDesk) {
+        if (!shippingProperties.getZrExpress().isEnabled()) {
+            LOG.warn("ZR Express integration is disabled");
+            return DeliveryFeeResult.failure("ZR Express integration is disabled");
+        }
+
+        if (territoryId == null || territoryId.isBlank()) {
+            return DeliveryFeeResult.failure("Territory ID is required");
+        }
+
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String url = shippingProperties.getZrExpress().getBaseUrl() +
+                "/delivery-pricing/rates/" + territoryId;
+
+            LOG.debug("Fetching ZR Express rate from: {}", url);
+
+            ResponseEntity<ZrExpressRateResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                ZrExpressRateResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                ZrExpressRateResponse rateResponse = response.getBody();
+
+                BigDecimal fee = rateResponse.getDeliveryFee(isStopDesk);
+                if (fee != null) {
+                    LOG.debug("ZR Express delivery fee for territory {}: {} DA (stopDesk={})",
+                        territoryId, fee, isStopDesk);
+                    return DeliveryFeeResult.automatic(fee, ShippingProvider.ZR);
+                } else {
+                    return DeliveryFeeResult.failure("No delivery prices found for territory: " + territoryId);
+                }
+            } else {
+                LOG.error("ZR Express rate API returned unexpected response: status={}", response.getStatusCode());
+                return DeliveryFeeResult.failure("ZR Express API returned unexpected response");
+            }
+
+        } catch (HttpClientErrorException e) {
+            LOG.error("ZR Express rate API client error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return DeliveryFeeResult.failure("ZR Express API error: " + e.getResponseBodyAsString());
+        } catch (HttpServerErrorException e) {
+            LOG.error("ZR Express rate API server error: {}", e.getStatusCode());
+            return DeliveryFeeResult.failure("ZR Express server error");
+        } catch (Exception e) {
+            LOG.error("Error fetching ZR Express delivery fee", e);
+            return DeliveryFeeResult.failure("Unexpected error: " + e.getMessage());
+        }
     }
 }

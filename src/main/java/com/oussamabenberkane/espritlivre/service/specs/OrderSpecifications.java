@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.service.specs;
 
 import com.oussamabenberkane.espritlivre.domain.Order;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
+import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
@@ -65,6 +66,8 @@ public class OrderSpecifications {
      * Specification to search orders by text.
      * Searches in: order ID (numeric), customer name, email, phone number.
      * Uses case-insensitive partial matching (LIKE with LOWER).
+     * Phone search is normalized to handle leading zeros and country codes
+     * (e.g., searching "0549697533" will match "+213549697533").
      *
      * @param searchTerm the search term
      * @return the specification
@@ -85,8 +88,13 @@ public class OrderSpecifications {
             // Search in email
             predicates.add(builder.like(builder.lower(root.get("email")), searchPattern));
 
-            // Search in phone number
-            predicates.add(builder.like(builder.lower(root.get("phone")), searchPattern));
+            // Search in phone number with normalization for flexible matching
+            // This handles cases like searching "0549697533" to find "+213549697533"
+            String normalizedPhone = TextNormalizationUtils.normalizePhoneForSearch(trimmedSearch);
+            if (normalizedPhone != null && !normalizedPhone.isEmpty()) {
+                // Match the normalized digits anywhere in the stored phone number
+                predicates.add(builder.like(root.get("phone"), "%" + normalizedPhone + "%"));
+            }
 
             // Search by order ID if the search term is numeric
             try {
