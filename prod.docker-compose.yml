@@ -1,0 +1,245 @@
+services:
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
+  postgres:
+    image: postgres:17
+    container_name: espritlivre-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5433:5432"  # Only localhost for SSH tunnel access (5433 to avoid conflicts)
+    environment:
+      POSTGRES_USER: ${DB_USER:-espritlivre}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:-espritlivre}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-espritlivre} -d ${DB_NAME:-espritlivre}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===========================================
+  # Keycloak Authentication Server
+  # ===========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.3
+    container_name: espritlivre-keycloak
+    restart: unless-stopped
+    command: start --import-realm
+    environment:
+      # Database
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${KC_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${DB_USER:-espritlivre}
+      KC_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      # Admin credentials
+      KEYCLOAK_ADMIN: ${KC_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?KC_ADMIN_PASSWORD is required}
+      # Production settings
+      KC_HOSTNAME: auth.${DOMAIN:-espritlivre.com}
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_FEATURES: scripts
+      # Performance
+      KC_HTTP_PORT: 8080
+      JAVA_OPTS_APPEND: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
+    volumes:
+      - ./src/main/docker/realm-config:/opt/keycloak/data/import:ro
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ===========================================
+  # Esprit Livre API
+  # ===========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: espritlivre/api:${VERSION:-latest}
+    container_name: espritlivre-api
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-espritlivre}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-espritlivre}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      # OAuth2/Keycloak (must match token issuer - external HTTPS URL)
+      OAUTH_ISSUER_URI: https://auth.espritlivre.com/realms/jhipster
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_ID: ${OAUTH_CLIENT_ID:-web_app}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:?OAUTH_CLIENT_SECRET is required}
+      # Application
+      APPLICATION_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@espritlivre.com}
+      APPLICATION_ADMIN_PANEL_URL: https://admin.${DOMAIN:-espritlivre.com}
+      # Media storage
+      MEDIA_ROOT_DIR: /app/media
+      # Shipping providers
+      YALIDINE_ENABLED: ${YALIDINE_ENABLED:-false}
+      YALIDINE_API_ID: ${YALIDINE_API_ID:-}
+      YALIDINE_API_TOKEN: ${YALIDINE_API_TOKEN:-}
+      YALIDINE_WEBHOOK_SECRET: ${YALIDINE_WEBHOOK_SECRET:-}
+      ZR_EXPRESS_ENABLED: ${ZR_EXPRESS_ENABLED:-true}
+      ZR_EXPRESS_TENANT_ID: ${ZR_EXPRESS_TENANT_ID:-}
+      ZR_EXPRESS_API_KEY: ${ZR_EXPRESS_API_KEY:-}
+      # Keycloak Admin API (for user sync)
+      KEYCLOAK_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+      KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
+      # Mail (configure your SMTP)
+      SPRING_MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # JVM tuning
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:+UseG1GC
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs
+        -Djava.security.egd=file:/dev/./urandom
+    volumes:
+      - api_media:/app/media
+      - api_logs:/app/logs
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/management/health/liveness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+
+  # ===========================================
+  # User Frontend
+  # ===========================================
+  user-frontend:
+    build:
+      context: ../user
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api.${DOMAIN:-espritlivre.com}
+        VITE_KEYCLOAK_URL: https://auth.${DOMAIN:-espritlivre.com}
+        VITE_KEYCLOAK_REALM: jhipster
+        VITE_KEYCLOAK_CLIENT_ID: web_app
+    image: espritlivre/user-frontend:${VERSION:-latest}
+    container_name: espritlivre-user-frontend
+    restart: unless-stopped
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ===========================================
+  # Admin Frontend
+  # ===========================================
+  admin-frontend:
+    build:
+      context: ../admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api.${DOMAIN:-espritlivre.com}
+        VITE_KEYCLOAK_URL: https://auth.${DOMAIN:-espritlivre.com}
+        VITE_KEYCLOAK_REALM: jhipster
+        VITE_KEYCLOAK_CLIENT_ID: web_app
+    image: espritlivre/admin-frontend:${VERSION:-latest}
+    container_name: espritlivre-admin-frontend
+    restart: unless-stopped
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ===========================================
+  # Nginx Reverse Proxy
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: espritlivre-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    networks:
+      backend:
+        aliases:
+          - auth.espritlivre.com
+    depends_on:
+      - api
+      - keycloak
+      - user-frontend
+      - admin-frontend
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  postgres_data:
+    name: espritlivre_postgres_data
+  keycloak_data:
+    name: espritlivre_keycloak_data
+  api_media:
+    name: espritlivre_api_media
+  api_logs:
+    name: espritlivre_api_logs
+  nginx_cache:
+    name: espritlivre_nginx_cache
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  backend:
+    name: espritlivre-network
+    driver: bridge
