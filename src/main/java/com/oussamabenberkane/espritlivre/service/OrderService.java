@@ -159,12 +159,6 @@ public class OrderService {
         if (!StringUtils.hasText(order.getPhone())) {
             throw new BadRequestAlertException("Phone is required", "order", "phonerequired");
         }
-        if (!StringUtils.hasText(order.getCity())) {
-            throw new BadRequestAlertException("City is required", "order", "cityrequired");
-        }
-        if (!StringUtils.hasText(order.getWilaya())) {
-            throw new BadRequestAlertException("Wilaya is required", "order", "wilayarequired");
-        }
 
         // Shipping and pricing info
         order.setShippingMethod(orderDTO.getShippingMethod());
