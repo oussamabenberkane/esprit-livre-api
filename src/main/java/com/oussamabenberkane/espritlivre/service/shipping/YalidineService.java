@@ -385,13 +385,8 @@ public class YalidineService implements ShippingProviderService {
             .isStopDesk(order.getIsStopDesk() != null ? order.getIsStopDesk() : false)
             .stopDeskId(order.getStopDeskId())
             .hasExchange(false)
-            // Required fields with defaults for books
             .doInsurance(false)
             .declaredValue(priceInt)
-            .length(20)  // Default dimensions for book packages
-            .width(15)
-            .height(5)
-            .weight(1)
             .build();
     }
 

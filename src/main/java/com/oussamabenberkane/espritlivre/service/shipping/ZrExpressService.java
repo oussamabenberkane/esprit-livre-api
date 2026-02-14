@@ -700,7 +700,6 @@ public class ZrExpressService implements ShippingProviderService {
             .deliveryAddress(cityTerritoryId, districtTerritoryId, streetAddress != null ? streetAddress : "N/A")
             .deliveryType(deliveryType)
             .amount(order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0)
-            .weight(1.0) // Default weight for books
             .externalId(order.getUniqueId())
             .description(buildProductList(order))
             .orderedProducts(orderedProducts);
