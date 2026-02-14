@@ -785,39 +785,26 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
-     * Get customer name - prefer User info, fallback to Order.
+     * Get customer name from order info.
+     * Always uses order.fullName as it contains the actual recipient info.
      */
     private String getCustomerName(Order order) {
-        if (order.getUser() != null) {
-            String firstName = order.getUser().getFirstName();
-            String lastName = order.getUser().getLastName();
-            if (firstName != null || lastName != null) {
-                String fullName = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
-                if (!fullName.isEmpty()) {
-                    return fullName;
-                }
-            }
-        }
         return order.getFullName();
     }
 
     /**
-     * Get customer phone - prefer User info, fallback to Order.
+     * Get customer phone from order info.
+     * Always uses order.phone as it contains the actual recipient info.
      */
     private String getCustomerPhone(Order order) {
-        if (order.getUser() != null && order.getUser().getPhone() != null && !order.getUser().getPhone().isEmpty()) {
-            return order.getUser().getPhone();
-        }
         return order.getPhone();
     }
 
     /**
-     * Get customer street address - prefer User info, fallback to Order.
+     * Get customer street address from order info.
+     * Always uses order.streetAddress as it contains the actual delivery address.
      */
     private String getCustomerStreetAddress(Order order) {
-        if (order.getUser() != null && order.getUser().getStreetAddress() != null && !order.getUser().getStreetAddress().isEmpty()) {
-            return order.getUser().getStreetAddress();
-        }
         return order.getStreetAddress();
     }
 
