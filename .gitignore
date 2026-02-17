@@ -168,3 +168,11 @@ src/main/resources/media/
 nginx/ssl/
 
 el.env
+
+*.jpg
+
+*.png
+
+*.webp
+
+*.jpeg
