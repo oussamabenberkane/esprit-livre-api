@@ -1,7 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 /**
  * DTO for overall dashboard statistics including all KPI metrics.
@@ -13,8 +12,8 @@ public class DashboardStatsDTO implements Serializable {
     private BestSellingBookDTO bestSellingBook;
     private NewUsersDTO newUsers;
     private Long totalOrders;
-    private BigDecimal monthlySales;
-    private BigDecimal grossMonthlySales;
+    private SalesBreakdownDTO sales;
+    private SalesBreakdownDTO grossSales;
     private GrowthMetricsDTO growth;
 
     public DashboardStatsDTO() {}
@@ -23,15 +22,15 @@ public class DashboardStatsDTO implements Serializable {
         BestSellingBookDTO bestSellingBook,
         NewUsersDTO newUsers,
         Long totalOrders,
-        BigDecimal monthlySales,
-        BigDecimal grossMonthlySales,
+        SalesBreakdownDTO sales,
+        SalesBreakdownDTO grossSales,
         GrowthMetricsDTO growth
     ) {
         this.bestSellingBook = bestSellingBook;
         this.newUsers = newUsers;
         this.totalOrders = totalOrders;
-        this.monthlySales = monthlySales;
-        this.grossMonthlySales = grossMonthlySales;
+        this.sales = sales;
+        this.grossSales = grossSales;
         this.growth = growth;
     }
 
@@ -61,20 +60,20 @@ public class DashboardStatsDTO implements Serializable {
         this.totalOrders = totalOrders;
     }
 
-    public BigDecimal getMonthlySales() {
-        return monthlySales;
+    public SalesBreakdownDTO getSales() {
+        return sales;
     }
 
-    public void setMonthlySales(BigDecimal monthlySales) {
-        this.monthlySales = monthlySales;
+    public void setSales(SalesBreakdownDTO sales) {
+        this.sales = sales;
     }
 
-    public BigDecimal getGrossMonthlySales() {
-        return grossMonthlySales;
+    public SalesBreakdownDTO getGrossSales() {
+        return grossSales;
     }
 
-    public void setGrossMonthlySales(BigDecimal grossMonthlySales) {
-        this.grossMonthlySales = grossMonthlySales;
+    public void setGrossSales(SalesBreakdownDTO grossSales) {
+        this.grossSales = grossSales;
     }
 
     public GrowthMetricsDTO getGrowth() {
@@ -95,10 +94,10 @@ public class DashboardStatsDTO implements Serializable {
             newUsers +
             ", totalOrders=" +
             totalOrders +
-            ", monthlySales=" +
-            monthlySales +
-            ", grossMonthlySales=" +
-            grossMonthlySales +
+            ", sales=" +
+            sales +
+            ", grossSales=" +
+            grossSales +
             ", growth=" +
             growth +
             '}'

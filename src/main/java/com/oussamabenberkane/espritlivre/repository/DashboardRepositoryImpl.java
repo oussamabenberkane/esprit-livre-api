@@ -97,19 +97,24 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
     @Override
     public BigDecimal sumSalesByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
-        String sql =
+        StringBuilder sql = new StringBuilder(
             """
             SELECT COALESCE(SUM(o.total_amount - COALESCE(o.shipping_cost, 0)), 0)
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
               AND o.status = 'DELIVERED'
-              AND o.created_at >= :startDate
-              AND o.created_at < :endDate
-            """;
+            """
+        );
 
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("startDate", startDate);
-        query.setParameter("endDate", endDate);
+        if (startDate != null && endDate != null) {
+            sql.append(" AND o.created_at >= :startDate AND o.created_at < :endDate");
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        if (startDate != null && endDate != null) {
+            query.setParameter("startDate", startDate);
+            query.setParameter("endDate", endDate);
+        }
 
         Number result = (Number) query.getSingleResult();
         return result != null ? new BigDecimal(result.toString()) : BigDecimal.ZERO;
@@ -117,19 +122,24 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
     @Override
     public BigDecimal sumGrossSalesByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
-        String sql =
+        StringBuilder sql = new StringBuilder(
             """
             SELECT COALESCE(SUM(o.total_amount), 0)
             FROM jhi_order o
             WHERE o.deleted_at IS NULL
               AND o.status = 'DELIVERED'
-              AND o.created_at >= :startDate
-              AND o.created_at < :endDate
-            """;
+            """
+        );
 
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("startDate", startDate);
-        query.setParameter("endDate", endDate);
+        if (startDate != null && endDate != null) {
+            sql.append(" AND o.created_at >= :startDate AND o.created_at < :endDate");
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        if (startDate != null && endDate != null) {
+            query.setParameter("startDate", startDate);
+            query.setParameter("endDate", endDate);
+        }
 
         Number result = (Number) query.getSingleResult();
         return result != null ? new BigDecimal(result.toString()) : BigDecimal.ZERO;

@@ -55,15 +55,14 @@ public class DashboardService {
         // Get total orders for the time range
         Long totalOrders = dashboardRepository.countOrdersByDateRange(currentBounds.start, currentBounds.end);
 
-        // Get monthly sales (always current month regardless of timeRange)
-        TimeRangeBounds monthBounds = getTimeRangeBounds("THIS_MONTH", now);
-        BigDecimal monthlySales = dashboardRepository.sumSalesByDateRange(monthBounds.start, monthBounds.end);
-        BigDecimal grossMonthlySales = dashboardRepository.sumGrossSalesByDateRange(monthBounds.start, monthBounds.end);
+        // Get sales breakdown by time period
+        SalesBreakdownDTO sales = getSalesStats(now);
+        SalesBreakdownDTO grossSales = getGrossSalesStats(now);
 
         // Calculate growth metrics
         GrowthMetricsDTO growth = calculateGrowthMetrics(currentBounds, previousBounds, now);
 
-        return new DashboardStatsDTO(bestSellingBook, newUsers, totalOrders, monthlySales, grossMonthlySales, growth);
+        return new DashboardStatsDTO(bestSellingBook, newUsers, totalOrders, sales, grossSales, growth);
     }
 
     /**
@@ -141,6 +140,56 @@ public class DashboardService {
     }
 
     /**
+     * Get net sales statistics (gross sales - shipping fees) with breakdown by time periods.
+     */
+    private SalesBreakdownDTO getSalesStats(ZonedDateTime now) {
+        // Today
+        ZonedDateTime startOfToday = now.truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfToday = startOfToday.plusDays(1);
+        BigDecimal today = dashboardRepository.sumSalesByDateRange(startOfToday, endOfToday);
+
+        // This week (Monday-based)
+        ZonedDateTime startOfWeek = now.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfWeek = startOfWeek.plusWeeks(1);
+        BigDecimal thisWeek = dashboardRepository.sumSalesByDateRange(startOfWeek, endOfWeek);
+
+        // This month
+        ZonedDateTime startOfMonth = now.with(TemporalAdjusters.firstDayOfMonth()).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfMonth = startOfMonth.plusMonths(1);
+        BigDecimal thisMonth = dashboardRepository.sumSalesByDateRange(startOfMonth, endOfMonth);
+
+        // Total (all time)
+        BigDecimal total = dashboardRepository.sumSalesByDateRange(null, null);
+
+        return new SalesBreakdownDTO(total, today, thisWeek, thisMonth);
+    }
+
+    /**
+     * Get gross sales statistics (total revenue including shipping) with breakdown by time periods.
+     */
+    private SalesBreakdownDTO getGrossSalesStats(ZonedDateTime now) {
+        // Today
+        ZonedDateTime startOfToday = now.truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfToday = startOfToday.plusDays(1);
+        BigDecimal today = dashboardRepository.sumGrossSalesByDateRange(startOfToday, endOfToday);
+
+        // This week (Monday-based)
+        ZonedDateTime startOfWeek = now.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfWeek = startOfWeek.plusWeeks(1);
+        BigDecimal thisWeek = dashboardRepository.sumGrossSalesByDateRange(startOfWeek, endOfWeek);
+
+        // This month
+        ZonedDateTime startOfMonth = now.with(TemporalAdjusters.firstDayOfMonth()).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfMonth = startOfMonth.plusMonths(1);
+        BigDecimal thisMonth = dashboardRepository.sumGrossSalesByDateRange(startOfMonth, endOfMonth);
+
+        // Total (all time)
+        BigDecimal total = dashboardRepository.sumGrossSalesByDateRange(null, null);
+
+        return new SalesBreakdownDTO(total, today, thisWeek, thisMonth);
+    }
+
+    /**
      * Calculate growth metrics by comparing current and previous periods.
      */
     private GrowthMetricsDTO calculateGrowthMetrics(TimeRangeBounds currentBounds, TimeRangeBounds previousBounds, ZonedDateTime now) {
@@ -178,7 +227,12 @@ public class DashboardService {
         BigDecimal lastMonthSales = dashboardRepository.sumSalesByDateRange(startOfLastMonth, endOfLastMonth);
         GrowthMetricDTO salesGrowth = calculateGrowthFromBigDecimal(thisMonthSales, lastMonthSales);
 
-        return new GrowthMetricsDTO(bestSellingBookGrowth, newUsersGrowth, ordersGrowth, salesGrowth);
+        // Gross sales growth (compare this month vs last month)
+        BigDecimal thisMonthGrossSales = dashboardRepository.sumGrossSalesByDateRange(startOfThisMonth, endOfThisMonth);
+        BigDecimal lastMonthGrossSales = dashboardRepository.sumGrossSalesByDateRange(startOfLastMonth, endOfLastMonth);
+        GrowthMetricDTO grossSalesGrowth = calculateGrowthFromBigDecimal(thisMonthGrossSales, lastMonthGrossSales);
+
+        return new GrowthMetricsDTO(bestSellingBookGrowth, newUsersGrowth, ordersGrowth, salesGrowth, grossSalesGrowth);
     }
 
     /**

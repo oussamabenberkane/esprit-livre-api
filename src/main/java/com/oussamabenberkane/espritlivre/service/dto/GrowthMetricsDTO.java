@@ -13,6 +13,7 @@ public class GrowthMetricsDTO implements Serializable {
     private GrowthMetricDTO newUsers;
     private GrowthMetricDTO orders;
     private GrowthMetricDTO sales;
+    private GrowthMetricDTO grossSales;
 
     public GrowthMetricsDTO() {}
 
@@ -20,12 +21,14 @@ public class GrowthMetricsDTO implements Serializable {
         GrowthMetricDTO bestSellingBook,
         GrowthMetricDTO newUsers,
         GrowthMetricDTO orders,
-        GrowthMetricDTO sales
+        GrowthMetricDTO sales,
+        GrowthMetricDTO grossSales
     ) {
         this.bestSellingBook = bestSellingBook;
         this.newUsers = newUsers;
         this.orders = orders;
         this.sales = sales;
+        this.grossSales = grossSales;
     }
 
     // Getters and Setters
@@ -62,6 +65,14 @@ public class GrowthMetricsDTO implements Serializable {
         this.sales = sales;
     }
 
+    public GrowthMetricDTO getGrossSales() {
+        return grossSales;
+    }
+
+    public void setGrossSales(GrowthMetricDTO grossSales) {
+        this.grossSales = grossSales;
+    }
+
     @Override
     public String toString() {
         return (
@@ -74,6 +85,8 @@ public class GrowthMetricsDTO implements Serializable {
             orders +
             ", sales=" +
             sales +
+            ", grossSales=" +
+            grossSales +
             '}'
         );
     }
