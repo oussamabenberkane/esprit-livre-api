@@ -206,6 +206,8 @@ public class BookService {
         existingBook.setPrice(bookDTO.getPrice());
         existingBook.setStockQuantity(bookDTO.getStockQuantity() != null ? bookDTO.getStockQuantity() : 1);
         existingBook.setDescription(bookDTO.getDescription());
+        existingBook.setDeliveryFee(bookDTO.getDeliveryFee());
+        existingBook.setAutomaticDeliveryFee(bookDTO.getAutomaticDeliveryFee());
         existingBook.setUpdatedAt(ZonedDateTime.now());
 
         // Handle cover image if provided

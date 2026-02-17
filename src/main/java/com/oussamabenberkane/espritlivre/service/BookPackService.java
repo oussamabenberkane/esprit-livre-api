@@ -98,6 +98,8 @@ public class BookPackService {
             bookPack.setTitle(bookPackDTO.getTitle());
             bookPack.setDescription(bookPackDTO.getDescription());
             bookPack.setPrice(bookPackDTO.getPrice());
+            bookPack.setDeliveryFee(bookPackDTO.getDeliveryFee());
+            bookPack.setAutomaticDeliveryFee(bookPackDTO.getAutomaticDeliveryFee());
         } else {
             // Create new book pack
             if (bookPackDTO.getId() != null) {
