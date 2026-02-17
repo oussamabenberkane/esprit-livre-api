@@ -11,7 +11,7 @@ public class DashboardStatsDTO implements Serializable {
 
     private BestSellingBookDTO bestSellingBook;
     private NewUsersDTO newUsers;
-    private Long totalOrders;
+    private OrdersBreakdownDTO orders;
     private SalesBreakdownDTO sales;
     private SalesBreakdownDTO grossSales;
     private GrowthMetricsDTO growth;
@@ -21,14 +21,14 @@ public class DashboardStatsDTO implements Serializable {
     public DashboardStatsDTO(
         BestSellingBookDTO bestSellingBook,
         NewUsersDTO newUsers,
-        Long totalOrders,
+        OrdersBreakdownDTO orders,
         SalesBreakdownDTO sales,
         SalesBreakdownDTO grossSales,
         GrowthMetricsDTO growth
     ) {
         this.bestSellingBook = bestSellingBook;
         this.newUsers = newUsers;
-        this.totalOrders = totalOrders;
+        this.orders = orders;
         this.sales = sales;
         this.grossSales = grossSales;
         this.growth = growth;
@@ -52,12 +52,12 @@ public class DashboardStatsDTO implements Serializable {
         this.newUsers = newUsers;
     }
 
-    public Long getTotalOrders() {
-        return totalOrders;
+    public OrdersBreakdownDTO getOrders() {
+        return orders;
     }
 
-    public void setTotalOrders(Long totalOrders) {
-        this.totalOrders = totalOrders;
+    public void setOrders(OrdersBreakdownDTO orders) {
+        this.orders = orders;
     }
 
     public SalesBreakdownDTO getSales() {
@@ -92,8 +92,8 @@ public class DashboardStatsDTO implements Serializable {
             bestSellingBook +
             ", newUsers=" +
             newUsers +
-            ", totalOrders=" +
-            totalOrders +
+            ", orders=" +
+            orders +
             ", sales=" +
             sales +
             ", grossSales=" +

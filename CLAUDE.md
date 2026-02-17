@@ -166,7 +166,6 @@ Activate profiles via Maven: `-Pprod` or in IDE/environment: `spring.profiles.ac
   - `DashboardService`: Admin dashboard statistics
   - `MailService`: Email notifications using Thymeleaf templates
   - `AppUserService`: Extended user management beyond OAuth2
-  - `CleanupService`: Scheduled cleanup of unused resources
   - `UniqueIdGeneratorService`: Generates unique order IDs
 
 **Repository Layer** ([repository/](src/main/java/com/oussamabenberkane/espritlivre/repository/)):

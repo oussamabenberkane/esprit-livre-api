@@ -52,8 +52,8 @@ public class DashboardService {
         // Get new users stats
         NewUsersDTO newUsers = getNewUsersStats(now);
 
-        // Get total orders for the time range
-        Long totalOrders = dashboardRepository.countOrdersByDateRange(currentBounds.start, currentBounds.end);
+        // Get orders breakdown by time period
+        OrdersBreakdownDTO orders = getOrdersStats(now);
 
         // Get sales breakdown by time period
         SalesBreakdownDTO sales = getSalesStats(now);
@@ -62,7 +62,7 @@ public class DashboardService {
         // Calculate growth metrics
         GrowthMetricsDTO growth = calculateGrowthMetrics(currentBounds, previousBounds, now);
 
-        return new DashboardStatsDTO(bestSellingBook, newUsers, totalOrders, sales, grossSales, growth);
+        return new DashboardStatsDTO(bestSellingBook, newUsers, orders, sales, grossSales, growth);
     }
 
     /**
@@ -137,6 +137,31 @@ public class DashboardService {
         // Total is the same as the selected time range filter in the parent method
         // For the card, we use thisMonth as total
         return new NewUsersDTO(thisMonth, today, thisWeek, thisMonth);
+    }
+
+    /**
+     * Get orders statistics with breakdown by time periods.
+     */
+    private OrdersBreakdownDTO getOrdersStats(ZonedDateTime now) {
+        // Today
+        ZonedDateTime startOfToday = now.truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfToday = startOfToday.plusDays(1);
+        Long today = dashboardRepository.countOrdersByDateRange(startOfToday, endOfToday);
+
+        // This week (Monday-based)
+        ZonedDateTime startOfWeek = now.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfWeek = startOfWeek.plusWeeks(1);
+        Long thisWeek = dashboardRepository.countOrdersByDateRange(startOfWeek, endOfWeek);
+
+        // This month
+        ZonedDateTime startOfMonth = now.with(TemporalAdjusters.firstDayOfMonth()).truncatedTo(ChronoUnit.DAYS);
+        ZonedDateTime endOfMonth = startOfMonth.plusMonths(1);
+        Long thisMonth = dashboardRepository.countOrdersByDateRange(startOfMonth, endOfMonth);
+
+        // Total (all time)
+        Long total = dashboardRepository.countOrdersByDateRange(null, null);
+
+        return new OrdersBreakdownDTO(total, today, thisWeek, thisMonth);
     }
 
     /**
