@@ -872,14 +872,23 @@ public class ZrExpressService implements ShippingProviderService {
                 return DeliveryFeeResult.failure("Could not resolve wilaya: " + wilayaName);
             }
 
-            // Try to get district territory if commune provided
+            // ZR Express API only allows commune-level rates for the supplier's origin wilaya.
+            // For other wilayas, we must use the wilaya-level territory ID.
             String territoryId = cityTerritoryId;
-            if (communeName != null && !communeName.isBlank()) {
+            boolean isOriginWilaya = isDestinationInOriginWilaya(wilayaName);
+            String territoryLevel = "wilaya";
+
+            if (isOriginWilaya && communeName != null && !communeName.isBlank()) {
+                // Only try district-level for origin wilaya
                 String districtTerritoryId = resolveDistrictTerritoryId(cityTerritoryId, communeName);
                 if (districtTerritoryId != null) {
                     territoryId = districtTerritoryId;
+                    territoryLevel = "commune";
                 }
             }
+
+            LOG.debug("ZR Express rate lookup: wilaya={}, commune={}, isOriginWilaya={}, territoryLevel={}, territoryId={}",
+                wilayaName, communeName, isOriginWilaya, territoryLevel, territoryId);
 
             // Now fetch the rate for this territory
             HttpHeaders headers = createHeaders();
