@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,8 +28,14 @@ public class FileStorageService {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileStorageService.class);
 
+    private final ImageConversionService imageConversionService;
+
     @Value("${media.root-dir:src/main/resources/media}")
     private String mediaRootDir;
+
+    public FileStorageService(ImageConversionService imageConversionService) {
+        this.imageConversionService = imageConversionService;
+    }
 
     private String booksDir;
     private String bookPacksDir;
