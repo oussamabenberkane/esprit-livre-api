@@ -51,7 +51,7 @@ public class FileStorageService {
         this.authorsDir = mediaRootDir + "/authors";
         this.categoriesDir = mediaRootDir + "/categories";
         this.usersDir = mediaRootDir + "/users";
-        this.defaultPlaceholderPath = mediaRootDir + "/default.png";
+        this.defaultPlaceholderPath = mediaRootDir + "/default.webp";
         LOG.info("FileStorageService initialized with media root: {}", mediaRootDir);
     }
 
@@ -149,6 +149,7 @@ public class FileStorageService {
 
     /**
      * Generic method to store an image.
+     * Converts the image to WebP format before storing.
      *
      * @param file the uploaded file
      * @param uploadDir the directory to store the file in
@@ -171,16 +172,27 @@ public class FileStorageService {
             Files.createDirectories(uploadPath);
         }
 
-        // Generate filename
-        String originalFilename = file.getOriginalFilename();
-        String extension = getFileExtension(originalFilename, entityName);
-        String filename = filenamePrefix + "." + extension;
+        // Convert to WebP and store
+        byte[] imageBytes;
+        if (imageConversionService.isWebP(file.getContentType())) {
+            imageBytes = file.getBytes();
+        } else {
+            try {
+                imageBytes = imageConversionService.convertToWebP(file.getInputStream());
+            } catch (IOException e) {
+                LOG.error("Failed to convert image to WebP: {}", e.getMessage());
+                throw new BadRequestAlertException("Failed to process image", entityName, "imageconversionfailed");
+            }
+        }
+
+        // Always save with .webp extension
+        String filename = filenamePrefix + ".webp";
 
         // Store file
         Path targetLocation = uploadPath.resolve(filename);
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        Files.write(targetLocation, imageBytes);
 
-        LOG.debug("Image stored successfully: {}", filename);
+        LOG.debug("Image stored successfully as WebP: {}", filename);
 
         // Return relative URL path
         return urlPrefix + filename;
