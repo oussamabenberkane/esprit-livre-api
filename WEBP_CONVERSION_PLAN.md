@@ -8,9 +8,11 @@ Convert all uploaded images to WebP format automatically, and migrate existing i
 - Quality: 80-85% (balanced)
 - Keep original dimensions
 - Replace originals (WebP only)
-- Migrate all existing images
+- Migrate existing images (manually on remote)
 
-## Implementation
+---
+
+## Part 1: Code Changes (Local)
 
 ### 1. Create ImageConversionService
 **File:** `src/main/java/com/oussamabenberkane/espritlivre/service/ImageConversionService.java`
@@ -55,62 +57,114 @@ String filename = filenamePrefix + ".webp";
 Files.write(targetLocation, imageBytes);
 ```
 
-### 3. Create ImageMigrationService
-**File:** `src/main/java/com/oussamabenberkane/espritlivre/service/ImageMigrationService.java`
-
-Handles migration of existing images:
-- Scan media directories for non-WebP files
-- Convert each to WebP
-- Update database URL references (change `.jpg`/`.png` → `.webp`)
-- Delete original after successful conversion
-- Track progress (total, processed, errors)
-
-### 4. Create MigrationStatusDTO
-**File:** `src/main/java/com/oussamabenberkane/espritlivre/service/dto/MigrationStatusDTO.java`
-
-Simple DTO for migration status:
-- `inProgress`, `totalImages`, `processedImages`, `successCount`, `errorCount`, `errors`
-
-### 5. Add Admin Migration Endpoints
-**File:** `src/main/java/com/oussamabenberkane/espritlivre/web/rest/AdminResource.java`
-
-Add two endpoints:
-- `POST /api/admin/images/migrate` - Start migration (async)
-- `GET /api/admin/images/migration-status` - Check progress
-
-### 6. Convert default.png
+### 3. Convert default.png
 Convert `src/main/resources/media/default.png` to `default.webp` and update `FileStorageService.defaultPlaceholderPath`.
 
-## Files Summary
+### Files Summary (Local)
 
 **New files:**
 1. `service/ImageConversionService.java` - WebP conversion logic
-2. `service/ImageMigrationService.java` - Migration orchestration
-3. `service/dto/MigrationStatusDTO.java` - Status tracking DTO
 
 **Modified files:**
 1. `service/FileStorageService.java` - Add conversion on upload
-2. `web/rest/AdminResource.java` - Add migration endpoints
 
-## Database Updates (during migration)
+---
 
-| Entity | Field | Change |
-|--------|-------|--------|
-| Book | coverImageUrl | `/media/books/cover_1.jpg` → `.webp` |
-| Author | profilePictureUrl | `/media/authors/author_1.jpg` → `.webp` |
-| BookPack | coverUrl | `/media/book-packs/pack_1.png` → `.webp` |
-| Tag | imageUrl | `/media/categories/category_1.png` → `.webp` |
+## Part 2: Existing Image Migration (Remote Server)
 
-## Error Handling
+### Step 1: Install cwebp tool
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install webp
 
-**On upload:** If conversion fails, throw `BadRequestAlertException` - don't save corrupted file.
+# Verify installation
+cwebp -version
+```
 
-**On migration:** Log error, skip file, continue with others. Report failures in status endpoint. Keep original if conversion fails.
+### Step 2: Backup existing images
+```bash
+cd /app/media  # or your MEDIA_ROOT_DIR
+cp -r . ../media_backup_$(date +%Y%m%d)
+```
+
+### Step 3: Convert all images to WebP
+```bash
+# Convert all jpg/jpeg/png files to webp (82% quality)
+cd /app/media
+
+# Books
+for f in books/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+  [ -f "$f" ] && cwebp -q 82 "$f" -o "${f%.*}.webp" && rm "$f"
+done
+
+# Authors
+for f in authors/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+  [ -f "$f" ] && cwebp -q 82 "$f" -o "${f%.*}.webp" && rm "$f"
+done
+
+# Book-packs
+for f in book-packs/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+  [ -f "$f" ] && cwebp -q 82 "$f" -o "${f%.*}.webp" && rm "$f"
+done
+
+# Categories
+for f in categories/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+  [ -f "$f" ] && cwebp -q 82 "$f" -o "${f%.*}.webp" && rm "$f"
+done
+
+# Users
+for f in users/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+  [ -f "$f" ] && cwebp -q 82 "$f" -o "${f%.*}.webp" && rm "$f"
+done
+
+# Default placeholder
+cwebp -q 82 default.png -o default.webp && rm default.png
+```
+
+### Step 4: Update database URLs
+Run these SQL queries to update image references:
+
+```sql
+-- Books
+UPDATE book
+SET cover_image_url = REGEXP_REPLACE(cover_image_url, '\.(jpg|jpeg|png|JPG|JPEG|PNG)$', '.webp')
+WHERE cover_image_url IS NOT NULL
+  AND cover_image_url NOT LIKE '%.webp';
+
+-- Authors
+UPDATE author
+SET profile_picture_url = REGEXP_REPLACE(profile_picture_url, '\.(jpg|jpeg|png|JPG|JPEG|PNG)$', '.webp')
+WHERE profile_picture_url IS NOT NULL
+  AND profile_picture_url NOT LIKE '%.webp';
+
+-- Book packs
+UPDATE book_pack
+SET cover_url = REGEXP_REPLACE(cover_url, '\.(jpg|jpeg|png|JPG|JPEG|PNG)$', '.webp')
+WHERE cover_url IS NOT NULL
+  AND cover_url NOT LIKE '%.webp';
+
+-- Tags (categories)
+UPDATE tag
+SET image_url = REGEXP_REPLACE(image_url, '\.(jpg|jpeg|png|JPG|JPEG|PNG)$', '.webp')
+WHERE image_url IS NOT NULL
+  AND image_url NOT LIKE '%.webp';
+```
+
+### Step 5: Verify migration
+```bash
+# Check no non-webp images remain
+find /app/media -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | wc -l
+# Should output: 0
+
+# Check webp files exist
+find /app/media -type f -name "*.webp" | wc -l
+```
+
+---
 
 ## Verification
 
 1. **Upload test:** Upload a JPEG via admin panel, verify saved as `.webp`
 2. **Quality check:** Compare file sizes (expect ~30-50% reduction)
-3. **Migration test:** Run migration endpoint, verify all images converted
+3. **Remote check:** Verify all images converted and display correctly
 4. **Database check:** Verify URL references updated in database
-5. **Frontend check:** Verify images display correctly after migration
