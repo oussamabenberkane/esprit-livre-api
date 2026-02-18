@@ -199,10 +199,10 @@ public class TagResource {
             Resource resource = fileStorageService.loadPlaceholderImage();
 
             return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
+                .contentType(MediaType.parseMediaType(fileStorageService.getPlaceholderContentType()))
                 .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.EXPIRES, "0")
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"default.png\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileStorageService.getPlaceholderFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
             LOG.error("Failed to load placeholder image", e);

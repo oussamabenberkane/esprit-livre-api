@@ -463,23 +463,60 @@ public class FileStorageService {
 
     /**
      * Load the default placeholder image as a Resource.
+     * Tries WebP first, falls back to PNG if WebP doesn't exist (pre-migration).
      *
      * @return the placeholder image file as a Resource
      * @throws IOException if the placeholder file cannot be found or read
      */
     public Resource loadPlaceholderImage() throws IOException {
         try {
-            Path filePath = Path.of(defaultPlaceholderPath).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
+            // Try WebP first (post-migration)
+            Path webpPath = Path.of(defaultPlaceholderPath).normalize();
+            Resource webpResource = new UrlResource(webpPath.toUri());
 
-            if (resource.exists() && resource.isReadable()) {
-                LOG.debug("Placeholder image loaded successfully");
-                return resource;
-            } else {
-                throw new IOException("Placeholder image not found or not readable: " + defaultPlaceholderPath);
+            if (webpResource.exists() && webpResource.isReadable()) {
+                LOG.debug("Placeholder image (WebP) loaded successfully");
+                return webpResource;
             }
+
+            // Fall back to PNG (pre-migration)
+            Path pngPath = Path.of(mediaRootDir, "default.png").normalize();
+            Resource pngResource = new UrlResource(pngPath.toUri());
+
+            if (pngResource.exists() && pngResource.isReadable()) {
+                LOG.debug("Placeholder image (PNG fallback) loaded successfully");
+                return pngResource;
+            }
+
+            throw new IOException("Placeholder image not found or not readable");
         } catch (MalformedURLException e) {
             throw new IOException("Malformed placeholder path: " + defaultPlaceholderPath, e);
         }
+    }
+
+    /**
+     * Get the content type of the placeholder image.
+     *
+     * @return "image/webp" if WebP exists, "image/png" otherwise
+     */
+    public String getPlaceholderContentType() {
+        Path webpPath = Path.of(defaultPlaceholderPath).normalize();
+        if (Files.exists(webpPath)) {
+            return "image/webp";
+        }
+        return "image/png";
+    }
+
+    /**
+     * Get the filename of the placeholder image.
+     *
+     * @return "default.webp" if WebP exists, "default.png" otherwise
+     */
+    public String getPlaceholderFilename() {
+        Path webpPath = Path.of(defaultPlaceholderPath).normalize();
+        if (Files.exists(webpPath)) {
+            return "default.webp";
+        }
+        return "default.png";
     }
 }
