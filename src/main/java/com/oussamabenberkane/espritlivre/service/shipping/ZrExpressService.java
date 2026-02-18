@@ -836,6 +836,18 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
+     * Check if the destination wilaya is the supplier's origin wilaya.
+     * ZR Express API only allows commune-level rate queries for the origin wilaya.
+     */
+    private boolean isDestinationInOriginWilaya(String destinationWilaya) {
+        String originWilaya = shippingProperties.getOriginWilaya();
+        if (originWilaya == null || destinationWilaya == null) {
+            return false;
+        }
+        return matchesLocationName(originWilaya, destinationWilaya);
+    }
+
+    /**
      * Get delivery fee for a specific destination territory.
      *
      * @param wilayaName Destination wilaya name (e.g., "Bejaia", "Alger")
