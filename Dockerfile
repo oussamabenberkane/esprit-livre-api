@@ -31,8 +31,8 @@ LABEL description="Esprit Livre API - Book E-commerce Platform"
 
 WORKDIR /app
 
-# Install curl and ca-certificates for health checks and HTTPS
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install curl, ca-certificates, and libwebp for health checks, HTTPS, and WebP image conversion
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates libwebp-dev && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
 RUN groupadd -r espritlivre && useradd -r -g espritlivre espritlivre
