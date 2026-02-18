@@ -3,7 +3,9 @@ package com.oussamabenberkane.espritlivre.web.rest;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.AppUserService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
+import com.oussamabenberkane.espritlivre.service.ImageMigrationService;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
+import com.oussamabenberkane.espritlivre.service.dto.MigrationStatusDTO;
 import com.oussamabenberkane.espritlivre.service.dto.PasswordChangeDTO;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
@@ -37,9 +39,12 @@ public class AdminResource {
 
     private final FileStorageService fileStorageService;
 
-    public AdminResource(AppUserService appUserService, FileStorageService fileStorageService) {
+    private final ImageMigrationService imageMigrationService;
+
+    public AdminResource(AppUserService appUserService, FileStorageService fileStorageService, ImageMigrationService imageMigrationService) {
         this.appUserService = appUserService;
         this.fileStorageService = fileStorageService;
+        this.imageMigrationService = imageMigrationService;
     }
 
     /**
@@ -187,6 +192,37 @@ public class AdminResource {
         LOG.debug("REST request to change admin password");
         appUserService.changeAdminPassword(passwordChangeDTO);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * {@code POST  /admin/images/migrate} : Start image migration to WebP format.
+     * This is an asynchronous operation. Use the status endpoint to track progress.
+     *
+     * @return the {@link ResponseEntity} with status {@code 202 (ACCEPTED)} if migration started,
+     *         or {@code 409 (CONFLICT)} if migration is already in progress.
+     */
+    @PostMapping("/images/migrate")
+    public ResponseEntity<MigrationStatusDTO> startImageMigration() {
+        LOG.debug("REST request to start image migration to WebP");
+
+        if (imageMigrationService.isMigrationInProgress()) {
+            LOG.warn("Migration already in progress");
+            return ResponseEntity.status(409).body(imageMigrationService.getStatus());
+        }
+
+        imageMigrationService.startMigration();
+        return ResponseEntity.accepted().body(imageMigrationService.getStatus());
+    }
+
+    /**
+     * {@code GET  /admin/images/migration-status} : Get the current image migration status.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the migration status in body.
+     */
+    @GetMapping("/images/migration-status")
+    public ResponseEntity<MigrationStatusDTO> getMigrationStatus() {
+        LOG.debug("REST request to get image migration status");
+        return ResponseEntity.ok(imageMigrationService.getStatus());
     }
 
     /**
