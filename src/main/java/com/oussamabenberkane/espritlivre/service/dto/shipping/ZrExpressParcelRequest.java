@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.service.dto.shipping;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * DTO for creating a parcel in ZR Express API.
