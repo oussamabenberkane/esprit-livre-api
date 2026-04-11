@@ -1,25 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./mvnw:*)",
-      "Bash(docker ps:*)",
-      "Bash(cat:*)",
-      "Bash(docker exec:*)",
-      "Bash(curl:*)",
-      "Bash(python -m json.tool:*)",
-      "Bash(timeout 90 bash:*)",
-      "Bash(test:*)",
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(java -version:*)",
-      "WebSearch",
-      "WebFetch(domain:docs.zrexpress.app)",
-      "WebFetch(domain:github.com)",
-      "Bash(mvn compile:*)",
-      "Bash(tree:*)",
-      "Bash(mvn test:*)"
+      "Bash(*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/home/ouss/Desktop/Work/el/api/.claude"
+    ]
   }
 }

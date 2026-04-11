@@ -1,0 +1,183 @@
+/backup-prod
+Bash Run prod backup script
+IN
+scripts/backup-prod.sh
+
+OUT
+Exit code 1
+[00:13:35] starting backup 2026-04-12-001335
+[00:13:35] preparing remote staging dir
+[00:13:37] dumping postgres (pg_dump -F c)
+[00:13:41] exporting keycloak realm (live)
+[FAIL] keycloak export failed
+[rerun: b1]
+Read backup-prod.sh
+The keycloak export step failed. Let me diagnose the actual error.
+
+Bash Test keycloak export directly to see error
+IN
+ssh personal "docker exec espritlivre-keycloak /opt/keycloak/bin/kc.sh export --dir /tmp/kc-export-test --realm jhipster --users realm_file" 2>&1 | tail -50
+
+OUT
+2026-04-11 23:14:36,672 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) Starting Infinispan embedded cache manager
+2026-04-11 23:14:36,677 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) JGroups JDBC_PING discovery enabled.
+2026-04-11 23:14:36,820 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) JGroups Encryption enabled (mTLS).
+2026-04-11 23:14:36,944 INFO  [org.infinispan.CONTAINER] (main) Virtual threads support enabled
+2026-04-11 23:14:37,040 INFO  [org.keycloak.infinispan.module.certificates.CertificateReloadManager] (main) Starting JGroups certificate reload manager
+2026-04-11 23:14:37,187 INFO  [org.infinispan.CONTAINER] (main) ISPN000556: Starting user marshaller 'org.infinispan.commons.marshall.ImmutableProtoStreamMarshaller'
+2026-04-11 23:14:37,391 INFO  [org.infinispan.CLUSTER] (main) ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`
+2026-04-11 23:14:37,392 INFO  [org.jgroups.JChannel] (main) local_addr: 69faeff2-125a-45d3-aaea-b9fbbfa65bc0, name: d29dee997e62-3992
+2026-04-11 23:14:37,406 INFO  [org.jgroups.protocols.FD_SOCK2] (main) server listening on *:57801
+2026-04-11 23:14:39,416 WARN  [org.jgroups.protocols.pbcast.GMS] (main) d29dee997e62-3992: JOIN(d29dee997e62-3992) sent to d29dee997e62-24587 timed out (after 2000 ms), on try 0
+2026-04-11 23:14:41,419 WARN  [org.jgroups.protocols.pbcast.GMS] (main) d29dee997e62-3992: JOIN(d29dee997e62-3992) sent to d29dee997e62-24587 timed out (after 2000 ms), on try 1
+2026-04-11 23:14:43,421 WARN  [org.jgroups.protocols.pbcast.GMS] (main) d29dee997e62-3992: JOIN(d29dee997e62-3992) sent to d29dee997e62-24587 timed out (after 2000 ms), on try 2
+2026-04-11 23:14:45,423 WARN  [org.jgroups.protocols.pbcast.GMS] (main) d29dee997e62-3992: JOIN(d29dee997e62-3992) sent to d29dee997e62-24587 timed out (after 2000 ms), on try 3
+2026-04-11 23:14:47,425 WARN  [org.jgroups.protocols.pbcast.GMS] (main) d29dee997e62-3992: JOIN(d29dee997e62-3992) sent to d29dee997e62-24587 timed out (after 2000 ms), on try 4
+2026-04-11 23:14:47,494 INFO  [org.infinispan.CLUSTER] (main) ISPN000094: Received new cluster view for channel ISPN: [d29dee997e62-18281|1] (2) [d29dee997e62-18281, d29dee997e62-3992]
+2026-04-11 23:14:47,496 INFO  [org.keycloak.infinispan.module.certificates.CertificateReloadManager] (main) Reloading JGroups Certificate
+2026-04-11 23:14:47,552 INFO  [org.infinispan.CLUSTER] (main) ISPN000079: Channel `ISPN` local address is `d29dee997e62-3992`, physical addresses are `[172.21.0.5:7801]`
+2026-04-11 23:14:47,866 INFO  [org.infinispan.LIFECYCLE] () [Context=org.infinispan.CONFIG] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:47,898 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t1) [Context=org.infinispan.CONFIG] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:47,982 INFO  [org.infinispan.LIFECYCLE] () [Context=actionTokens] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:47,990 INFO  [org.infinispan.LIFECYCLE] () [Context=actionTokens] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,057 INFO  [org.infinispan.LIFECYCLE] () [Context=authenticationSessions] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,066 INFO  [org.infinispan.LIFECYCLE] () [Context=authenticationSessions] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,136 INFO  [org.infinispan.LIFECYCLE] () [Context=clientSessions] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,142 INFO  [org.infinispan.LIFECYCLE] () [Context=clientSessions] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,194 INFO  [org.infinispan.LIFECYCLE] () [Context=loginFailures] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,199 INFO  [org.infinispan.LIFECYCLE] () [Context=loginFailures] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,233 INFO  [org.infinispan.LIFECYCLE] () [Context=offlineClientSessions] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,238 INFO  [org.infinispan.LIFECYCLE] () [Context=offlineClientSessions] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,267 INFO  [org.infinispan.LIFECYCLE] () [Context=offlineSessions] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,275 INFO  [org.infinispan.LIFECYCLE] () [Context=offlineSessions] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,306 INFO  [org.infinispan.LIFECYCLE] () [Context=sessions] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,311 INFO  [org.infinispan.LIFECYCLE] () [Context=sessions] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,348 INFO  [org.infinispan.LIFECYCLE] () [Context=work] ISPN100002: Starting rebalance with members [d29dee997e62-18281, d29dee997e62-3992], phase READ_OLD_WRITE_ALL, topology id 2
+2026-04-11 23:14:48,351 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t1) [Context=work] ISPN100010: Finished rebalance with members [d29dee997e62-18281, d29dee997e62-3992], topology id 2
+2026-04-11 23:14:48,463 INFO  [org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory] (main) Node name: d29dee997e62-3992, Site name: null
+2026-04-11 23:14:48,961 INFO  [org.keycloak.services] (main) KC-SERVICES0034: Export of realm 'jhipster' requested.
+2026-04-11 23:14:50,378 INFO  [org.keycloak.exportimport.dir.DirExportProvider] (main) Exporting into directory /tmp/kc-export-test
+2026-04-11 23:14:50,450 INFO  [org.keycloak.exportimport.dir.DirExportProvider] (main) Realm 'jhipster' - data exported
+2026-04-11 23:14:50,455 INFO  [org.keycloak.services] (main) KC-SERVICES0035: Export finished successfully
+2026-04-11 23:14:50,644 INFO  [org.infinispan.CLUSTER] (main) ISPN000080: Disconnecting JGroups channel `ISPN`
+2026-04-11 23:14:50,690 WARN  [org.jgroups.protocols.TCP] (TcpServer.Acceptor[7801]-1,d29dee997e62-3992) JGRP000006: 172.21.0.5:7801: failed accepting connection from peer SSLSocket[hostname=172.21.0.5, port=44141, Session(1775949277430|SSL_NULL_WITH_NULL_NULL)]: java.net.SocketException: Socket is closed
+2026-04-11 23:14:51,655 INFO  [org.keycloak.infinispan.module.certificates.CertificateReloadManager] (main) Stopping JGroups certificate reload manager
+2026-04-11 23:14:51,659 INFO  [com.arjuna.ats.jbossatx] (main) ARJUNA032014: Stopping transaction recovery manager
+2026-04-11 23:14:51,683 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Failed to start server in (nonserver) mode
+2026-04-11 23:14:51,683 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Unable to start HTTP server
+2026-04-11 23:14:51,683 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: java.lang.IllegalStateException: Unable to start the management interface on 0.0.0.0:9000
+2026-04-11 23:14:51,683 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Unable to start the management interface on 0.0.0.0:9000
+2026-04-11 23:14:51,683 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Address already in use
+2026-04-11 23:14:51,684 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.
+[rerun: b2]
+Export actually succeeds — the real error is kc.sh exiting non-zero because it tries to bind management port 9000 (already taken by running KC). Data is written before the failure. Let me verify and fix the script.
+
+Bash Verify export files were written
+IN
+ssh personal "docker exec espritlivre-keycloak ls /tmp/kc-export-test/ 2>&1; docker exec espritlivre-keycloak rm -rf /tmp/kc-export-test"
+
+OUT
+jhipster-realm.json
+[rerun: b3]
+Confirmed: jhipster-realm.json is produced successfully. I'll patch the script to tolerate kc.sh's non-zero exit (caused by the port 9000 bind conflict) by verifying the output file instead.
+
+Edit backup-prod.sh
+Added 4 lines
+Bash Re-run prod backup
+IN
+scripts/backup-prod.sh
+
+OUT
+[00:15:20] starting backup 2026-04-12-001520
+[00:15:20] preparing remote staging dir
+[00:15:23] dumping postgres (pg_dump -F c)
+[00:15:26] exporting keycloak realm (live)
+[00:15:40] archiving api media volume
+[00:15:43] archiving host config (compose, nginx, .env)
+[00:15:49] archiving TLS certs (/etc/letsencrypt)
+[00:15:52] building manifest
+[00:15:55] transferring to /home/ouss/backups/el/.partial-2026-04-12-001520
+[00:16:12] finalized /home/ouss/backups/el/2026-04-12-001520
+
+=== backup complete ===
+location : /home/ouss/backups/el/2026-04-12-001520
+symlink  : /home/ouss/backups/el/latest
+size     : 62M
+elapsed  : 52s
+contents :
+  host-config.tar.gz           53M
+  keycloak-realm.tar.gz        16K
+  MANIFEST.txt                 915
+  media.tar.gz                 8.0M
+  postgres.dump                327K
+  tls-letsencrypt.tar.gz       883K
+
+retention: 1/10 backups, nothing to prune.
+[rerun: b4]
+Backup complete.
+
+Location: ~/backups/el/2026-04-12-001520 (also linked as latest)
+Size: 62M (host-config 53M, media 8M, tls 883K, postgres 327K, keycloak 16K)
+Elapsed: 52s
+Retention: 1/10 — nothing pruned or flagged.
+Fix applied: The first run failed on the keycloak export step. Root cause: kc.sh export finishes writing the realm file but then exits non-zero because it tries to bind the management port (9000), which the live Keycloak container already holds. Patched scripts/backup-prod.sh:48-63 to swallow that exit code and instead verify jhipster-realm.json exists before proceeding.
+
+how do I restore it, just tell me how dont do it
+Restore is the reverse of what the backup script did. Extract the archive set from ~/backups/el/latest/ and feed each piece back to its service.
+
+1. Stage the files on the prod host
+
+rsync -a ~/backups/el/latest/ personal:/root/.restore-staging/
+ssh personal
+cd /root/.restore-staging
+2. Postgres (postgres.dump)
+
+# Stop the app so nothing writes during restore
+docker compose -f /root/esprit-livre/docker-compose.yml stop espritlivre-app
+
+# Drop & recreate the DB (DESTRUCTIVE)
+docker exec -i espritlivre-postgres dropdb   -U el --if-exists el-prod-db
+docker exec -i espritlivre-postgres createdb -U el el-prod-db
+
+# Restore
+docker cp postgres.dump espritlivre-postgres:/tmp/postgres.dump
+docker exec espritlivre-postgres pg_restore -U el -d el-prod-db --clean --if-exists /tmp/postgres.dump
+docker exec espritlivre-postgres rm /tmp/postgres.dump
+3. Keycloak realm (keycloak-realm.tar.gz)
+Easiest path is import-on-start (the realm must not already exist, or use --override true):
+
+
+tar -xzf keycloak-realm.tar.gz                      # yields keycloak-export/jhipster-realm.json
+docker cp keycloak-export espritlivre-keycloak:/tmp/kc-import
+docker compose -f /root/esprit-livre/docker-compose.yml stop espritlivre-keycloak
+# Run a one-shot import (same port conflict caveat — run with the main KC stopped):
+docker run --rm \
+  --network esprit-livre_default \
+  -v kc-import-vol:/tmp/kc-import \
+  quay.io/keycloak/keycloak:26.2.3 \
+  /opt/keycloak/bin/kc.sh import --dir /tmp/kc-import --override true
+docker compose -f /root/esprit-livre/docker-compose.yml start espritlivre-keycloak
+Simpler alternative if you just need the realm back on a fresh KC: drop jhipster-realm.json into src/main/docker/realm-config/ before first start.
+
+4. Media volume (media.tar.gz)
+
+docker run --rm \
+  -v espritlivre_api_media:/dst \
+  -v /root/.restore-staging:/src:ro \
+  alpine sh -c 'cd /dst && tar -xzf /src/media.tar.gz'
+(If you want a clean replace, add rm -rf /dst/* before the tar -xzf.)
+
+5. Host config (host-config.tar.gz)
+Contains /root/esprit-livre (compose, nginx, .env). Only extract if you're rebuilding the host:
+
+
+tar -C /root -xzf host-config.tar.gz     # recreates /root/esprit-livre
+6. TLS certs (tls-letsencrypt.tar.gz)
+
+tar -C /etc -xzf tls-letsencrypt.tar.gz  # recreates /etc/letsencrypt
+systemctl reload nginx                   # or restart the nginx container
+7. Bring everything back up
+
+docker compose -f /root/esprit-livre/docker-compose.yml up -d
+rm -rf /root/.restore-staging
+Sanity check before you start: sha256sum -c against MANIFEST.txt to confirm the archives aren't corrupt. Order matters: Postgres + Keycloak first, then media, then start the app — the app will crash-loop if it boots before its DB/realm are in place.
