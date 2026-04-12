@@ -150,7 +150,6 @@ public class ZrExpressParcelRequest {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ZrCustomer {
-        @JsonInclude(JsonInclude.Include.ALWAYS)
         private String customerId;  // UUID of existing customer, null for inline creation
         private String name;
         private ZrPhone phone;
