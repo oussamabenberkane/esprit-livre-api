@@ -46,5 +46,6 @@
     <include file="config/liquibase/changelog/20260214120000_add_unaccent_extension.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260215000000_add_order_to_tag.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260215100000_make_order_address_fields_optional.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260412000000_add_rel_tag_book_pack.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

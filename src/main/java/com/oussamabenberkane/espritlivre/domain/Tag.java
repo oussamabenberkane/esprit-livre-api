@@ -61,6 +61,12 @@ public class Tag implements Serializable {
     @JsonIgnoreProperties(value = { "tags" }, allowSetters = true)
     private Set<Book> books = new HashSet<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "rel_tag__book_pack", joinColumns = @JoinColumn(name = "tag_id"), inverseJoinColumns = @JoinColumn(name = "book_pack_id"))
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "tags" }, allowSetters = true)
+    private Set<BookPack> bookPacks = new HashSet<>();
+
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {
@@ -213,6 +219,29 @@ public class Tag implements Serializable {
 
     public Tag removeBook(Book book) {
         this.books.remove(book);
+        return this;
+    }
+
+    public Set<BookPack> getBookPacks() {
+        return this.bookPacks;
+    }
+
+    public void setBookPacks(Set<BookPack> bookPacks) {
+        this.bookPacks = bookPacks;
+    }
+
+    public Tag bookPacks(Set<BookPack> bookPacks) {
+        this.setBookPacks(bookPacks);
+        return this;
+    }
+
+    public Tag addBookPack(BookPack bookPack) {
+        this.bookPacks.add(bookPack);
+        return this;
+    }
+
+    public Tag removeBookPack(BookPack bookPack) {
+        this.bookPacks.remove(bookPack);
         return this;
     }
 

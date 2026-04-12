@@ -267,6 +267,46 @@ public class TagResource {
     }
 
     /**
+     * {@code POST  /tags/:id/book-packs/add} : Add book packs to a tag.
+     *
+     * @param id the id of the tag.
+     * @param bookPackIds the list of book pack IDs to add.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO.
+     */
+    @PostMapping("/{id}/book-packs/add")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<TagDTO> addBookPacksToTag(
+        @PathVariable("id") Long id,
+        @RequestBody List<Long> bookPackIds
+    ) {
+        LOG.debug("REST request to add book packs {} to Tag : {}", bookPackIds, id);
+        TagDTO result = tagService.addBookPacksToTag(id, bookPackIds);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
+    /**
+     * {@code POST  /tags/:id/book-packs/remove} : Remove book packs from a tag.
+     *
+     * @param id the id of the tag.
+     * @param bookPackIds the list of book pack IDs to remove.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO.
+     */
+    @PostMapping("/{id}/book-packs/remove")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<TagDTO> removeBookPacksFromTag(
+        @PathVariable("id") Long id,
+        @RequestBody List<Long> bookPackIds
+    ) {
+        LOG.debug("REST request to remove book packs {} from Tag : {}", bookPackIds, id);
+        TagDTO result = tagService.removeBookPacksFromTag(id, bookPackIds);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
+    /**
      * {@code POST  /tags/:id/change-color} : Change the color of an ETIQUETTE tag.
      *
      * @param id the id of the tag.

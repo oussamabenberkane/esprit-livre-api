@@ -77,7 +77,20 @@ public class BookPackSpecifications {
     }
 
     public static Specification<BookPack> hasMainDisplay(Long mainDisplayId) {
-        return hasTagOfType(TagType.MAIN_DISPLAY, mainDisplayId);
+        return (root, query, builder) -> {
+            if (mainDisplayId == null) {
+                return builder.conjunction();
+            }
+
+            query.distinct(true);
+
+            // Use the direct Tag <-> BookPack relationship (rel_tag__book_pack)
+            Join<BookPack, Tag> tagJoin = root.join("tags", JoinType.INNER);
+            return builder.and(
+                builder.equal(tagJoin.get("type"), TagType.MAIN_DISPLAY),
+                builder.equal(tagJoin.get("id"), mainDisplayId)
+            );
+        };
     }
 
     /**

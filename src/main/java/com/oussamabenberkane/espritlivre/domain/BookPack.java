@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -80,6 +81,11 @@ public class BookPack implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "author", "tags" }, allowSetters = true)
     private Set<Book> books = new HashSet<>();
+
+    @ManyToMany(mappedBy = "bookPacks", fetch = FetchType.LAZY)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnore
+    private Set<Tag> tags = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -233,6 +239,19 @@ public class BookPack implements Serializable {
 
     public BookPack removeBooks(Book book) {
         this.books.remove(book);
+        return this;
+    }
+
+    public Set<Tag> getTags() {
+        return this.tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
+    }
+
+    public BookPack tags(Set<Tag> tags) {
+        this.setTags(tags);
         return this;
     }
 

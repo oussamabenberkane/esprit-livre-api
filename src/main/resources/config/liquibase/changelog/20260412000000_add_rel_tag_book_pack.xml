@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <!--
+        Added join table for Tag <-> BookPack many-to-many relationship.
+        Allows book packs to be associated directly with main display sections.
+    -->
+    <changeSet id="20260412000000-1" author="jhipster">
+        <createTable tableName="rel_tag__book_pack">
+            <column name="tag_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="book_pack_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="tag_id, book_pack_id" tableName="rel_tag__book_pack"/>
+
+        <addForeignKeyConstraint baseColumnNames="tag_id"
+                                 baseTableName="rel_tag__book_pack"
+                                 constraintName="fk_rel_tag__book_pack__tag_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="tag"/>
+
+        <addForeignKeyConstraint baseColumnNames="book_pack_id"
+                                 baseTableName="rel_tag__book_pack"
+                                 constraintName="fk_rel_tag__book_pack__book_pack_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="book_pack"/>
+    </changeSet>
+</databaseChangeLog>
