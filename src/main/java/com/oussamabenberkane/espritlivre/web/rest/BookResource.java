@@ -231,7 +231,7 @@ public class BookResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load book cover image: {}, returning placeholder", coverImageUrl, e);
+            LOG.warn("Failed to load book cover image: {}, returning placeholder", coverImageUrl, e);
             return loadPlaceholder();
         }
     }
