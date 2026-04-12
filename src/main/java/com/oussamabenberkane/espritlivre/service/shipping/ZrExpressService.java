@@ -89,8 +89,17 @@ public class ZrExpressService implements ShippingProviderService {
                 return ShippingResult.failure("Could not resolve commune: " + order.getCity());
             }
 
-            // 2. Build parcel request with inline customer info
-            ZrExpressParcelRequest request = buildParcelRequest(order, cityTerritoryId, districtTerritoryId);
+            // 2. Resolve or create customer
+            String customerPhone = formatPhoneForZrExpress(getCustomerPhone(order));
+            String customerName = getCustomerName(order);
+            String customerId = resolveOrCreateCustomer(customerName, customerPhone);
+            if (customerId == null) {
+                LOG.error("Could not resolve or create ZR Express customer for order: {}", order.getUniqueId());
+                return ShippingResult.failure("Could not resolve or create ZR Express customer");
+            }
+
+            // 3. Build parcel request with customer ID
+            ZrExpressParcelRequest request = buildParcelRequest(order, cityTerritoryId, districtTerritoryId, customerId);
             LOG.debug("Creating ZR Express parcel for order {}", order.getUniqueId());
 
             // Log the request for debugging
@@ -674,24 +683,107 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
-     * Build parcel request from order.
-     * Uses User info if available, falls back to Order info.
-     * Customer info is included inline (no separate customer creation needed).
+     * Search for an existing ZR Express customer by phone, or create one if not found.
+     * Returns the customer UUID.
      */
-    private ZrExpressParcelRequest buildParcelRequest(Order order, String cityTerritoryId, String districtTerritoryId) {
+    private String resolveOrCreateCustomer(String name, String phone) {
+        // 1. Search by phone keyword
+        String customerId = searchCustomerByPhone(phone);
+        if (customerId != null) {
+            LOG.debug("Found existing ZR Express customer {} for phone {}", customerId, phone);
+            return customerId;
+        }
+
+        // 2. Create a new individual customer
+        return createCustomer(name, phone);
+    }
+
+    @SuppressWarnings("unchecked")
+    private String searchCustomerByPhone(String phone) {
+        try {
+            HttpHeaders headers = createHeaders();
+
+            Map<String, Object> searchRequest = new HashMap<>();
+            searchRequest.put("keyword", phone);
+            searchRequest.put("pageSize", 1);
+            searchRequest.put("pageNumber", 1);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(searchRequest, headers);
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/customers/search";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object itemsObj = response.getBody().get("items");
+                if (itemsObj != null) {
+                    List<Map<String, Object>> items = objectMapper.convertValue(itemsObj, new TypeReference<List<Map<String, Object>>>() {});
+                    if (!items.isEmpty()) {
+                        Object id = items.get(0).get("id");
+                        return id != null ? id.toString() : null;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Error searching ZR Express customer by phone {}: {}", phone, e.getMessage());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String createCustomer(String name, String phone) {
+        try {
+            HttpHeaders headers = createHeaders();
+
+            Map<String, Object> phoneDto = new HashMap<>();
+            phoneDto.put("number1", phone);
+
+            Map<String, Object> customerRequest = new HashMap<>();
+            customerRequest.put("name", name);
+            customerRequest.put("phone", phoneDto);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(customerRequest, headers);
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/customers/individual";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object id = response.getBody().get("id");
+                if (id != null) {
+                    LOG.info("Created ZR Express customer {} for {}", id, name);
+                    return id.toString();
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("Error creating ZR Express customer for {}: {}", name, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Build parcel request from order.
+     * Uses the pre-resolved customerId for the ZR Express API.
+     */
+    private ZrExpressParcelRequest buildParcelRequest(Order order, String cityTerritoryId, String districtTerritoryId, String customerId) {
         boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
         String deliveryType = isPickupPoint ? DELIVERY_TYPE_PICKUP_POINT : DELIVERY_TYPE_HOME;
 
-        // Get customer info (prefers User, falls back to Order)
-        String customerName = getCustomerName(order);
-        String customerPhone = formatPhoneForZrExpress(getCustomerPhone(order));
         String streetAddress = getCustomerStreetAddress(order);
 
         // Build ordered products list from order items
         List<ZrExpressParcelRequest.ZrOrderedProduct> orderedProducts = buildOrderedProducts(order);
 
         ZrExpressParcelRequest.Builder builder = ZrExpressParcelRequest.builder()
-            .customer(customerName, customerPhone)
+            .customerId(customerId)
             .deliveryAddress(cityTerritoryId, districtTerritoryId, streetAddress != null ? streetAddress : "N/A")
             .deliveryType(deliveryType)
             .amount(order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0)

@@ -305,6 +305,14 @@ public class ZrExpressParcelRequest {
             return this;
         }
 
+        public Builder customerId(String customerId) {
+            if (request.customer == null) {
+                request.customer = new ZrCustomer();
+            }
+            request.customer.setCustomerId(customerId);
+            return this;
+        }
+
         public Builder deliveryAddress(String cityTerritoryId, String districtTerritoryId, String street) {
             request.deliveryAddress = new ZrDeliveryAddress(cityTerritoryId, districtTerritoryId, street);
             return this;
