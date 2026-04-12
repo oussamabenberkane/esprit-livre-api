@@ -3,6 +3,7 @@ package com.oussamabenberkane.espritlivre.service.shipping;
 import com.oussamabenberkane.espritlivre.config.ShippingProperties;
 import com.oussamabenberkane.espritlivre.domain.Order;
 import com.oussamabenberkane.espritlivre.domain.OrderItem;
+import com.oussamabenberkane.espritlivre.domain.enumeration.DeliveryFeeMethod;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
@@ -369,7 +370,8 @@ public class YalidineService implements ShippingProviderService {
 
     private YalidineParcelRequest buildParcelRequest(Order order) {
         String[] nameParts = splitFullName(order.getFullName());
-        int priceInt = order.getTotalAmount() != null ? order.getTotalAmount().intValue() : 0;
+        BigDecimal price = adjustPriceForYalidine(order);
+        int priceInt = price != null ? price.intValue() : 0;
 
         return YalidineParcelRequest.builder()
             .orderId(order.getUniqueId())
@@ -381,7 +383,7 @@ public class YalidineService implements ShippingProviderService {
             .toWilayaName(order.getWilaya())
             .toCommuneName(order.getCity())
             .productList(buildProductList(order))
-            .price(order.getTotalAmount())
+            .price(price)
             .freeShipping(isFreeShipping(order))
             .isStopDesk(order.getIsStopDesk() != null ? order.getIsStopDesk() : false)
             .stopDeskId(order.getStopDeskId())
@@ -389,6 +391,39 @@ public class YalidineService implements ShippingProviderService {
             .doInsurance(false)
             .declaredValue(priceInt)
             .build();
+    }
+
+    /**
+     * Adjust the price sent to Yalidine.
+     * If the order used automatic delivery fee calculation, the price is already correct.
+     * If the order used a fixed delivery fee, we need to swap our fee for Yalidine's actual fee:
+     *   yalidinePrice = totalAmount - ourShippingCost + yalidineActualFee
+     */
+    private BigDecimal adjustPriceForYalidine(Order order) {
+        BigDecimal totalAmount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+
+        if (order.getDeliveryFeeMethod() == DeliveryFeeMethod.AUTOMATIC) {
+            return totalAmount;
+        }
+
+        // Fixed fee: swap our shipping cost for Yalidine's actual fee
+        boolean isStopDesk = Boolean.TRUE.equals(order.getIsStopDesk());
+        Integer wilayaId = getWilayaIdFromName(order.getWilaya());
+        DeliveryFeeResult yalidineResult = getDeliveryFee(wilayaId, order.getCity(), isStopDesk);
+
+        if (!yalidineResult.isSuccess()) {
+            LOG.warn("Could not fetch Yalidine fee for order {}, using original totalAmount", order.getUniqueId());
+            return totalAmount;
+        }
+
+        BigDecimal ourShippingCost = order.getShippingCost() != null ? order.getShippingCost() : BigDecimal.ZERO;
+        BigDecimal yalidineActualFee = yalidineResult.getFee();
+        BigDecimal adjustedPrice = totalAmount.subtract(ourShippingCost).add(yalidineActualFee);
+
+        LOG.info("Yalidine price adjusted for order {}: {} -> {} (ourFee={}, yalidineFee={})",
+            order.getUniqueId(), totalAmount, adjustedPrice, ourShippingCost, yalidineActualFee);
+
+        return adjustedPrice;
     }
 
     /**
