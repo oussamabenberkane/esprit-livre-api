@@ -98,8 +98,8 @@ public class ZrExpressService implements ShippingProviderService {
                 return ShippingResult.failure("Could not resolve or create ZR Express customer");
             }
 
-            // 3. Build parcel request with customer ID
-            ZrExpressParcelRequest request = buildParcelRequest(order, cityTerritoryId, districtTerritoryId, customerId);
+            // 3. Build parcel request with customer ID + inline info
+            ZrExpressParcelRequest request = buildParcelRequest(order, cityTerritoryId, districtTerritoryId, customerId, customerName, customerPhone);
             LOG.debug("Creating ZR Express parcel for order {}", order.getUniqueId());
 
             // Log the request for debugging
@@ -773,7 +773,8 @@ public class ZrExpressService implements ShippingProviderService {
      * Build parcel request from order.
      * Uses the pre-resolved customerId for the ZR Express API.
      */
-    private ZrExpressParcelRequest buildParcelRequest(Order order, String cityTerritoryId, String districtTerritoryId, String customerId) {
+    private ZrExpressParcelRequest buildParcelRequest(Order order, String cityTerritoryId, String districtTerritoryId,
+                                                       String customerId, String customerName, String customerPhone) {
         boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
         String deliveryType = isPickupPoint ? DELIVERY_TYPE_PICKUP_POINT : DELIVERY_TYPE_HOME;
 
@@ -783,6 +784,7 @@ public class ZrExpressService implements ShippingProviderService {
         List<ZrExpressParcelRequest.ZrOrderedProduct> orderedProducts = buildOrderedProducts(order);
 
         ZrExpressParcelRequest.Builder builder = ZrExpressParcelRequest.builder()
+            .customer(customerName, customerPhone)
             .customerId(customerId)
             .deliveryAddress(cityTerritoryId, districtTerritoryId, streetAddress != null ? streetAddress : "N/A")
             .deliveryType(deliveryType)
