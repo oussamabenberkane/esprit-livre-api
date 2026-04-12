@@ -38,6 +38,13 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
     @Query("select l.book.id from Like l where l.book.id in :bookIds and l.user.login = ?#{authentication.name}")
     List<Long> findBookIdsLikedByCurrentUser(@Param("bookIds") List<Long> bookIds);
 
+    /**
+     * Count recent likes (last 30 days) for a set of books.
+     * Returns [bookId, recentLikeCount].
+     */
+    @Query("SELECT l.book.id, COUNT(l) FROM Like l WHERE l.book.id IN :bookIds AND l.createdAt >= :since GROUP BY l.book.id")
+    List<Object[]> countRecentLikesByBookIds(@Param("bookIds") List<Long> bookIds, @Param("since") java.time.ZonedDateTime since);
+
     default Optional<Like> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }

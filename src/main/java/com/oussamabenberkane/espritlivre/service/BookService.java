@@ -18,10 +18,12 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.oussamabenberkane.espritlivre.domain.enumeration.BookStatus;
@@ -538,5 +540,135 @@ public class BookService {
 
         book = bookRepository.save(book);
         return bookMapper.toDto(book);
+    }
+
+    /**
+     * Find similar books using a weighted multi-signal scoring algorithm.
+     * Signals: shared tags (+2 each, +3 for CATEGORY tags), same author (+5),
+     * same language (+1), pack co-occurrence (+4 each), price proximity (+1),
+     * recent popularity/trending (+1).
+     *
+     * @param bookId the source book ID.
+     * @param size max number of results.
+     * @return scored and ranked list of similar books.
+     */
+    @Transactional(readOnly = true)
+    public List<BookDTO> findSimilarBooks(Long bookId, int size) {
+        LOG.debug("Request to find similar books for Book : {}", bookId);
+
+        Book sourceBook = bookRepository.findWithAuthorAndTagsById(bookId)
+            .orElseThrow(() -> new BadRequestAlertException("Book not found", "book", "idnotfound"));
+
+        Long authorId = sourceBook.getAuthor() != null ? sourceBook.getAuthor().getId() : -1L;
+        String language = sourceBook.getLanguage() != null ? sourceBook.getLanguage().name() : "";
+        BigDecimal sourcePrice = sourceBook.getPrice() != null ? sourceBook.getPrice() : BigDecimal.ZERO;
+
+        // Collect category tag IDs for bonus scoring
+        Set<Long> categoryTagIds = sourceBook.getTags().stream()
+            .filter(t -> t.getType() != null && t.getType().name().equals("CATEGORY"))
+            .map(Tag::getId)
+            .collect(Collectors.toSet());
+
+        // 1. Get candidates: books sharing tags or same author
+        List<Object[]> candidates = bookRepository.findSimilarBookCandidates(bookId, authorId, language);
+
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+
+        // Build score map from tag/author/language signals
+        Map<Long, Double> scoreMap = new HashMap<>();
+        Map<Long, Integer> sharedTagCountMap = new HashMap<>();
+
+        for (Object[] row : candidates) {
+            Long candidateId = ((Number) row[0]).longValue();
+            int sharedTags = ((Number) row[1]).intValue();
+            boolean sameAuthor = ((Number) row[2]).intValue() == 1;
+            boolean sameLanguage = ((Number) row[3]).intValue() == 1;
+
+            double score = sharedTags * 2.0; // base tag score (+2 per shared tag)
+            if (sameAuthor) score += 5.0;
+            if (sameLanguage) score += 1.0;
+
+            scoreMap.put(candidateId, score);
+            sharedTagCountMap.put(candidateId, sharedTags);
+        }
+
+        List<Long> candidateIds = new ArrayList<>(scoreMap.keySet());
+
+        // 2. Co-occurrence signal: books that appear together in packs
+        List<Object[]> coOccurrences = bookRepository.findCoOccurringBooks(bookId);
+        for (Object[] row : coOccurrences) {
+            Long coBookId = ((Number) row[0]).longValue();
+            int count = ((Number) row[1]).intValue();
+            scoreMap.merge(coBookId, count * 4.0, Double::sum);
+            if (!candidateIds.contains(coBookId)) {
+                candidateIds.add(coBookId);
+            }
+        }
+
+        // 3. Trending signal: recent likes in last 30 days
+        if (!candidateIds.isEmpty()) {
+            ZonedDateTime since = ZonedDateTime.now().minusDays(30);
+            List<Object[]> recentLikes = likeRepository.countRecentLikesByBookIds(candidateIds, since);
+            for (Object[] row : recentLikes) {
+                Long likedBookId = ((Number) row[0]).longValue();
+                long recentCount = ((Number) row[1]).longValue();
+                if (recentCount > 0) {
+                    scoreMap.merge(likedBookId, Math.min(recentCount, 3) * 1.0, Double::sum); // cap at +3
+                }
+            }
+        }
+
+        // 4. Price proximity: +1 if within 20% of source price
+        // We'll apply this after fetching the full entities
+
+        // 5. Rank by score, take top N * 2 to allow for price bonus reranking
+        List<Long> topCandidateIds = candidateIds.stream()
+            .sorted(Comparator.comparingDouble((Long id) -> scoreMap.getOrDefault(id, 0.0)).reversed())
+            .limit((long) size * 2)
+            .collect(Collectors.toList());
+
+        if (topCandidateIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 6. Fetch full entities
+        List<Book> books = bookRepository.findAllByIdsWithEagerRelationships(topCandidateIds);
+
+        // 7. Apply price proximity bonus
+        for (Book b : books) {
+            if (b.getPrice() != null && sourcePrice.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal diff = b.getPrice().subtract(sourcePrice).abs();
+                BigDecimal threshold = sourcePrice.multiply(new BigDecimal("0.20"));
+                if (diff.compareTo(threshold) <= 0) {
+                    scoreMap.merge(b.getId(), 1.0, Double::sum);
+                }
+            }
+        }
+
+        // 8. Final sort and convert to DTOs
+        List<BookDTO> result = books.stream()
+            .sorted(Comparator.comparingDouble((Book b) -> scoreMap.getOrDefault(b.getId(), 0.0)).reversed())
+            .limit(size)
+            .map(book -> {
+                BookDTO dto = bookMapper.toDto(book);
+                // Batch-set like counts
+                Long likeCount = likeRepository.countByBookId(book.getId());
+                dto.setLikeCount(likeCount);
+                return dto;
+            })
+            .collect(Collectors.toList());
+
+        // Set like status for current user
+        if (!result.isEmpty()) {
+            List<Long> resultIds = result.stream().map(BookDTO::getId).collect(Collectors.toList());
+            SecurityUtils.getCurrentUserLogin().ifPresent(login -> {
+                List<Long> likedIds = likeRepository.findBookIdsLikedByCurrentUser(resultIds);
+                result.forEach(dto -> dto.setIsLikedByCurrentUser(likedIds.contains(dto.getId())));
+            });
+        }
+
+        return result;
     }
 }

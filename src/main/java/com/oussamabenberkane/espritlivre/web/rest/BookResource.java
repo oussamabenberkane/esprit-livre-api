@@ -332,6 +332,7 @@ public class BookResource {
 
     /**
      * {@code GET  /books/:id/recommendations} : get recommended book packs for the "id" book.
+     * Returns packs that contain the given book.
      *
      * @param id the id of the book to get recommendations for.
      * @param pageable the pagination information (default limit 5).
@@ -348,6 +349,45 @@ public class BookResource {
         Pageable limitedPageable = pageable.isPaged() ? pageable : Pageable.ofSize(5);
 
         Page<BookPackDTO> page = bookPackService.findRecommendationsForBook(id, limitedPageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /books/:id/similar} : get similar books scored by tags, author, co-occurrence, and trending.
+     *
+     * @param id the id of the book.
+     * @param size max results (default 10).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of similar books.
+     */
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<List<BookDTO>> getSimilarBooks(
+        @PathVariable("id") Long id,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        LOG.debug("REST request to get similar books for Book : {}", id);
+        List<BookDTO> similar = bookService.findSimilarBooks(id, size);
+        return ResponseEntity.ok().body(similar);
+    }
+
+    /**
+     * {@code GET  /books/:id/recommended-packs} : get contextually recommended packs for a book.
+     * Returns packs that share tags or author with the given book (but don't necessarily contain it).
+     *
+     * @param id the id of the book.
+     * @param pageable the pagination information (default limit 8).
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of recommended packs.
+     */
+    @GetMapping("/{id}/recommended-packs")
+    public ResponseEntity<List<BookPackDTO>> getRecommendedPacks(
+        @PathVariable("id") Long id,
+        @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to get recommended packs for Book : {}", id);
+
+        Pageable limitedPageable = pageable.isPaged() ? pageable : Pageable.ofSize(8);
+
+        Page<BookPackDTO> page = bookPackService.findRecommendedPacksForBook(id, limitedPageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

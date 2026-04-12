@@ -302,6 +302,68 @@ public class BookPackService {
     }
 
     /**
+     * Get contextually recommended packs for a book.
+     * Finds packs that share tags or author with the book (but don't contain it),
+     * ranked by overlap count. Falls back to popular packs if too few results.
+     *
+     * @param bookId the id of the book.
+     * @param pageable the pagination information.
+     * @return the list of recommended book packs.
+     */
+    @Transactional(readOnly = true)
+    public Page<BookPackDTO> findRecommendedPacksForBook(Long bookId, Pageable pageable) {
+        LOG.debug("Request to get recommended BookPacks for Book : {}", bookId);
+
+        com.oussamabenberkane.espritlivre.domain.Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BadRequestAlertException("Book not found", "book", "idnotfound"));
+
+        Long authorId = book.getAuthor() != null ? book.getAuthor().getId() : -1L;
+
+        // Get candidates ranked by overlap
+        List<Object[]> candidates = bookPackRepository.findRecommendedPackCandidates(bookId, authorId);
+
+        if (candidates.isEmpty()) {
+            // Fallback: return newest active packs that don't contain this book
+            Page<BookPack> fallback = bookPackRepository.findAll(pageable);
+            List<BookPackDTO> dtos = fallback.getContent().stream()
+                .map(bp -> {
+                    bp.getBooks().size(); // trigger lazy load
+                    return bookPackMapper.toDto(bp);
+                })
+                .collect(Collectors.toList());
+            return new PageImpl<>(dtos, pageable, fallback.getTotalElements());
+        }
+
+        // Apply pagination manually on ranked results
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), candidates.size());
+
+        if (start >= candidates.size()) {
+            return new PageImpl<>(List.of(), pageable, candidates.size());
+        }
+
+        List<Long> pageIds = candidates.subList(start, end).stream()
+            .map(row -> ((Number) row[0]).longValue())
+            .collect(Collectors.toList());
+
+        // Fetch with books eagerly
+        List<BookPack> packs = bookPackRepository.findByIdsWithEagerRelationships(pageIds);
+        packs.forEach(bp -> bp.getBooks().size());
+
+        // Maintain ranked order
+        List<BookPackDTO> dtos = pageIds.stream()
+            .map(id -> packs.stream()
+                .filter(bp -> bp.getId().equals(id))
+                .findFirst()
+                .map(bookPackMapper::toDto)
+                .orElse(null))
+            .filter(dto -> dto != null)
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, candidates.size());
+    }
+
+    /**
      * Get book pack recommendations for a book (packs that contain the book).
      *
      * @param bookId the id of the book.
