@@ -203,7 +203,7 @@ public class BookPackResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load book pack cover image: {}, returning placeholder", coverImageUrl, e);
+            LOG.warn("Failed to load book pack cover image: {}, returning placeholder", coverImageUrl, e);
             return loadPlaceholder();
         }
     }
@@ -224,7 +224,7 @@ public class BookPackResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileStorageService.getPlaceholderFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load placeholder image", e);
+            LOG.warn("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }

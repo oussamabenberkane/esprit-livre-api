@@ -129,7 +129,7 @@ public class AppUserResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load user picture: {}, returning placeholder", imageUrl, e);
+            LOG.warn("Failed to load user picture: {}, returning placeholder", imageUrl, e);
             return loadPlaceholder();
         }
     }
@@ -150,7 +150,7 @@ public class AppUserResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileStorageService.getPlaceholderFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load placeholder image", e);
+            LOG.warn("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }

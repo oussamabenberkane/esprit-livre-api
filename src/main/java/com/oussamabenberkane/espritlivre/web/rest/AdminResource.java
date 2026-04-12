@@ -175,7 +175,7 @@ public class AdminResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load admin picture: {}, returning placeholder", imageUrl, e);
+            LOG.warn("Failed to load admin picture: {}, returning placeholder", imageUrl, e);
             return loadPlaceholder();
         }
     }
@@ -241,7 +241,7 @@ public class AdminResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileStorageService.getPlaceholderFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.error("Failed to load placeholder image", e);
+            LOG.warn("Failed to load placeholder image", e);
             return ResponseEntity.notFound().build();
         }
     }
