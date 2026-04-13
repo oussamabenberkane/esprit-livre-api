@@ -200,7 +200,7 @@ public class AuthorResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
         } catch (IOException e) {
-            LOG.warn("Failed to load author picture: {}, returning placeholder", profilePictureUrl, e);
+            LOG.debug("Failed to load author picture: {}, returning placeholder", profilePictureUrl);
             return loadPlaceholder();
         }
     }
