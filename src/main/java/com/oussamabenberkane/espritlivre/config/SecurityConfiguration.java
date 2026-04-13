@@ -84,6 +84,7 @@ public class SecurityConfiguration {
                     // Public tag endpoints
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/*")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/tags/main-display/ordered")).permitAll()
                     // Public author endpoints
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/*")).permitAll()
