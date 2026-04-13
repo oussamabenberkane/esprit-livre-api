@@ -7,7 +7,9 @@
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "/home/ouss/Desktop/Work/el/api/.claude"
+      "/home/ouss/Desktop/Work/el/api/.claude",
+      "/home/ouss/Desktop/Work/el/user",
+      "/home/ouss/Desktop/Work/el/admin"
     ]
   }
 }
