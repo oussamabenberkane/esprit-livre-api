@@ -117,14 +117,17 @@ public class OrderResource {
     }
 
     /**
-     * {@code PUT  /orders/:id} : Updates an existing order's status.
+     * {@code PUT  /orders/:id} : Updates an existing order.
      * Admin-only endpoint.
-     * Only updates the order status field. All other fields in the request are ignored.
+     * Updates customer details (fullName, phone, email, wilaya, city, streetAddress),
+     * shipping fields (shippingMethod, shippingProvider, shippingCost, stopDeskId, isStopDesk),
+     * and status.
      * Stock management: When status changes to DELIVERED, stock is automatically decremented.
      * When status changes from DELIVERED to another status, stock is restored.
+     * Shipping parcel is auto-created when status changes to CONFIRMED.
      *
      * @param id the id of the order to update.
-     * @param orderDTO the orderDTO containing the new status (other fields are ignored).
+     * @param orderDTO the orderDTO containing the fields to update.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated orderDTO,
      * or with status {@code 400 (Bad Request)} if the orderDTO is not valid,
      * or with status {@code 404 (Not Found)} if the order doesn't exist.
@@ -135,7 +138,7 @@ public class OrderResource {
         @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody OrderDTO orderDTO
     ) {
-        LOG.debug("REST request to update Order status: {}, new status: {}", id, orderDTO.getStatus());
+        LOG.debug("REST request to update Order: {}", id);
         if (orderDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
@@ -147,7 +150,7 @@ public class OrderResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        orderDTO = orderService.updateStatus(id, orderDTO.getStatus());
+        orderDTO = orderService.update(id, orderDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, orderDTO.getId().toString()))
             .body(orderDTO);

@@ -8,6 +8,7 @@ import com.oussamabenberkane.espritlivre.domain.OrderItem;
 import com.oussamabenberkane.espritlivre.domain.User;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
+import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
 import com.oussamabenberkane.espritlivre.repository.BookPackRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.OrderRepository;
@@ -260,6 +261,84 @@ public class OrderService {
         }
 
         return spec;
+    }
+
+    /**
+     * Update an order (Admin only).
+     * Updates customer details, shipping fields, and status.
+     * Status change side effects are preserved:
+     *   - Auto-decrements book stock when status changes to DELIVERED.
+     *   - Auto-restores book stock when status changes from DELIVERED to another status.
+     *   - Auto-creates shipping parcel when status changes to CONFIRMED (if shipping provider is set).
+     *
+     * @param orderId the id of the order to update.
+     * @param orderDTO the DTO containing the fields to update.
+     * @return the updated order as DTO.
+     */
+    public OrderDTO update(Long orderId, OrderDTO orderDTO) {
+        LOG.debug("Request to update Order: {}", orderId);
+
+        Order existingOrder = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BadRequestAlertException("Order not found", "order", "ordernotfound"));
+
+        // Update customer details
+        if (orderDTO.getFullName() != null) existingOrder.setFullName(orderDTO.getFullName());
+        if (orderDTO.getPhone() != null) existingOrder.setPhone(orderDTO.getPhone());
+        if (orderDTO.getEmail() != null) existingOrder.setEmail(orderDTO.getEmail());
+        if (orderDTO.getWilaya() != null) existingOrder.setWilaya(orderDTO.getWilaya());
+        if (orderDTO.getCity() != null) existingOrder.setCity(orderDTO.getCity());
+        if (orderDTO.getStreetAddress() != null) existingOrder.setStreetAddress(orderDTO.getStreetAddress());
+
+        // Update shipping details
+        if (orderDTO.getShippingMethod() != null) {
+            existingOrder.setShippingMethod(orderDTO.getShippingMethod());
+            // Derive isStopDesk from shippingMethod — SHIPPING_PROVIDER means stop-desk/relay point.
+            // The admin app does not override isStopDesk explicitly; it sends the old DB value via
+            // the ...fullOrder spread, so we must not trust it. shippingMethod is authoritative.
+            boolean isStopDesk = orderDTO.getShippingMethod() == ShippingMethod.SHIPPING_PROVIDER;
+            existingOrder.setIsStopDesk(isStopDesk);
+            existingOrder.setStopDeskId(isStopDesk ? orderDTO.getStopDeskId() : null);
+        }
+        if (orderDTO.getShippingProvider() != null) existingOrder.setShippingProvider(orderDTO.getShippingProvider());
+        if (orderDTO.getShippingCost() != null) {
+            existingOrder.setShippingCost(orderDTO.getShippingCost());
+            // Recalculate totalAmount so it stays consistent with the updated shipping cost.
+            // The admin app sends the old totalAmount from the DB (via ...fullOrder spread),
+            // so we must recompute it here: items subtotal + new shipping cost.
+            BigDecimal itemsTotal = existingOrder.getOrderItems().stream()
+                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            existingOrder.setTotalAmount(itemsTotal.add(orderDTO.getShippingCost()));
+        }
+
+        existingOrder.setUpdatedAt(ZonedDateTime.now());
+
+        // Apply status change with side effects if status is provided and different
+        String shippingError = null;
+        if (orderDTO.getStatus() != null) {
+            OrderStatus oldStatus = existingOrder.getStatus();
+            OrderStatus newStatus = orderDTO.getStatus();
+
+            existingOrder.setStatus(newStatus);
+
+            if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED &&
+                existingOrder.getShippingProvider() != null) {
+                shippingError = createShippingParcel(existingOrder);
+            }
+
+            if (newStatus == OrderStatus.DELIVERED && oldStatus != OrderStatus.DELIVERED) {
+                LOG.debug("Order status changed to DELIVERED, decrementing stock for order items");
+                decrementStockForOrder(existingOrder);
+            } else if (oldStatus == OrderStatus.DELIVERED && newStatus != OrderStatus.DELIVERED) {
+                LOG.debug("Order status changed from DELIVERED, restoring stock for order items");
+                restoreStockForOrder(existingOrder);
+            }
+        }
+
+        existingOrder = orderRepository.save(existingOrder);
+        OrderDTO dto = orderMapper.toDto(existingOrder);
+        dto.setShippingProviderError(shippingError);
+        return dto;
     }
 
     /**
