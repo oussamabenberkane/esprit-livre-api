@@ -531,11 +531,7 @@ public class BookService {
             .orElseThrow(() -> new BadRequestAlertException("Book not found", "book", "idnotfound"));
 
         for (Long tagId : tagIds) {
-            Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new BadRequestAlertException("Tag not found with id: " + tagId, "tag", "tagnotfound"));
-
-            // Remove tag from book
-            book.removeTag(tag);
+            tagRepository.findById(tagId).ifPresent(book::removeTag);
         }
 
         book = bookRepository.save(book);
