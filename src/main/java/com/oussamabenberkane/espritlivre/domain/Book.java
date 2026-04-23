@@ -1,6 +1,7 @@
 package com.oussamabenberkane.espritlivre.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.oussamabenberkane.espritlivre.domain.enumeration.DiscountType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -79,6 +80,16 @@ public class Book implements Serializable {
 
     @Column(name = "automatic_delivery_fee")
     private Boolean automaticDeliveryFee;
+
+    @Column(name = "on_sale", columnDefinition = "boolean default false")
+    private Boolean onSale;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "discount_type")
+    private DiscountType discountType;
+
+    @Column(name = "discount_value", precision = 21, scale = 2)
+    private BigDecimal discountValue;
 
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "books")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -326,12 +337,54 @@ public class Book implements Serializable {
         this.automaticDeliveryFee = automaticDeliveryFee;
     }
 
+    public Boolean getOnSale() {
+        return this.onSale;
+    }
+
+    public Book onSale(Boolean onSale) {
+        this.setOnSale(onSale);
+        return this;
+    }
+
+    public void setOnSale(Boolean onSale) {
+        this.onSale = onSale;
+    }
+
+    public DiscountType getDiscountType() {
+        return this.discountType;
+    }
+
+    public Book discountType(DiscountType discountType) {
+        this.setDiscountType(discountType);
+        return this;
+    }
+
+    public void setDiscountType(DiscountType discountType) {
+        this.discountType = discountType;
+    }
+
+    public BigDecimal getDiscountValue() {
+        return this.discountValue;
+    }
+
+    public Book discountValue(BigDecimal discountValue) {
+        this.setDiscountValue(discountValue);
+        return this;
+    }
+
+    public void setDiscountValue(BigDecimal discountValue) {
+        this.discountValue = discountValue;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @PrePersist
     public void prePersist() {
         if (this.active == null) {
             this.active = true;
+        }
+        if (this.onSale == null) {
+            this.onSale = false;
         }
     }
 

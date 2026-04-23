@@ -50,5 +50,6 @@
     <include file="config/liquibase/changelog/20260422000000_add_preorder_date_to_book.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260423000000_book_description_to_clob.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260423100000_add_order_to_rel_tag_book_and_pack.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260424000000_add_discount_fields_to_book.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

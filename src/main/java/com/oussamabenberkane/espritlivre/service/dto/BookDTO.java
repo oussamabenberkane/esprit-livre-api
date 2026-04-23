@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service.dto;
 
+import com.oussamabenberkane.espritlivre.domain.enumeration.DiscountType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
@@ -50,6 +51,12 @@ public class BookDTO implements Serializable {
     private Long likeCount;
 
     private Boolean isLikedByCurrentUser;
+
+    private Boolean onSale;
+
+    private DiscountType discountType;
+
+    private BigDecimal discountValue;
 
     public Long getId() {
         return id;
@@ -185,6 +192,43 @@ public class BookDTO implements Serializable {
 
     public void setAutomaticDeliveryFee(Boolean automaticDeliveryFee) {
         this.automaticDeliveryFee = automaticDeliveryFee;
+    }
+
+    public Boolean getOnSale() {
+        return onSale;
+    }
+
+    public void setOnSale(Boolean onSale) {
+        this.onSale = onSale;
+    }
+
+    public DiscountType getDiscountType() {
+        return discountType;
+    }
+
+    public void setDiscountType(DiscountType discountType) {
+        this.discountType = discountType;
+    }
+
+    public BigDecimal getDiscountValue() {
+        return discountValue;
+    }
+
+    public void setDiscountValue(BigDecimal discountValue) {
+        this.discountValue = discountValue;
+    }
+
+    public BigDecimal getSalePrice() {
+        if (!Boolean.TRUE.equals(onSale) || price == null || discountValue == null || discountType == null) {
+            return price;
+        }
+        if (discountType == DiscountType.PERCENTAGE) {
+            BigDecimal factor = BigDecimal.ONE.subtract(discountValue.divide(new java.math.BigDecimal("100")));
+            return price.multiply(factor).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        // FIXED_AMOUNT
+        BigDecimal result = price.subtract(discountValue);
+        return result.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : result.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     @Override

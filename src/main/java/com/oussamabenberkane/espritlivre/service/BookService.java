@@ -249,12 +249,18 @@ public class BookService {
         Long categoryId,
         Long mainDisplayId,
         List<String> language,
-        String status
+        String status,
+        Boolean onSale
     ) {
-        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}, status: {}",
-            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status);
+        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}, status: {}, onSale: {}",
+            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale);
 
         Specification<Book> spec = Specification.where(BookSpecifications.activeOnly());
+
+        // Apply onSale filter if requested
+        if (Boolean.TRUE.equals(onSale)) {
+            spec = spec.and(BookSpecifications.isOnSale());
+        }
 
         // Apply status filter if provided (case-insensitive)
         BookStatus bookStatus = BookStatus.fromString(status);
@@ -294,7 +300,7 @@ public class BookService {
         Page<Book> books;
         if (mainDisplayId != null && !StringUtils.hasText(search) && (author == null || author.isEmpty())
                 && categoryId == null && minPrice == null && maxPrice == null
-                && (language == null || language.isEmpty()) && bookStatus == null) {
+                && (language == null || language.isEmpty()) && bookStatus == null && !Boolean.TRUE.equals(onSale)) {
             books = bookRepository.findByMainDisplayIdOrdered(mainDisplayId, pageable);
         } else {
             books = bookRepository.findAll(spec, pageable);

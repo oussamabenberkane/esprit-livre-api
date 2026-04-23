@@ -147,10 +147,11 @@ public class BookResource {
         @RequestParam(required = false) @Min(1) Long categoryId,
         @RequestParam(required = false) @Min(1) Long mainDisplayId,
         @RequestParam(required = false) List<String> language,
-        @RequestParam(required = false) String status
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Boolean onSale
     ) {
         validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
-        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status);
+        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
     }
