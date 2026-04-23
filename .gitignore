@@ -169,6 +169,8 @@ nginx/ssl/
 
 el.env
 
+src/main/docker/realm-config/jhipster-realm.json
+
 *.jpg
 
 *.png

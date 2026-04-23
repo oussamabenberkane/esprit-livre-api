@@ -120,7 +120,7 @@ media:
   root-dir: ${MEDIA_ROOT_DIR:/app/media}
 
 application:
-  admin-email: ${ADMIN_EMAIL:admin@espritlivre.com}
+  admin-email: ${ADMIN_EMAIL:contact@espritlivre.com}
   admin-panel-url: ${APPLICATION_ADMIN_PANEL_URL:https://admin.espritlivre.com}
   keycloak:
     admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}

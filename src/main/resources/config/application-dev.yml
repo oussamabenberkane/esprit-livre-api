@@ -103,7 +103,7 @@ jhipster:
 # ===================================================================
 
 application:
-  admin-email: ${ADMIN_EMAIL:oussamabenberkane.pro@gmail.com}
+  admin-email: ${ADMIN_EMAIL:contact@espritlivre.com}
   admin-panel-url: ${ADMIN_PANEL_URL:http://localhost:8080/admin}
   keycloak:
     admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}

@@ -114,8 +114,8 @@ passed.
 - Keycloak: realm `jhipster`
 - Named volumes: `espritlivre_postgres_data`, `espritlivre_api_media`,
   `espritlivre_keycloak_data`, `espritlivre_api_logs`, `espritlivre_nginx_cache`
-- TLS certs: `/etc/letsencrypt/live/app.espritlivre.com/` (on the host)
-- Public URL: `https://app.espritlivre.com/`
+- TLS certs: `/etc/letsencrypt/live/app.espritlivre.com/` (subdomains), `/etc/letsencrypt/live/espritlivre.com/` (apex, on the host)
+- Public URL: `https://espritlivre.com/`
 
 ## Manual fallback procedure
 

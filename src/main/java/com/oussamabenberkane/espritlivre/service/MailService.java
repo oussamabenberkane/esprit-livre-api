@@ -311,7 +311,7 @@ public class MailService {
         String emailSubject = "Nouveau message du formulaire de contact - " + subject;
 
         // Send to all admin emails
-        String[] adminEmails = {"oussamabenberkane.pro@gmail.com", "contact@espritlivre.com"};
+        String[] adminEmails = {"contact@espritlivre.com"};
         for (String recipientEmail : adminEmails) {
             sendEmailWithPriority(recipientEmail, emailSubject, content, false, true, 3);
         }
