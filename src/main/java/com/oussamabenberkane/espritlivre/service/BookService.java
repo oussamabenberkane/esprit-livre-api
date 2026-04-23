@@ -210,6 +210,7 @@ public class BookService {
         existingBook.setDescription(bookDTO.getDescription());
         existingBook.setDeliveryFee(bookDTO.getDeliveryFee());
         existingBook.setAutomaticDeliveryFee(bookDTO.getAutomaticDeliveryFee());
+        existingBook.setPreorderDate(bookDTO.getPreorderDate());
         existingBook.setUpdatedAt(ZonedDateTime.now());
 
         // Handle cover image if provided
