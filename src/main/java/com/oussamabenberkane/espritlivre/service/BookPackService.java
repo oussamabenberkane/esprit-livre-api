@@ -211,8 +211,16 @@ public class BookPackService {
             }
         }
 
-        // First, get the page of BookPack IDs with filtering
-        Page<BookPack> page = bookPackRepository.findAll(spec, pageable);
+        // When mainDisplayId is the sole filter, use native SQL to preserve pack_order from the join table.
+        // JPA Criteria API cannot ORDER BY the join table's pack_order column.
+        Page<BookPack> page;
+        if (mainDisplayId != null && !StringUtils.hasText(search) && (author == null || author.isEmpty())
+                && categoryId == null && minPrice == null && maxPrice == null
+                && (language == null || language.isEmpty())) {
+            page = bookPackRepository.findByMainDisplayIdOrdered(mainDisplayId, pageable);
+        } else {
+            page = bookPackRepository.findAll(spec, pageable);
+        }
 
         // If no results, return empty page
         if (page.isEmpty()) {

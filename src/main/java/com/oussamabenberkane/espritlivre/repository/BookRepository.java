@@ -107,4 +107,16 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
 
     @Query("SELECT b FROM Book b LEFT JOIN FETCH b.author LEFT JOIN FETCH b.tags WHERE b.id IN :ids AND b.active = true")
     List<Book> findAllByIdsWithEagerRelationships(@Param("ids") List<Long> ids);
+
+    @Query(
+        value = "SELECT b.* FROM book b " +
+                "INNER JOIN rel_tag__book rtb ON b.id = rtb.book_id " +
+                "WHERE rtb.tag_id = :tagId AND b.active = true " +
+                "ORDER BY rtb.book_order ASC NULLS LAST",
+        countQuery = "SELECT COUNT(b.id) FROM book b " +
+                     "INNER JOIN rel_tag__book rtb ON b.id = rtb.book_id " +
+                     "WHERE rtb.tag_id = :tagId AND b.active = true",
+        nativeQuery = true
+    )
+    Page<Book> findByMainDisplayIdOrdered(@Param("tagId") Long tagId, Pageable pageable);
 }

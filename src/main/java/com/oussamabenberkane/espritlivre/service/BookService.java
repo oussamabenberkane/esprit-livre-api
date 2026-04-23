@@ -289,7 +289,16 @@ public class BookService {
             }
         }
 
-        Page<Book> books = bookRepository.findAll(spec, pageable);
+        // When mainDisplayId is the sole filter, use native SQL to preserve book_order from the join table.
+        // JPA Criteria API joins Book→Tag and cannot ORDER BY the join table's book_order column.
+        Page<Book> books;
+        if (mainDisplayId != null && !StringUtils.hasText(search) && (author == null || author.isEmpty())
+                && categoryId == null && minPrice == null && maxPrice == null
+                && (language == null || language.isEmpty()) && bookStatus == null) {
+            books = bookRepository.findByMainDisplayIdOrdered(mainDisplayId, pageable);
+        } else {
+            books = bookRepository.findAll(spec, pageable);
+        }
 
         // Create DTOs and then batch fetch all like counts
         Page<BookDTO> bookDTOs = books.map(bookMapper::toDto);

@@ -62,6 +62,18 @@ public interface BookPackRepository extends JpaRepository<BookPack, Long>, JpaSp
     @Query("select bookPack from BookPack bookPack where bookPack.id in :ids and bookPack.active = true")
     List<BookPack> findByIdsWithEagerRelationships(@Param("ids") List<Long> ids);
 
+    @Query(
+        value = "SELECT bp.* FROM book_pack bp " +
+                "INNER JOIN rel_tag__book_pack rtbp ON bp.id = rtbp.book_pack_id " +
+                "WHERE rtbp.tag_id = :tagId AND bp.active = true " +
+                "ORDER BY rtbp.pack_order ASC NULLS LAST",
+        countQuery = "SELECT COUNT(bp.id) FROM book_pack bp " +
+                     "INNER JOIN rel_tag__book_pack rtbp ON bp.id = rtbp.book_pack_id " +
+                     "WHERE rtbp.tag_id = :tagId AND bp.active = true",
+        nativeQuery = true
+    )
+    Page<BookPack> findByMainDisplayIdOrdered(@Param("tagId") Long tagId, Pageable pageable);
+
     /**
      * Find packs that share at least one tag or author with the given book's tags/author,
      * but do NOT contain the given book. Returns [packId, overlapCount].
