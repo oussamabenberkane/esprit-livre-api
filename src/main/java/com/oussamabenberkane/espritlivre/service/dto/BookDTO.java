@@ -29,7 +29,6 @@ public class BookDTO implements Serializable {
 
     private String coverImageUrl;
 
-    @Size(max = 1000)
     private String description;
 
     private Boolean active;

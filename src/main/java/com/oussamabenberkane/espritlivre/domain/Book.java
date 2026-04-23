@@ -49,8 +49,7 @@ public class Book implements Serializable {
     @Column(name = "cover_image_url")
     private String coverImageUrl;
 
-    @Size(max = 1000)
-    @Column(name = "description", length = 1000)
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "active", columnDefinition = "boolean default true")
