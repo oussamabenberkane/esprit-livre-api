@@ -458,6 +458,58 @@ public class TagService {
     }
 
     /**
+     * Reorder books within a tag.
+     *
+     * @param tagId the tag ID.
+     * @param bookIds the ordered list of book IDs.
+     * @return the updated tag DTO.
+     */
+    public TagDTO reorderBooksInTag(Long tagId, List<Long> bookIds) {
+        LOG.debug("Request to reorder books {} in tag {}", bookIds, tagId);
+
+        Tag tag = tagRepository.findById(tagId)
+            .orElseThrow(() -> new BadRequestAlertException("Tag not found", "tag", "idnotfound"));
+
+        java.util.Map<Long, Book> bookMap = tag.getBooks().stream()
+            .collect(java.util.stream.Collectors.toMap(Book::getId, b -> b));
+
+        List<Book> reordered = bookIds.stream()
+            .map(bookMap::get)
+            .filter(b -> b != null)
+            .collect(Collectors.toList());
+
+        tag.setBooks(reordered);
+        tag = tagRepository.save(tag);
+        return tagMapper.toDto(tag);
+    }
+
+    /**
+     * Reorder book packs within a tag.
+     *
+     * @param tagId the tag ID.
+     * @param packIds the ordered list of book pack IDs.
+     * @return the updated tag DTO.
+     */
+    public TagDTO reorderPacksInTag(Long tagId, List<Long> packIds) {
+        LOG.debug("Request to reorder packs {} in tag {}", packIds, tagId);
+
+        Tag tag = tagRepository.findById(tagId)
+            .orElseThrow(() -> new BadRequestAlertException("Tag not found", "tag", "idnotfound"));
+
+        java.util.Map<Long, BookPack> packMap = tag.getBookPacks().stream()
+            .collect(java.util.stream.Collectors.toMap(BookPack::getId, p -> p));
+
+        List<BookPack> reordered = packIds.stream()
+            .map(packMap::get)
+            .filter(p -> p != null)
+            .collect(Collectors.toList());
+
+        tag.setBookPacks(reordered);
+        tag = tagRepository.save(tag);
+        return tagMapper.toDto(tag);
+    }
+
+    /**
      * Get a random color from the predefined color palette.
      *
      * @return a random color hex string.

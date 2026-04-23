@@ -323,6 +323,46 @@ public class TagResource {
     }
 
     /**
+     * {@code PUT  /tags/:id/books/reorder} : Reorder books within a tag.
+     *
+     * @param id the id of the tag.
+     * @param bookIds the ordered list of book IDs.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO.
+     */
+    @PutMapping("/{id}/books/reorder")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<TagDTO> reorderBooksInTag(
+        @PathVariable("id") Long id,
+        @RequestBody List<Long> bookIds
+    ) {
+        LOG.debug("REST request to reorder books in Tag : {}", id);
+        TagDTO result = tagService.reorderBooksInTag(id, bookIds);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
+    /**
+     * {@code PUT  /tags/:id/book-packs/reorder} : Reorder book packs within a tag.
+     *
+     * @param id the id of the tag.
+     * @param packIds the ordered list of book pack IDs.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated tagDTO.
+     */
+    @PutMapping("/{id}/book-packs/reorder")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<TagDTO> reorderPacksInTag(
+        @PathVariable("id") Long id,
+        @RequestBody List<Long> packIds
+    ) {
+        LOG.debug("REST request to reorder book packs in Tag : {}", id);
+        TagDTO result = tagService.reorderPacksInTag(id, packIds);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
+    /**
      * {@code PUT  /tags/main-display/reorder} : Reorder MAIN_DISPLAY tags.
      *
      * @param tagIds the ordered list of tag IDs.

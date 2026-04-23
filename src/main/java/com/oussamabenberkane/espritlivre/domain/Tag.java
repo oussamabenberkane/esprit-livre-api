@@ -5,8 +5,8 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.TagType;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -56,16 +56,18 @@ public class Tag implements Serializable {
     private Integer order;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @OrderColumn(name = "book_order")
     @JoinTable(name = "rel_tag__book", joinColumns = @JoinColumn(name = "tag_id"), inverseJoinColumns = @JoinColumn(name = "book_id"))
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "tags" }, allowSetters = true)
-    private Set<Book> books = new HashSet<>();
+    private List<Book> books = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @OrderColumn(name = "pack_order")
     @JoinTable(name = "rel_tag__book_pack", joinColumns = @JoinColumn(name = "tag_id"), inverseJoinColumns = @JoinColumn(name = "book_pack_id"))
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "tags" }, allowSetters = true)
-    private Set<BookPack> bookPacks = new HashSet<>();
+    private List<BookPack> bookPacks = new ArrayList<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -199,21 +201,23 @@ public class Tag implements Serializable {
         this.order = order;
     }
 
-    public Set<Book> getBooks() {
+    public List<Book> getBooks() {
         return this.books;
     }
 
-    public void setBooks(Set<Book> books) {
+    public void setBooks(List<Book> books) {
         this.books = books;
     }
 
-    public Tag books(Set<Book> books) {
+    public Tag books(List<Book> books) {
         this.setBooks(books);
         return this;
     }
 
     public Tag addBook(Book book) {
-        this.books.add(book);
+        if (!this.books.contains(book)) {
+            this.books.add(book);
+        }
         return this;
     }
 
@@ -222,21 +226,23 @@ public class Tag implements Serializable {
         return this;
     }
 
-    public Set<BookPack> getBookPacks() {
+    public List<BookPack> getBookPacks() {
         return this.bookPacks;
     }
 
-    public void setBookPacks(Set<BookPack> bookPacks) {
+    public void setBookPacks(List<BookPack> bookPacks) {
         this.bookPacks = bookPacks;
     }
 
-    public Tag bookPacks(Set<BookPack> bookPacks) {
+    public Tag bookPacks(List<BookPack> bookPacks) {
         this.setBookPacks(bookPacks);
         return this;
     }
 
     public Tag addBookPack(BookPack bookPack) {
-        this.bookPacks.add(bookPack);
+        if (!this.bookPacks.contains(bookPack)) {
+            this.bookPacks.add(bookPack);
+        }
         return this;
     }
 

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Add book_order column to rel_tag__book join table -->
+    <changeSet id="20260423100000-1" author="claude">
+        <addColumn tableName="rel_tag__book">
+            <column name="book_order" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add pack_order column to rel_tag__book_pack join table -->
+    <changeSet id="20260423100000-2" author="claude">
+        <addColumn tableName="rel_tag__book_pack">
+            <column name="pack_order" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Initialize existing book rows with sequential order per tag -->
+    <changeSet id="20260423100000-3" author="claude">
+        <sql>
+            UPDATE rel_tag__book rtb
+            SET book_order = sub.rn - 1
+            FROM (
+                SELECT tag_id, book_id,
+                       ROW_NUMBER() OVER (PARTITION BY tag_id ORDER BY book_id) AS rn
+                FROM rel_tag__book
+            ) sub
+            WHERE rtb.tag_id = sub.tag_id AND rtb.book_id = sub.book_id;
+        </sql>
+    </changeSet>
+
+    <!-- Initialize existing pack rows with sequential order per tag -->
+    <changeSet id="20260423100000-4" author="claude">
+        <sql>
+            UPDATE rel_tag__book_pack rtbp
+            SET pack_order = sub.rn - 1
+            FROM (
+                SELECT tag_id, book_pack_id,
+                       ROW_NUMBER() OVER (PARTITION BY tag_id ORDER BY book_pack_id) AS rn
+                FROM rel_tag__book_pack
+            ) sub
+            WHERE rtbp.tag_id = sub.tag_id AND rtbp.book_pack_id = sub.book_pack_id;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
