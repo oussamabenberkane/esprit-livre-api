@@ -206,7 +206,8 @@ public class BookService {
         // Update fields
         existingBook.setTitle(bookDTO.getTitle());
         existingBook.setPrice(bookDTO.getPrice());
-        existingBook.setStockQuantity(bookDTO.getStockQuantity() != null ? bookDTO.getStockQuantity() : 1);
+        existingBook.setStockQuantity(bookDTO.getStockQuantity() != null ? bookDTO.getStockQuantity() : 0);
+        existingBook.setLanguage(bookDTO.getLanguage());
         existingBook.setDescription(bookDTO.getDescription());
         existingBook.setDeliveryFee(bookDTO.getDeliveryFee());
         existingBook.setAutomaticDeliveryFee(bookDTO.getAutomaticDeliveryFee());
