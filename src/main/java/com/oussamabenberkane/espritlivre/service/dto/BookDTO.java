@@ -4,6 +4,7 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.Language;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Objects;
@@ -40,6 +41,8 @@ public class BookDTO implements Serializable {
     private ZonedDateTime updatedAt;
 
     private Set<TagDTO> tags = new HashSet<>();
+
+    private LocalDate preorderDate;
 
     private BigDecimal deliveryFee;
 
@@ -159,6 +162,14 @@ public class BookDTO implements Serializable {
 
     public void setIsLikedByCurrentUser(Boolean isLikedByCurrentUser) {
         this.isLikedByCurrentUser = isLikedByCurrentUser;
+    }
+
+    public LocalDate getPreorderDate() {
+        return preorderDate;
+    }
+
+    public void setPreorderDate(LocalDate preorderDate) {
+        this.preorderDate = preorderDate;
     }
 
     public BigDecimal getDeliveryFee() {

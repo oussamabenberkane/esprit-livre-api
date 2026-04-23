@@ -7,6 +7,7 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -71,6 +72,9 @@ public class Book implements Serializable {
     @Column(name = "deleted_by", length = 50)
     private String deletedBy;
 
+    @Column(name = "preorder_date")
+    private LocalDate preorderDate;
+
     @Column(name = "delivery_fee", precision = 21, scale = 2)
     private BigDecimal deliveryFee;
 
@@ -81,6 +85,19 @@ public class Book implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
     private Set<Tag> tags = new HashSet<>();
+
+    public LocalDate getPreorderDate() {
+        return this.preorderDate;
+    }
+
+    public Book preorderDate(LocalDate preorderDate) {
+        this.setPreorderDate(preorderDate);
+        return this;
+    }
+
+    public void setPreorderDate(LocalDate preorderDate) {
+        this.preorderDate = preorderDate;
+    }
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
