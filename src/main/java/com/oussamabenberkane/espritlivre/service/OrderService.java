@@ -79,6 +79,8 @@ public class OrderService {
 
     private final OrderStatusEnrichmentService orderStatusEnrichmentService;
 
+    private final MetaConversionsApiService metaConversionsApiService;
+
     public OrderService(
         OrderRepository orderRepository,
         OrderMapper orderMapper,
@@ -89,7 +91,8 @@ public class OrderService {
         MailService mailService,
         ApplicationProperties applicationProperties,
         ShippingProviderFactory shippingProviderFactory,
-        OrderStatusEnrichmentService orderStatusEnrichmentService
+        OrderStatusEnrichmentService orderStatusEnrichmentService,
+        MetaConversionsApiService metaConversionsApiService
     ) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
@@ -101,6 +104,7 @@ public class OrderService {
         this.applicationProperties = applicationProperties;
         this.shippingProviderFactory = shippingProviderFactory;
         this.orderStatusEnrichmentService = orderStatusEnrichmentService;
+        this.metaConversionsApiService = metaConversionsApiService;
     }
 
     /**
@@ -225,6 +229,27 @@ public class OrderService {
             LOG.debug("Admin notification email queued for order: {}", savedOrderDTO.getUniqueId());
         } catch (Exception e) {
             LOG.error("Failed to send admin notification email for order: {}. Error: {}", savedOrderDTO.getUniqueId(), e.getMessage(), e);
+        }
+
+        // Send server-side Purchase event to Meta Conversions API (async, non-blocking)
+        try {
+            List<String> contentIds = order.getOrderItems().stream()
+                .map(item -> item.getBook() != null
+                    ? String.valueOf(item.getBook().getId())
+                    : "pack-" + item.getBookPack().getId())
+                .collect(java.util.stream.Collectors.toList());
+            int numItems = order.getOrderItems().stream()
+                .mapToInt(OrderItem::getQuantity)
+                .sum();
+            metaConversionsApiService.sendPurchaseEvent(
+                savedOrderDTO.getUniqueId(),
+                savedOrderDTO.getTotalAmount(),
+                numItems,
+                contentIds,
+                order.getPhone()
+            );
+        } catch (Exception e) {
+            LOG.error("Failed to send Meta CAPI event for order: {}", savedOrderDTO.getUniqueId(), e);
         }
 
         return savedOrderDTO;

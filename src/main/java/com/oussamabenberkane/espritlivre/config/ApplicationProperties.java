@@ -21,6 +21,8 @@ public class ApplicationProperties {
 
     private final Keycloak keycloak = new Keycloak();
 
+    private final Meta meta = new Meta();
+
     // jhipster-needle-application-properties-property
 
     public Liquibase getLiquibase() {
@@ -53,6 +55,10 @@ public class ApplicationProperties {
 
     public Keycloak getKeycloak() {
         return keycloak;
+    }
+
+    public Meta getMeta() {
+        return meta;
     }
 
     // jhipster-needle-application-properties-property-getter
@@ -100,5 +106,36 @@ public class ApplicationProperties {
             this.adminClientId = adminClientId;
         }
     }
+    public static class Meta {
+
+        private boolean enabled = false;
+        private String pixelId;
+        private String accessToken;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getPixelId() {
+            return pixelId;
+        }
+
+        public void setPixelId(String pixelId) {
+            this.pixelId = pixelId;
+        }
+
+        public String getAccessToken() {
+            return accessToken;
+        }
+
+        public void setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+        }
+    }
+
     // jhipster-needle-application-properties-property-class
 }

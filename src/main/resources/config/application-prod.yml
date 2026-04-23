@@ -126,3 +126,7 @@ application:
     admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
     admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
     admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+  meta:
+    enabled: ${META_ENABLED:false}
+    pixel-id: ${META_PIXEL_ID:}
+    access-token: ${META_ACCESS_TOKEN:}
