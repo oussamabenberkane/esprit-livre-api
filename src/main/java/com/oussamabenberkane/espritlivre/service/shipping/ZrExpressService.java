@@ -82,11 +82,17 @@ public class ZrExpressService implements ShippingProviderService {
                 return ShippingResult.failure("Could not resolve wilaya: " + order.getWilaya());
             }
 
-            String districtTerritoryId = resolveDistrictTerritoryId(cityTerritoryId, order.getCity());
-            if (districtTerritoryId == null) {
-                LOG.error("Could not resolve district territory ID for city: {} in wilaya: {} for order: {}",
-                    order.getCity(), order.getWilaya(), order.getUniqueId());
-                return ShippingResult.failure("Could not resolve commune: " + order.getCity());
+            boolean isPickupPoint = Boolean.TRUE.equals(order.getIsStopDesk());
+            String districtTerritoryId = null;
+            if (!isPickupPoint) {
+                districtTerritoryId = resolveDistrictTerritoryId(cityTerritoryId, order.getCity());
+                if (districtTerritoryId == null) {
+                    LOG.error("Could not resolve district territory ID for city: {} in wilaya: {} for order: {}",
+                        order.getCity(), order.getWilaya(), order.getUniqueId());
+                    return ShippingResult.failure("Could not resolve commune: " + order.getCity());
+                }
+            } else {
+                LOG.warn("Stop desk order {}: skipping district territory resolution (commune: {})", order.getUniqueId(), order.getCity());
             }
 
             // 2. Resolve or create customer
