@@ -1,5 +1,94 @@
 # Esprit Livre Production Deployment Guide
 
+---
+
+## Day-to-day: commit → push → deploy
+
+### 1. Commit & push locally
+
+```bash
+git add <files>
+git commit -m "type(scope): short description"
+git push
+```
+
+### 2. Pull on the server
+
+```bash
+ssh personal
+cd /root/esprit-livre/api
+git pull
+```
+
+### 3. Restart the right service
+
+| What changed | Command |
+|---|---|
+| API source / config | `docker compose restart api` |
+| Nginx config (`nginx/`) | `docker exec espritlivre-nginx nginx -s reload` |
+| User frontend | `docker compose build user-frontend && docker compose up -d user-frontend` |
+| Admin frontend | `docker compose build admin-frontend && docker compose up -d admin-frontend` |
+| Keycloak realm config | `docker compose restart keycloak` |
+| Everything | `docker compose up -d --build` |
+
+> The API takes ~30 s to become healthy after restart. Check with `docker compose ps`.
+
+### 4. Verify
+
+```bash
+docker compose ps                                        # all healthy?
+curl -sI https://espritlivre.com | head -2               # user app
+curl -sI https://admin.espritlivre.com | head -2         # admin
+curl -s https://api.espritlivre.com/management/health    # API health
+```
+
+---
+
+## SSL certificates
+
+Certs live in `nginx/ssl/` (copied from Let's Encrypt). Two pairs:
+
+| Files | Covers |
+|---|---|
+| `fullchain.pem` / `privkey.pem` | `app`, `admin`, `api`, `auth`.espritlivre.com |
+| `apex.fullchain.pem` / `apex.privkey.pem` | `espritlivre.com`, `www.espritlivre.com` |
+
+Certbot auto-renews, but the copies in `nginx/ssl/` must be refreshed manually after renewal:
+
+```bash
+# Subdomain cert
+cp /etc/letsencrypt/live/app.espritlivre.com/fullchain.pem nginx/ssl/fullchain.pem
+cp /etc/letsencrypt/live/app.espritlivre.com/privkey.pem   nginx/ssl/privkey.pem
+
+# Apex cert
+cp /etc/letsencrypt/live/espritlivre.com/fullchain.pem nginx/ssl/apex.fullchain.pem
+cp /etc/letsencrypt/live/espritlivre.com/privkey.pem   nginx/ssl/apex.privkey.pem
+
+docker exec espritlivre-nginx nginx -s reload
+```
+
+---
+
+## Keycloak live changes (without restart)
+
+```bash
+# Authenticate
+docker exec espritlivre-keycloak \
+  /opt/keycloak/bin/kcadm.sh config credentials \
+  --server http://localhost:8080 --realm master \
+  --user el-admin \
+  --password "$(grep KC_ADMIN_PASSWORD /root/esprit-livre/api/.env | cut -d= -f2)"
+
+# Update web_app client (UUID: 6e8deddb-b4d6-4e2e-b389-b397d3f74fcd)
+docker exec espritlivre-keycloak \
+  /opt/keycloak/bin/kcadm.sh update clients/6e8deddb-b4d6-4e2e-b389-b397d3f74fcd \
+  -r jhipster \
+  -s 'redirectUris=["https://espritlivre.com/*","https://www.espritlivre.com/*","https://admin.espritlivre.com/*","https://api.espritlivre.com/*","http://localhost:5173/*","http://localhost:5174/*"]' \
+  -s 'webOrigins=["https://espritlivre.com","https://www.espritlivre.com","https://admin.espritlivre.com","https://api.espritlivre.com","http://localhost:5173","http://localhost:5174"]'
+```
+
+---
+
 ## Prerequisites
 
 - VPS with Ubuntu 22.04+ (Contabo Cloud VPS 10 with 8GB RAM)
@@ -13,11 +102,12 @@ Point these records to your VPS IP address:
 
 | Type | Name | Value |
 |------|------|-------|
-| A | @ | YOUR_VPS_IP |
-| A | www | YOUR_VPS_IP |
-| A | api | YOUR_VPS_IP |
-| A | admin | YOUR_VPS_IP |
-| A | auth | YOUR_VPS_IP |
+| A | @ | 185.187.235.22 |
+| CNAME | www | espritlivre.com |
+| A | api | 185.187.235.22 |
+| A | admin | 185.187.235.22 |
+| A | auth | 185.187.235.22 |
+| A | app | 185.187.235.22 (redirects → espritlivre.com) |
 
 ## VPS Initial Setup
 
