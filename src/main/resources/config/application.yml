@@ -205,7 +205,7 @@ jhipster:
     name: 'espritLivreApp'
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8100,http://localhost:9000,http://localhost:5173,http://localhost:5174}
-    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:https://*.espritlivre.com}
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:https://espritlivre.com,https://*.espritlivre.com}
     allowed-methods: "*"
     allowed-headers: "*"
     exposed-headers: "Authorization,Link,X-Total-Count,X-${jhipster.clientApp.name}-alert,X-${jhipster.clientApp.name}-error,X-${jhipster.clientApp.name}-params"
