@@ -203,7 +203,7 @@ public class BookResource {
         LOG.debug("REST request to get Book : {}", id);
         Optional<BookDTO> bookDTO = bookService.findOne(id);
         if (bookDTO.isPresent()
-                && Boolean.FALSE.equals(bookDTO.get().getVisibleInCatalog())
+                && Boolean.FALSE.equals(bookDTO.orElseThrow().getVisibleInCatalog())
                 && !SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)) {
             return ResponseEntity.notFound().build();
         }
@@ -226,7 +226,7 @@ public class BookResource {
         if (bookDTO.isEmpty()) {
             return loadPlaceholder();
         }
-        if (Boolean.FALSE.equals(bookDTO.get().getVisibleInCatalog())
+        if (Boolean.FALSE.equals(bookDTO.orElseThrow().getVisibleInCatalog())
                 && !SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)) {
             return ResponseEntity.notFound().build();
         }
