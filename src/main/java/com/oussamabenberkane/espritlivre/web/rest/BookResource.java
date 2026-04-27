@@ -226,10 +226,6 @@ public class BookResource {
         if (bookDTO.isEmpty()) {
             return loadPlaceholder();
         }
-        if (Boolean.FALSE.equals(bookDTO.orElseThrow().getVisibleInCatalog())
-                && !SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)) {
-            return ResponseEntity.notFound().build();
-        }
 
         String coverImageUrl = bookDTO.orElseThrow().getCoverImageUrl();
         if (coverImageUrl == null || coverImageUrl.isEmpty()) {
