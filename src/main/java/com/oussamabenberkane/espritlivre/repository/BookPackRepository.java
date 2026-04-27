@@ -75,6 +75,14 @@ public interface BookPackRepository extends JpaRepository<BookPack, Long>, JpaSp
     Page<BookPack> findByMainDisplayIdOrdered(@Param("tagId") Long tagId, Pageable pageable);
 
     /**
+     * Find all active packs that contain the given book, with their full books collection eagerly loaded.
+     * Used to cascade pack cleanup when a book is soft-deleted.
+     */
+    @Query("SELECT DISTINCT bp FROM BookPack bp JOIN FETCH bp.books WHERE bp.id IN " +
+           "(SELECT bp2.id FROM BookPack bp2 JOIN bp2.books b WHERE b.id = :bookId AND bp2.active = true)")
+    List<BookPack> findActivePacksContainingBookEager(@Param("bookId") Long bookId);
+
+    /**
      * Find packs that share at least one tag or author with the given book's tags/author,
      * but do NOT contain the given book. Returns [packId, overlapCount].
      */

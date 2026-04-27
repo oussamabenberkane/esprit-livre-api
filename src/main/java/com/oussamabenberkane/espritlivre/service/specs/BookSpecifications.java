@@ -155,6 +155,15 @@ public class BookSpecifications {
         return (root, query, builder) -> builder.equal(root.get("onSale"), true);
     }
 
+    public static Specification<Book> isVisibleInCatalog(Boolean visibleInCatalog) {
+        return (root, query, builder) -> {
+            if (visibleInCatalog == null) {
+                return builder.conjunction();
+            }
+            return builder.equal(root.get("visibleInCatalog"), visibleInCatalog);
+        };
+    }
+
     /**
      * Specification to filter books by stock status.
      * AVAILABLE: stockQuantity >= 1

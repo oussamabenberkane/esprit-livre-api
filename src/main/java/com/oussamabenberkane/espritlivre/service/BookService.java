@@ -2,8 +2,10 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.domain.Author;
 import com.oussamabenberkane.espritlivre.domain.Book;
+import com.oussamabenberkane.espritlivre.domain.BookPack;
 import com.oussamabenberkane.espritlivre.domain.Tag;
 import com.oussamabenberkane.espritlivre.repository.AuthorRepository;
+import com.oussamabenberkane.espritlivre.repository.BookPackRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.LikeRepository;
 import com.oussamabenberkane.espritlivre.repository.TagRepository;
@@ -66,13 +68,16 @@ public class BookService {
 
     private final TagRepository tagRepository;
 
+    private final BookPackRepository bookPackRepository;
+
     public BookService(
         BookRepository bookRepository,
         BookMapper bookMapper,
         LikeRepository likeRepository,
         FileStorageService fileStorageService,
         AuthorRepository authorRepository,
-        TagRepository tagRepository
+        TagRepository tagRepository,
+        BookPackRepository bookPackRepository
     ) {
         this.bookRepository = bookRepository;
         this.bookMapper = bookMapper;
@@ -80,6 +85,7 @@ public class BookService {
         this.fileStorageService = fileStorageService;
         this.authorRepository = authorRepository;
         this.tagRepository = tagRepository;
+        this.bookPackRepository = bookPackRepository;
     }
 
     /**
@@ -203,7 +209,7 @@ public class BookService {
             existingBook.setAuthor(null);
         }
 
-        // Update fields
+        // Update fields — visibleInCatalog is intentionally excluded: it is immutable after creation
         existingBook.setTitle(bookDTO.getTitle());
         existingBook.setPrice(bookDTO.getPrice());
         existingBook.setStockQuantity(bookDTO.getStockQuantity() != null ? bookDTO.getStockQuantity() : 0);
@@ -250,12 +256,17 @@ public class BookService {
         Long mainDisplayId,
         List<String> language,
         String status,
-        Boolean onSale
+        Boolean onSale,
+        Boolean visibleInCatalog
     ) {
-        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}, status: {}, onSale: {}",
-            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale);
+        LOG.debug("Request to get all Books with filters - search: {}, author: {}, priceRange: [{}, {}], categoryId: {}, mainDisplayId: {}, language: {}, status: {}, onSale: {}, visibleInCatalog: {}",
+            search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale, visibleInCatalog);
 
         Specification<Book> spec = Specification.where(BookSpecifications.activeOnly());
+
+        if (visibleInCatalog != null) {
+            spec = spec.and(BookSpecifications.isVisibleInCatalog(visibleInCatalog));
+        }
 
         // Apply onSale filter if requested
         if (Boolean.TRUE.equals(onSale)) {
@@ -300,7 +311,8 @@ public class BookService {
         Page<Book> books;
         if (mainDisplayId != null && !StringUtils.hasText(search) && (author == null || author.isEmpty())
                 && categoryId == null && minPrice == null && maxPrice == null
-                && (language == null || language.isEmpty()) && bookStatus == null && !Boolean.TRUE.equals(onSale)) {
+                && (language == null || language.isEmpty()) && bookStatus == null && !Boolean.TRUE.equals(onSale)
+                && visibleInCatalog == null) {
             books = bookRepository.findByMainDisplayIdOrdered(mainDisplayId, pageable);
         } else {
             books = bookRepository.findAll(spec, pageable);
@@ -399,6 +411,22 @@ public class BookService {
             book.setUpdatedAt(ZonedDateTime.now());
             bookRepository.save(book);
         });
+
+        // Remove the book from all active packs; soft-delete any pack that falls below 2 books
+        List<BookPack> affectedPacks = bookPackRepository.findActivePacksContainingBookEager(id);
+        Instant now = Instant.now();
+        String deletedBy = SecurityUtils.getCurrentUserLogin().orElse(null);
+        for (BookPack pack : affectedPacks) {
+            pack.getBooks().removeIf(b -> b.getId().equals(id));
+            if (pack.getBooks().size() < 2) {
+                pack.setActive(false);
+                pack.setDeletedAt(now);
+                if (deletedBy != null) {
+                    pack.setDeletedBy(deletedBy);
+                }
+            }
+            bookPackRepository.save(pack);
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.web.rest;
 
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.security.AuthoritiesConstants;
+import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.BookPackService;
 import com.oussamabenberkane.espritlivre.service.BookService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
@@ -148,10 +149,15 @@ public class BookResource {
         @RequestParam(required = false) @Min(1) Long mainDisplayId,
         @RequestParam(required = false) List<String> language,
         @RequestParam(required = false) String status,
-        @RequestParam(required = false) Boolean onSale
+        @RequestParam(required = false) Boolean onSale,
+        @RequestParam(required = false) Boolean visibleInCatalog
     ) {
         validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
-        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale);
+        // Non-admins always see only catalog-visible books
+        Boolean effectiveVisibility = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)
+            ? visibleInCatalog
+            : Boolean.TRUE;
+        Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale, effectiveVisibility);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
     }
@@ -196,6 +202,11 @@ public class BookResource {
     public ResponseEntity<BookDTO> getBook(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Book : {}", id);
         Optional<BookDTO> bookDTO = bookService.findOne(id);
+        if (bookDTO.isPresent()
+                && Boolean.FALSE.equals(bookDTO.get().getVisibleInCatalog())
+                && !SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseUtil.wrapOrNotFound(bookDTO);
     }
 
@@ -214,6 +225,10 @@ public class BookResource {
         Optional<BookDTO> bookDTO = bookService.findOne(id);
         if (bookDTO.isEmpty()) {
             return loadPlaceholder();
+        }
+        if (Boolean.FALSE.equals(bookDTO.get().getVisibleInCatalog())
+                && !SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)) {
+            return ResponseEntity.notFound().build();
         }
 
         String coverImageUrl = bookDTO.orElseThrow().getCoverImageUrl();

@@ -58,6 +58,8 @@ public class BookDTO implements Serializable {
 
     private BigDecimal discountValue;
 
+    private Boolean visibleInCatalog;
+
     public Long getId() {
         return id;
     }
@@ -216,6 +218,14 @@ public class BookDTO implements Serializable {
 
     public void setDiscountValue(BigDecimal discountValue) {
         this.discountValue = discountValue;
+    }
+
+    public Boolean getVisibleInCatalog() {
+        return visibleInCatalog;
+    }
+
+    public void setVisibleInCatalog(Boolean visibleInCatalog) {
+        this.visibleInCatalog = visibleInCatalog;
     }
 
     public BigDecimal getSalePrice() {

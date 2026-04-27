@@ -130,6 +130,14 @@ public class BookPackService {
             )
             .collect(Collectors.toSet());
 
+        // Validate all books share the same visibleInCatalog value (no mixing catalog and pack-only books)
+        long hiddenCount = books.stream().filter(b -> Boolean.FALSE.equals(b.getVisibleInCatalog())).count();
+        if (hiddenCount > 0 && hiddenCount < books.size()) {
+            throw new BadRequestAlertException(
+                "A pack cannot mix catalog books and pack-only books", "bookPack", "mixedvisibility"
+            );
+        }
+
         bookPack.setBooks(books);
         bookPack = bookPackRepository.save(bookPack);
 

@@ -91,6 +91,9 @@ public class Book implements Serializable {
     @Column(name = "discount_value", precision = 21, scale = 2)
     private BigDecimal discountValue;
 
+    @Column(name = "visible_in_catalog", columnDefinition = "boolean default true")
+    private Boolean visibleInCatalog;
+
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "books")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonIgnoreProperties(value = { "books" }, allowSetters = true)
@@ -378,6 +381,19 @@ public class Book implements Serializable {
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
+    public Boolean getVisibleInCatalog() {
+        return this.visibleInCatalog;
+    }
+
+    public Book visibleInCatalog(Boolean visibleInCatalog) {
+        this.setVisibleInCatalog(visibleInCatalog);
+        return this;
+    }
+
+    public void setVisibleInCatalog(Boolean visibleInCatalog) {
+        this.visibleInCatalog = visibleInCatalog;
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.active == null) {
@@ -385,6 +401,9 @@ public class Book implements Serializable {
         }
         if (this.onSale == null) {
             this.onSale = false;
+        }
+        if (this.visibleInCatalog == null) {
+            this.visibleInCatalog = true;
         }
     }
 

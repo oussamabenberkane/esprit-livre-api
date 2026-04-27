@@ -19,6 +19,13 @@ public interface BookPackMapper extends EntityMapper<BookPackDTO, BookPack> {
     @Mapping(target = "removeBooks", ignore = true)
     BookPack toEntity(BookPackDTO bookPackDTO);
 
+    @AfterMapping
+    default void computePricingMode(BookPack source, @MappingTarget BookPackDTO dto) {
+        boolean hasHiddenBooks = source.getBooks().stream()
+            .anyMatch(b -> Boolean.FALSE.equals(b.getVisibleInCatalog()));
+        dto.setPricingMode(hasHiddenBooks ? "FLAT" : "STANDARD");
+    }
+
     @Named("bookIdTitle")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
@@ -26,6 +33,7 @@ public interface BookPackMapper extends EntityMapper<BookPackDTO, BookPack> {
     @Mapping(target = "price", source = "price")
     @Mapping(target = "coverImageUrl", source = "coverImageUrl")
     @Mapping(target = "stockQuantity", source = "stockQuantity")
+    @Mapping(target = "visibleInCatalog", source = "visibleInCatalog")
     BookDTO toDtoBookIdTitle(Book book);
 
     @Named("bookIdTitleSet")

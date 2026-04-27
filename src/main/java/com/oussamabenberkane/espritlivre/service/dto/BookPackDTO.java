@@ -40,6 +40,8 @@ public class BookPackDTO implements Serializable {
     @Size(min = 2)
     private Set<BookDTO> books = new HashSet<>();
 
+    private String pricingMode;
+
     public Long getId() {
         return id;
     }
@@ -118,6 +120,14 @@ public class BookPackDTO implements Serializable {
 
     public void setAutomaticDeliveryFee(Boolean automaticDeliveryFee) {
         this.automaticDeliveryFee = automaticDeliveryFee;
+    }
+
+    public String getPricingMode() {
+        return pricingMode;
+    }
+
+    public void setPricingMode(String pricingMode) {
+        this.pricingMode = pricingMode;
     }
 
     @Override
