@@ -164,7 +164,7 @@ src/main/resources/media/
 ######################
 # Production Secrets
 ######################
-.env
+.env*
 nginx/ssl/
 
 el.env
