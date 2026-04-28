@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.service.dto.PixelEventSummaryDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -27,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Sends server-side Purchase events to the Meta Conversions API (CAPI).
@@ -76,8 +79,19 @@ public class MetaConversionsApiService {
 
         String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
 
+        String clientIp = null;
+        String userAgent = null;
         try {
-            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone);
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, clientIp, userAgent);
 
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -105,7 +119,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    private String buildPurchasePayload(String orderId, BigDecimal value, int numItems, List<String> contentIds, String phone) throws Exception {
+    private String buildPurchasePayload(String orderId, BigDecimal value, int numItems, List<String> contentIds, String phone, String clientIp, String userAgent) throws Exception {
         long eventTime = System.currentTimeMillis() / 1000L;
 
         ObjectNode event = objectMapper.createObjectNode();
@@ -113,8 +127,9 @@ public class MetaConversionsApiService {
         event.put("event_time", eventTime);
         event.put("event_id", orderId);
         event.put("action_source", "website");
+        event.put("event_source_url", "https://espritlivre.com/cart");
 
-        // User data — only include hashed phone if available
+        // User data
         ObjectNode userData = objectMapper.createObjectNode();
         String hashedPhone = hashSha256(normalizePhone(phone));
         if (hashedPhone != null) {
@@ -122,6 +137,8 @@ public class MetaConversionsApiService {
             phArray.add(hashedPhone);
             userData.set("ph", phArray);
         }
+        if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+        if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
         event.set("user_data", userData);
 
         // Custom data
@@ -141,6 +158,14 @@ public class MetaConversionsApiService {
         payload.set("data", data);
 
         return objectMapper.writeValueAsString(payload);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(xff)) return xff.split(",")[0].trim();
+        String realIp = request.getHeader("X-Real-IP");
+        if (StringUtils.hasText(realIp)) return realIp.trim();
+        return request.getRemoteAddr();
     }
 
     private String normalizePhone(String phone) {
