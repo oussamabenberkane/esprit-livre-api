@@ -64,14 +64,10 @@ public class MetaConversionsApiService {
 
     /**
      * Sends a Purchase event to Meta CAPI asynchronously (fire-and-forget).
-     *
-     * @param orderId    the order uniqueId — used as eventID for browser pixel deduplication
-     * @param value      the total order amount in DZD
-     * @param numItems   total item quantity across all order items
-     * @param contentIds list of content IDs (book IDs or "pack-{id}")
-     * @param phone      raw phone number to be SHA-256 hashed before sending
+     * All PII fields are SHA-256 hashed before transmission.
      */
-    public void sendPurchaseEvent(String orderId, BigDecimal value, int numItems, List<String> contentIds, String phone) {
+    public void sendPurchaseEvent(String orderId, BigDecimal value, int numItems, List<String> contentIds,
+                                  String phone, String email, String firstName, String lastName) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -91,7 +87,7 @@ public class MetaConversionsApiService {
         } catch (Exception ignored) {}
 
         try {
-            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, clientIp, userAgent);
+            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, email, firstName, lastName, clientIp, userAgent);
 
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -119,7 +115,9 @@ public class MetaConversionsApiService {
         }
     }
 
-    private String buildPurchasePayload(String orderId, BigDecimal value, int numItems, List<String> contentIds, String phone, String clientIp, String userAgent) throws Exception {
+    private String buildPurchasePayload(String orderId, BigDecimal value, int numItems, List<String> contentIds,
+                                        String phone, String email, String firstName, String lastName,
+                                        String clientIp, String userAgent) throws Exception {
         long eventTime = System.currentTimeMillis() / 1000L;
 
         ObjectNode event = objectMapper.createObjectNode();
@@ -129,14 +127,16 @@ public class MetaConversionsApiService {
         event.put("action_source", "website");
         event.put("event_source_url", "https://espritlivre.com/cart");
 
-        // User data
+        // User data — all PII SHA-256 hashed, arrays used for multi-value fields
         ObjectNode userData = objectMapper.createObjectNode();
-        String hashedPhone = hashSha256(normalizePhone(phone));
-        if (hashedPhone != null) {
-            ArrayNode phArray = objectMapper.createArrayNode();
-            phArray.add(hashedPhone);
-            userData.set("ph", phArray);
-        }
+
+        addHashedArray(userData, "ph", normalizePhone(phone));
+        addHashedArray(userData, "em", normalizeEmail(email));
+        addHashedArray(userData, "fn", normalizeName(firstName));
+        addHashedArray(userData, "ln", normalizeName(lastName));
+        // All customers are in Algeria
+        addHashedArray(userData, "country", "dz");
+
         if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
         if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
         event.set("user_data", userData);
@@ -168,9 +168,27 @@ public class MetaConversionsApiService {
         return request.getRemoteAddr();
     }
 
+    private void addHashedArray(ObjectNode parent, String key, String normalizedValue) {
+        String hashed = hashSha256(normalizedValue);
+        if (hashed == null) return;
+        ArrayNode arr = objectMapper.createArrayNode();
+        arr.add(hashed);
+        parent.set(key, arr);
+    }
+
     private String normalizePhone(String phone) {
         if (!StringUtils.hasText(phone)) return null;
         return phone.replaceAll("\\s+", "").toLowerCase();
+    }
+
+    private String normalizeEmail(String email) {
+        if (!StringUtils.hasText(email)) return null;
+        return email.trim().toLowerCase();
+    }
+
+    private String normalizeName(String name) {
+        if (!StringUtils.hasText(name)) return null;
+        return name.trim().toLowerCase();
     }
 
     private synchronized void logEvent(String eventName) {

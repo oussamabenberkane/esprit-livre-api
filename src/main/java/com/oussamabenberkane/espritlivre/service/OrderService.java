@@ -246,7 +246,10 @@ public class OrderService {
                 savedOrderDTO.getTotalAmount(),
                 numItems,
                 contentIds,
-                order.getPhone()
+                order.getPhone(),
+                order.getEmail(),
+                order.getUser() != null ? order.getUser().getFirstName() : null,
+                order.getUser() != null ? order.getUser().getLastName() : null
             );
         } catch (Exception e) {
             LOG.error("Failed to send Meta CAPI event for order: {}", savedOrderDTO.getUniqueId(), e);
