@@ -12,8 +12,10 @@ services:
       POSTGRES_USER: ${DB_USER:-espritlivre}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-espritlivre}
+      KC_DB_NAME: ${KC_DB_NAME:-keycloak}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./src/main/docker/postgres-init:/docker-entrypoint-initdb.d:ro
     networks:
       - backend
     healthcheck:
