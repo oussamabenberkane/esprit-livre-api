@@ -7,12 +7,16 @@ import com.oussamabenberkane.espritlivre.security.*;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.security.oauth2.AudienceValidator;
 import com.oussamabenberkane.espritlivre.security.oauth2.CustomClaimConverter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oussamabenberkane.espritlivre.repository.UserRepository;
+import com.oussamabenberkane.espritlivre.web.filter.UserActivationCheckFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -54,7 +58,19 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
+    public UserActivationCheckFilter userActivationCheckFilter(UserRepository userRepository, ObjectMapper objectMapper) {
+        return new UserActivationCheckFilter(userRepository, objectMapper);
+    }
+
+    @Bean
+    public FilterRegistrationBean<UserActivationCheckFilter> userActivationCheckFilterRegistration(UserActivationCheckFilter filter) {
+        FilterRegistrationBean<UserActivationCheckFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc, UserActivationCheckFilter userActivationCheckFilter) throws Exception {
         http
             .cors(withDefaults())
             .csrf(csrf ->
@@ -117,7 +133,8 @@ public class SecurityConfiguration {
             )
             .oauth2Login(oauth2 -> oauth2.loginPage("/").userInfoEndpoint(userInfo -> userInfo.oidcUserService(this.oidcUserService())))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(authenticationConverter())))
-            .oauth2Client(withDefaults());
+            .oauth2Client(withDefaults())
+            .addFilterAfter(userActivationCheckFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 
