@@ -18,6 +18,7 @@ import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelReq
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressParcelResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressRateResponse;
 import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressSearchRequest;
+import com.oussamabenberkane.espritlivre.service.dto.shipping.ZrExpressTerritoryResponse;
 import com.oussamabenberkane.espritlivre.service.util.TextNormalizationUtils;
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -644,7 +645,73 @@ public class ZrExpressService implements ShippingProviderService {
             }
         }
 
+        // Fallback: query ZR Express territories API directly
+        String apiResult = resolveDistrictTerritoryIdViaApi(cityTerritoryId, communeName);
+        if (apiResult != null) {
+            // Cache it for future calls
+            Map<String, String> cityDistrictCache2 = districtTerritoryCache.computeIfAbsent(
+                cityTerritoryId, k -> new ConcurrentHashMap<>());
+            cityDistrictCache2.putIfAbsent(normalizedName, apiResult);
+            return apiResult;
+        }
+
         LOG.warn("Could not resolve district territory for commune: {} in city: {}", communeName, cityTerritoryId);
+        return null;
+    }
+
+    /**
+     * Fallback: query ZR Express /territories/search API to resolve a district by name.
+     * Used when the hub-based cache doesn't contain the commune (i.e. communes with no hub).
+     */
+    private String resolveDistrictTerritoryIdViaApi(String cityTerritoryId, String communeName) {
+        try {
+            HttpHeaders headers = createHeaders();
+
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("level", "district");
+            filters.put("parentId", cityTerritoryId);
+
+            ZrExpressSearchRequest searchRequest = ZrExpressSearchRequest.builder()
+                .keyword(communeName)
+                .filters(filters)
+                .pageSize(20)
+                .build();
+
+            HttpEntity<ZrExpressSearchRequest> entity = new HttpEntity<>(searchRequest, headers);
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/territories/search";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object itemsObj = response.getBody().get("items");
+                if (itemsObj != null) {
+                    List<ZrExpressTerritoryResponse> territories = objectMapper.convertValue(
+                        itemsObj, new TypeReference<List<ZrExpressTerritoryResponse>>() {});
+
+                    String normalizedCommune = normalizeLocationName(communeName);
+                    // Exact match first
+                    for (ZrExpressTerritoryResponse t : territories) {
+                        if (normalizeLocationName(t.getName()).equals(normalizedCommune)) {
+                            LOG.debug("Resolved commune '{}' via territories API: {}", communeName, t.getId());
+                            return t.getId();
+                        }
+                    }
+                    // Partial match fallback
+                    for (ZrExpressTerritoryResponse t : territories) {
+                        String n = normalizeLocationName(t.getName());
+                        if (n.contains(normalizedCommune) || normalizedCommune.contains(n)) {
+                            LOG.debug("Resolved commune '{}' via territories API (partial): {}", communeName, t.getId());
+                            return t.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("ZR Express territories API error for commune '{}' in city {}: {}", communeName, cityTerritoryId, e.getMessage());
+        }
         return null;
     }
 
