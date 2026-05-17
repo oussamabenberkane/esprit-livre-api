@@ -407,8 +407,8 @@ public class YalidineService implements ShippingProviderService {
             .familyName(nameParts[1])
             .contactPhone(formatPhoneForYalidine(order.getPhone()))
             .address(order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
-            .fromWilayaName(shippingProperties.getOriginWilaya())
-            .toWilayaName(order.getWilaya())
+            .fromWilayaName(normalizeWilayaName(shippingProperties.getOriginWilaya()))
+            .toWilayaName(normalizeWilayaName(order.getWilaya()))
             .toCommuneName(order.getCity())
             .productList(buildProductList(order))
             .price(priceInt)
@@ -829,6 +829,75 @@ public class YalidineService implements ShippingProviderService {
             case "el meghaier", "el m'ghair" -> 57;
             case "el meniaa" -> 58;
             default -> 6; // Default to Bejaia
+        };
+    }
+
+    // Yalidine requires exact wilaya names matching their internal database.
+    // This maps any stored/config variant (no accents, alternate spellings) to
+    // the canonical accented French name Yalidine expects.
+    private String normalizeWilayaName(String wilayaName) {
+        if (wilayaName == null) return null;
+        Integer id = getWilayaIdFromName(wilayaName);
+        return switch (id) {
+            case 1  -> "Adrar";
+            case 2  -> "Chlef";
+            case 3  -> "Laghouat";
+            case 4  -> "Oum El Bouaghi";
+            case 5  -> "Batna";
+            case 6  -> "Béjaïa";
+            case 7  -> "Biskra";
+            case 8  -> "Béchar";
+            case 9  -> "Blida";
+            case 10 -> "Bouira";
+            case 11 -> "Tamanrasset";
+            case 12 -> "Tébessa";
+            case 13 -> "Tlemcen";
+            case 14 -> "Tiaret";
+            case 15 -> "Tizi Ouzou";
+            case 16 -> "Alger";
+            case 17 -> "Djelfa";
+            case 18 -> "Jijel";
+            case 19 -> "Sétif";
+            case 20 -> "Saïda";
+            case 21 -> "Skikda";
+            case 22 -> "Sidi Bel Abbès";
+            case 23 -> "Annaba";
+            case 24 -> "Guelma";
+            case 25 -> "Constantine";
+            case 26 -> "Médéa";
+            case 27 -> "Mostaganem";
+            case 28 -> "M'Sila";
+            case 29 -> "Mascara";
+            case 30 -> "Ouargla";
+            case 31 -> "Oran";
+            case 32 -> "El Bayadh";
+            case 33 -> "Illizi";
+            case 34 -> "Bordj Bou Arréridj";
+            case 35 -> "Boumerdès";
+            case 36 -> "El Tarf";
+            case 37 -> "Tindouf";
+            case 38 -> "Tissemsilt";
+            case 39 -> "El Oued";
+            case 40 -> "Khenchela";
+            case 41 -> "Souk Ahras";
+            case 42 -> "Tipaza";
+            case 43 -> "Mila";
+            case 44 -> "Aïn Defla";
+            case 45 -> "Naâma";
+            case 46 -> "Aïn Témouchent";
+            case 47 -> "Ghardaïa";
+            case 48 -> "Relizane";
+            case 49 -> "Timimoun";
+            case 50 -> "Bordj Badji Mokhtar";
+            case 51 -> "Ouled Djellal";
+            case 52 -> "Béni Abbès";
+            case 53 -> "In Salah";
+            case 54 -> "In Guezzam";
+            case 55 -> "Touggourt";
+            case 56 -> "Djanet";
+            case 57 -> "El M'Ghair";
+            case 58 -> "El Meniaa";
+            default -> wilayaName;
         };
     }
 }
