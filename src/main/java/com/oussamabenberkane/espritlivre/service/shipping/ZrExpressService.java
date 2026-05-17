@@ -93,7 +93,7 @@ public class ZrExpressService implements ShippingProviderService {
                     return ShippingResult.failure("Could not resolve commune: " + order.getCity());
                 }
             } else {
-                LOG.warn("Stop desk order {}: skipping district territory resolution (commune: {})", order.getUniqueId(), order.getCity());
+                LOG.debug("Stop desk order {}: skipping district territory resolution (commune: {})", order.getUniqueId(), order.getCity());
                 if (order.getStopDeskId() != null && !isValidPickupPointHub(order.getStopDeskId())) {
                     LOG.error("Hub {} is not configured as a pickup point for order {}", order.getStopDeskId(), order.getUniqueId());
                     return ShippingResult.failure("Hub is not a valid pickup point: " + order.getStopDeskId());
@@ -157,6 +157,16 @@ public class ZrExpressService implements ShippingProviderService {
             }
 
         } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.CONFLICT) {
+                LOG.warn("ZR Express parcel already exists for order {}, recovering tracking number", order.getUniqueId());
+                String trackingNumber = fetchTrackingNumberByExternalId(order.getUniqueId());
+                if (trackingNumber != null) {
+                    LOG.info("Recovered existing ZR Express tracking number for order {}: {}", order.getUniqueId(), trackingNumber);
+                    return ShippingResult.success(trackingNumber, null);
+                }
+                LOG.warn("Could not recover tracking number for duplicate parcel, order {}", order.getUniqueId());
+                return ShippingResult.failure("Parcel already exists but tracking number could not be recovered for order: " + order.getUniqueId());
+            }
             LOG.error("ZR Express API client error for order {}: {} - {}",
                 order.getUniqueId(), e.getStatusCode(), e.getResponseBodyAsString());
             return ShippingResult.failure("ZR Express API error: " + e.getResponseBodyAsString());
@@ -726,6 +736,55 @@ public class ZrExpressService implements ShippingProviderService {
             }
         } catch (Exception e) {
             LOG.warn("ZR Express territories API error for commune '{}' in city {}: {}", communeName, cityTerritoryId, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Search for an existing parcel by external ID and return its tracking number.
+     * Used to recover from 409 CONFLICT when the parcel already exists.
+     */
+    @SuppressWarnings("unchecked")
+    private String fetchTrackingNumberByExternalId(String externalId) {
+        try {
+            HttpHeaders headers = createHeaders();
+
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("externalId", externalId);
+
+            ZrExpressSearchRequest searchRequest = ZrExpressSearchRequest.builder()
+                .filters(filters)
+                .pageSize(1)
+                .build();
+
+            HttpEntity<ZrExpressSearchRequest> entity = new HttpEntity<>(searchRequest, headers);
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/parcels/search";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object itemsObj = response.getBody().get("items");
+                if (itemsObj != null) {
+                    List<Map<String, Object>> items = objectMapper.convertValue(
+                        itemsObj, new TypeReference<List<Map<String, Object>>>() {});
+                    if (!items.isEmpty()) {
+                        Object trackingObj = items.get(0).get("trackingNumber");
+                        if (trackingObj != null) {
+                            return trackingObj.toString();
+                        }
+                        // Fallback: fetch by parcel ID
+                        Object idObj = items.get(0).get("id");
+                        if (idObj != null) {
+                            return fetchTrackingNumber(idObj.toString());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Error recovering parcel by external ID {}: {}", externalId, e.getMessage());
         }
         return null;
     }
