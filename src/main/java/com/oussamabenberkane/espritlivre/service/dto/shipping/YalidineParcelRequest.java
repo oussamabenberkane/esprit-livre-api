@@ -23,11 +23,11 @@ public class YalidineParcelRequest {
 
     private String address;
 
-    @JsonProperty("from_wilaya_id")
-    private Integer fromWilayaId;
+    @JsonProperty("from_wilaya_name")
+    private String fromWilayaName;
 
-    @JsonProperty("to_wilaya_id")
-    private Integer toWilayaId;
+    @JsonProperty("to_wilaya_name")
+    private String toWilayaName;
 
     @JsonProperty("to_commune_name")
     private String toCommuneName;
@@ -105,20 +105,20 @@ public class YalidineParcelRequest {
         this.address = address;
     }
 
-    public Integer getFromWilayaId() {
-        return fromWilayaId;
+    public String getFromWilayaName() {
+        return fromWilayaName;
     }
 
-    public void setFromWilayaId(Integer fromWilayaId) {
-        this.fromWilayaId = fromWilayaId;
+    public void setFromWilayaName(String fromWilayaName) {
+        this.fromWilayaName = fromWilayaName;
     }
 
-    public Integer getToWilayaId() {
-        return toWilayaId;
+    public String getToWilayaName() {
+        return toWilayaName;
     }
 
-    public void setToWilayaId(Integer toWilayaId) {
-        this.toWilayaId = toWilayaId;
+    public void setToWilayaName(String toWilayaName) {
+        this.toWilayaName = toWilayaName;
     }
 
     public String getToCommuneName() {
@@ -258,13 +258,13 @@ public class YalidineParcelRequest {
             return this;
         }
 
-        public Builder fromWilayaId(Integer fromWilayaId) {
-            request.setFromWilayaId(fromWilayaId);
+        public Builder fromWilayaName(String fromWilayaName) {
+            request.setFromWilayaName(fromWilayaName);
             return this;
         }
 
-        public Builder toWilayaId(Integer toWilayaId) {
-            request.setToWilayaId(toWilayaId);
+        public Builder toWilayaName(String toWilayaName) {
+            request.setToWilayaName(toWilayaName);
             return this;
         }
 

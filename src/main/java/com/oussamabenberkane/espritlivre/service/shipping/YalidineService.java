@@ -392,9 +392,6 @@ public class YalidineService implements ShippingProviderService {
         BigDecimal adjustedPrice = adjustPriceForYalidine(order);
         int priceInt = adjustedPrice != null ? adjustedPrice.intValue() : 0;
 
-        Integer fromWilayaId = getWilayaIdFromName(shippingProperties.getOriginWilaya());
-        Integer toWilayaId = getWilayaIdFromName(order.getWilaya());
-
         Integer stopDeskIdInt = null;
         if (order.getStopDeskId() != null) {
             try {
@@ -410,8 +407,8 @@ public class YalidineService implements ShippingProviderService {
             .familyName(nameParts[1])
             .contactPhone(formatPhoneForYalidine(order.getPhone()))
             .address(order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
-            .fromWilayaId(fromWilayaId)
-            .toWilayaId(toWilayaId)
+            .fromWilayaName(shippingProperties.getOriginWilaya())
+            .toWilayaName(order.getWilaya())
             .toCommuneName(order.getCity())
             .productList(buildProductList(order))
             .price(priceInt)
