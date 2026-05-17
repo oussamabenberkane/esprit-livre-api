@@ -89,6 +89,14 @@ public class YalidineService implements ShippingProviderService {
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode root = objectMapper.readTree(response.getBody());
+
+                // Yalidine returns [] (empty array) when the order_id already exists in their system
+                if (root.isArray()) {
+                    LOG.error("Yalidine returned empty array for order {} — parcel already exists or request was rejected",
+                        order.getUniqueId());
+                    return ShippingResult.failure("Yalidine a déjà enregistré ce colis (order_id dupliqué). Vérifiez le suivi dans le tableau de bord Yalidine.");
+                }
+
                 JsonNode parcelNode = root.get(order.getUniqueId());
 
                 if (parcelNode != null) {

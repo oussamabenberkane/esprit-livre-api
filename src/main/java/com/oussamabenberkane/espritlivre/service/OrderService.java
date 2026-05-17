@@ -354,7 +354,8 @@ public class OrderService {
             existingOrder.setStatus(newStatus);
 
             if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED &&
-                existingOrder.getShippingProvider() != null) {
+                existingOrder.getShippingProvider() != null &&
+                existingOrder.getTrackingNumber() == null) {
                 shippingError = createShippingParcel(existingOrder);
             }
 
