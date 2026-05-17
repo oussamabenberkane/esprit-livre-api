@@ -72,7 +72,13 @@ public class YalidineService implements ShippingProviderService {
 
         try {
             YalidineParcelRequest request = buildParcelRequest(order);
-            LOG.debug("Creating Yalidine parcel for order {}", order.getUniqueId());
+
+            try {
+                LOG.info("Yalidine parcel request for order {}: {}", order.getUniqueId(),
+                    objectMapper.writeValueAsString(List.of(request)));
+            } catch (Exception logEx) {
+                LOG.debug("Could not serialize Yalidine request for logging", logEx);
+            }
 
             HttpHeaders headers = createHeaders();
             HttpEntity<List<YalidineParcelRequest>> entity = new HttpEntity<>(List.of(request), headers);
