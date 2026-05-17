@@ -65,6 +65,11 @@ public class YalidineService implements ShippingProviderService {
             return ShippingResult.failure("Yalidine integration is disabled");
         }
 
+        if (order.getCity() == null || order.getCity().isBlank()) {
+            LOG.error("Cannot create Yalidine parcel for order {}: commune name (city) is null", order.getUniqueId());
+            return ShippingResult.failure("Commune name is required for Yalidine delivery");
+        }
+
         try {
             YalidineParcelRequest request = buildParcelRequest(order);
             LOG.debug("Creating Yalidine parcel for order {}", order.getUniqueId());

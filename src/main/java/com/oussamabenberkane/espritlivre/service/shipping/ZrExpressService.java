@@ -94,6 +94,10 @@ public class ZrExpressService implements ShippingProviderService {
                 }
             } else {
                 LOG.warn("Stop desk order {}: skipping district territory resolution (commune: {})", order.getUniqueId(), order.getCity());
+                if (order.getStopDeskId() != null && !isValidPickupPointHub(order.getStopDeskId())) {
+                    LOG.error("Hub {} is not configured as a pickup point for order {}", order.getStopDeskId(), order.getUniqueId());
+                    return ShippingResult.failure("Hub is not a valid pickup point: " + order.getStopDeskId());
+                }
             }
 
             // 2. Resolve or create customer
@@ -524,6 +528,17 @@ public class ZrExpressService implements ShippingProviderService {
 
         LOG.warn("Could not resolve city territory for wilaya: {}", wilayaName);
         return null;
+    }
+
+    /**
+     * Verify a hub is configured as a pickup point in ZR Express.
+     */
+    private boolean isValidPickupPointHub(String hubId) {
+        return fetchAllHubsRaw().stream()
+            .filter(h -> hubId.equals(h.getId()))
+            .findFirst()
+            .map(h -> Boolean.TRUE.equals(h.getIsPickupPoint()))
+            .orElse(false);
     }
 
     /**
