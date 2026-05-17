@@ -1,11 +1,12 @@
 package com.oussamabenberkane.espritlivre.service.dto.shipping;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.math.BigDecimal;
 
 /**
  * Request DTO for creating a parcel in Yalidine API.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class YalidineParcelRequest {
 
     @JsonProperty("order_id")
@@ -22,11 +23,11 @@ public class YalidineParcelRequest {
 
     private String address;
 
-    @JsonProperty("from_wilaya_name")
-    private String fromWilayaName;
+    @JsonProperty("from_wilaya_id")
+    private Integer fromWilayaId;
 
-    @JsonProperty("to_wilaya_name")
-    private String toWilayaName;
+    @JsonProperty("to_wilaya_id")
+    private Integer toWilayaId;
 
     @JsonProperty("to_commune_name")
     private String toCommuneName;
@@ -34,7 +35,7 @@ public class YalidineParcelRequest {
     @JsonProperty("product_list")
     private String productList;
 
-    private BigDecimal price;
+    private Integer price;
 
     @JsonProperty("freeshipping")
     private Boolean freeShipping;
@@ -43,7 +44,7 @@ public class YalidineParcelRequest {
     private Boolean isStopDesk;
 
     @JsonProperty("stopdesk_id")
-    private String stopDeskId;
+    private Integer stopDeskId;
 
     @JsonProperty("has_exchange")
     private Boolean hasExchange;
@@ -104,20 +105,20 @@ public class YalidineParcelRequest {
         this.address = address;
     }
 
-    public String getFromWilayaName() {
-        return fromWilayaName;
+    public Integer getFromWilayaId() {
+        return fromWilayaId;
     }
 
-    public void setFromWilayaName(String fromWilayaName) {
-        this.fromWilayaName = fromWilayaName;
+    public void setFromWilayaId(Integer fromWilayaId) {
+        this.fromWilayaId = fromWilayaId;
     }
 
-    public String getToWilayaName() {
-        return toWilayaName;
+    public Integer getToWilayaId() {
+        return toWilayaId;
     }
 
-    public void setToWilayaName(String toWilayaName) {
-        this.toWilayaName = toWilayaName;
+    public void setToWilayaId(Integer toWilayaId) {
+        this.toWilayaId = toWilayaId;
     }
 
     public String getToCommuneName() {
@@ -136,11 +137,11 @@ public class YalidineParcelRequest {
         this.productList = productList;
     }
 
-    public BigDecimal getPrice() {
+    public Integer getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(Integer price) {
         this.price = price;
     }
 
@@ -160,11 +161,11 @@ public class YalidineParcelRequest {
         this.isStopDesk = isStopDesk;
     }
 
-    public String getStopDeskId() {
+    public Integer getStopDeskId() {
         return stopDeskId;
     }
 
-    public void setStopDeskId(String stopDeskId) {
+    public void setStopDeskId(Integer stopDeskId) {
         this.stopDeskId = stopDeskId;
     }
 
@@ -257,13 +258,13 @@ public class YalidineParcelRequest {
             return this;
         }
 
-        public Builder fromWilayaName(String fromWilayaName) {
-            request.setFromWilayaName(fromWilayaName);
+        public Builder fromWilayaId(Integer fromWilayaId) {
+            request.setFromWilayaId(fromWilayaId);
             return this;
         }
 
-        public Builder toWilayaName(String toWilayaName) {
-            request.setToWilayaName(toWilayaName);
+        public Builder toWilayaId(Integer toWilayaId) {
+            request.setToWilayaId(toWilayaId);
             return this;
         }
 
@@ -277,7 +278,7 @@ public class YalidineParcelRequest {
             return this;
         }
 
-        public Builder price(BigDecimal price) {
+        public Builder price(Integer price) {
             request.setPrice(price);
             return this;
         }
@@ -292,7 +293,7 @@ public class YalidineParcelRequest {
             return this;
         }
 
-        public Builder stopDeskId(String stopDeskId) {
+        public Builder stopDeskId(Integer stopDeskId) {
             request.setStopDeskId(stopDeskId);
             return this;
         }

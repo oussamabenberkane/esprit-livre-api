@@ -389,8 +389,20 @@ public class YalidineService implements ShippingProviderService {
 
     private YalidineParcelRequest buildParcelRequest(Order order) {
         String[] nameParts = splitFullName(order.getFullName());
-        BigDecimal price = adjustPriceForYalidine(order);
-        int priceInt = price != null ? price.intValue() : 0;
+        BigDecimal adjustedPrice = adjustPriceForYalidine(order);
+        int priceInt = adjustedPrice != null ? adjustedPrice.intValue() : 0;
+
+        Integer fromWilayaId = getWilayaIdFromName(shippingProperties.getOriginWilaya());
+        Integer toWilayaId = getWilayaIdFromName(order.getWilaya());
+
+        Integer stopDeskIdInt = null;
+        if (order.getStopDeskId() != null) {
+            try {
+                stopDeskIdInt = Integer.parseInt(order.getStopDeskId());
+            } catch (NumberFormatException e) {
+                LOG.warn("Cannot parse stopDeskId '{}' as integer for order {}", order.getStopDeskId(), order.getUniqueId());
+            }
+        }
 
         return YalidineParcelRequest.builder()
             .orderId(order.getUniqueId())
@@ -398,14 +410,14 @@ public class YalidineService implements ShippingProviderService {
             .familyName(nameParts[1])
             .contactPhone(formatPhoneForYalidine(order.getPhone()))
             .address(order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
-            .fromWilayaName(shippingProperties.getOriginWilaya())
-            .toWilayaName(order.getWilaya())
+            .fromWilayaId(fromWilayaId)
+            .toWilayaId(toWilayaId)
             .toCommuneName(order.getCity())
             .productList(buildProductList(order))
-            .price(price)
+            .price(priceInt)
             .freeShipping(isFreeShipping(order))
             .isStopDesk(order.getIsStopDesk() != null ? order.getIsStopDesk() : false)
-            .stopDeskId(order.getStopDeskId())
+            .stopDeskId(stopDeskIdInt)
             .hasExchange(false)
             .doInsurance(false)
             .declaredValue(priceInt)
