@@ -401,6 +401,19 @@ public class YalidineService implements ShippingProviderService {
             }
         }
 
+        // For stop desk orders to_commune_name must be the CENTER's commune, not the customer's city.
+        String communeName = order.getCity();
+        if (Boolean.TRUE.equals(order.getIsStopDesk()) && stopDeskIdInt != null) {
+            RelayPointDTO center = getCenterById(stopDeskIdInt);
+            if (center != null && center.getCommuneName() != null) {
+                communeName = center.getCommuneName();
+                LOG.debug("Using center commune '{}' for stop desk order {}", communeName, order.getUniqueId());
+            } else {
+                LOG.warn("Could not fetch commune for center {} in order {}, falling back to customer city",
+                    stopDeskIdInt, order.getUniqueId());
+            }
+        }
+
         return YalidineParcelRequest.builder()
             .orderId(order.getUniqueId())
             .firstName(nameParts[0])
@@ -409,7 +422,7 @@ public class YalidineService implements ShippingProviderService {
             .address(order.getStreetAddress() != null ? order.getStreetAddress() : "N/A")
             .fromWilayaName(normalizeWilayaName(shippingProperties.getOriginWilaya()))
             .toWilayaName(normalizeWilayaName(order.getWilaya()))
-            .toCommuneName(order.getCity())
+            .toCommuneName(communeName)
             .productList(buildProductList(order))
             .price(priceInt)
             .freeShipping(isFreeShipping(order))
