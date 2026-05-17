@@ -9,6 +9,7 @@ import com.oussamabenberkane.espritlivre.domain.User;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderItemType;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
+import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import com.oussamabenberkane.espritlivre.repository.BookPackRepository;
 import com.oussamabenberkane.espritlivre.repository.BookRepository;
 import com.oussamabenberkane.espritlivre.repository.OrderRepository;
@@ -163,6 +164,9 @@ public class OrderService {
         // Validate required fields
         if (!StringUtils.hasText(order.getPhone())) {
             throw new BadRequestAlertException("Phone is required", "order", "phonerequired");
+        }
+        if (order.getShippingProvider() == ShippingProvider.YALIDINE && !StringUtils.hasText(order.getCity())) {
+            throw new BadRequestAlertException("City (commune) is required for Yalidine delivery", "order", "cityrequired");
         }
 
         // Shipping and pricing info
