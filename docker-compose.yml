@@ -201,7 +201,7 @@ services:
   # Nginx Reverse Proxy
   # ===========================================
   nginx:
-    image: nginx:alpine
+    image: fholzer/nginx-brotli:latest
     container_name: espritlivre-nginx
     restart: unless-stopped
     ports:
