@@ -276,19 +276,27 @@ public class MetaConversionsApiService {
         }
     }
 
-    public synchronized List<PixelEventSummaryDTO> getRecentEventSummaries() {
-        Instant cutoff = Instant.now().minus(24, ChronoUnit.HOURS);
+    public synchronized List<PixelEventSummaryDTO> getRecentEventSummaries(String period) {
+        Instant cutoff = computeCutoff(period);
         Map<String, List<PixelEventEntry>> byName = eventLog.stream()
             .collect(Collectors.groupingBy(PixelEventEntry::eventName));
 
         return ALL_EVENT_NAMES.stream().map(name -> {
             List<PixelEventEntry> entries = byName.getOrDefault(name, List.of());
-            long count24h = entries.stream().filter(e -> e.firedAt().isAfter(cutoff)).count();
+            long count = entries.stream().filter(e -> e.firedAt().isAfter(cutoff)).count();
             Optional<Instant> lastSeen = entries.stream()
                 .map(PixelEventEntry::firedAt)
                 .max(Comparator.naturalOrder());
-            return new PixelEventSummaryDTO(name, count24h, lastSeen.orElse(null));
+            return new PixelEventSummaryDTO(name, count, lastSeen.orElse(null));
         }).collect(Collectors.toList());
+    }
+
+    private Instant computeCutoff(String period) {
+        return switch (period) {
+            case "DAYS_7"  -> Instant.now().minus(7, ChronoUnit.DAYS);
+            case "DAYS_30" -> Instant.now().minus(30, ChronoUnit.DAYS);
+            default        -> Instant.now().minus(24, ChronoUnit.HOURS);
+        };
     }
 
     private String hashSha256(String input) {

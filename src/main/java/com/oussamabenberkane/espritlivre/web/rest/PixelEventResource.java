@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,8 +26,10 @@ public class PixelEventResource {
      * GET /api/admin/pixel/events — admin only (enforced by security filter).
      */
     @GetMapping("/api/admin/pixel/events")
-    public ResponseEntity<List<PixelEventSummaryDTO>> getPixelEvents() {
-        return ResponseEntity.ok(metaConversionsApiService.getRecentEventSummaries());
+    public ResponseEntity<List<PixelEventSummaryDTO>> getPixelEvents(
+        @RequestParam(value = "period", defaultValue = "HOURS_24") String period
+    ) {
+        return ResponseEntity.ok(metaConversionsApiService.getRecentEventSummaries(period));
     }
 
     /**
