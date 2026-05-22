@@ -13,12 +13,14 @@ public final class TextNormalizationUtils {
     }
 
     /**
-     * Normalize text for search by removing accents, converting to lowercase, and trimming.
-     * Used for in-memory filtering (e.g., relay points search).
+     * Normalize text for search by removing accents, normalizing hyphens/dashes to spaces,
+     * collapsing whitespace, and converting to lowercase.
+     * Used for in-memory filtering (e.g., relay points search, commune resolution).
      *
      * Examples:
      * - "Béjaia" -> "bejaia"
-     * - "Tizi-Ouzou" -> "tizi-ouzou"
+     * - "Tizi-Ouzou" -> "tizi ouzou"
+     * - "Dely-Brahim" -> "dely brahim"
      * - "ALGER" -> "alger"
      *
      * @param text the text to normalize
@@ -32,7 +34,11 @@ public final class TextNormalizationUtils {
         // then remove the combining diacritical marks
         String normalized = Normalizer.normalize(text, Normalizer.Form.NFD)
             .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        return normalized.toLowerCase().trim();
+        // Normalize hyphens/dashes to spaces so "Dely-Brahim" matches "Dely Brahim"
+        return normalized.toLowerCase()
+            .replaceAll("[\\-–—]", " ")
+            .replaceAll("\\s+", " ")
+            .trim();
     }
 
     /**

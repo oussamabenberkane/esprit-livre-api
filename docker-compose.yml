@@ -140,6 +140,9 @@ services:
         -XX:+HeapDumpOnOutOfMemoryError
         -XX:HeapDumpPath=/app/logs
         -Djava.security.egd=file:/dev/./urandom
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - api_media:/app/media
       - api_logs:/app/logs
