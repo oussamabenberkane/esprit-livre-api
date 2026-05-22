@@ -63,6 +63,84 @@ public class MetaConversionsApiService {
     }
 
     /**
+     * Sends a ViewContent event to Meta CAPI asynchronously (fire-and-forget).
+     * eventId must match the browser pixel eventID for deduplication.
+     */
+    public void sendViewContentEvent(String eventId, String contentId, String contentType, BigDecimal value, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            long eventTime = System.currentTimeMillis() / 1000L;
+
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "ViewContent");
+            event.put("event_time", eventTime);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+
+            ObjectNode customData = objectMapper.createObjectNode();
+            customData.put("value", value != null ? value.doubleValue() : 0.0);
+            customData.put("currency", "DZD");
+            customData.put("content_type", StringUtils.hasText(contentType) ? contentType : "product");
+            ArrayNode ids = objectMapper.createArrayNode();
+            ids.add(contentId);
+            customData.set("content_ids", ids);
+            event.set("custom_data", customData);
+
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+
+            logEvent("ViewContent");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    if (response.statusCode() == 200) {
+                        LOG.debug("Meta CAPI ViewContent event sent: {}", eventId);
+                    } else {
+                        LOG.warn("Meta CAPI returned HTTP {} for ViewContent eventId: {}. Body: {}", response.statusCode(), eventId, response.body());
+                    }
+                })
+                .exceptionally(ex -> {
+                    LOG.error("Meta CAPI ViewContent request failed for eventId: {}", eventId, ex);
+                    return null;
+                });
+
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI ViewContent payload for eventId: {}", eventId, e);
+        }
+    }
+
+    /**
      * Sends a Purchase event to Meta CAPI asynchronously (fire-and-forget).
      * All PII fields are SHA-256 hashed before transmission.
      */

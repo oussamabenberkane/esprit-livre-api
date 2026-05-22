@@ -109,6 +109,8 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders")).permitAll()
                     // Public email sending (customer service)
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact")).permitAll()
+                    // Meta Conversions API relay (browser sends ViewContent eventId for CAPI deduplication)
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/view-content")).permitAll()
                     // Public images
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*/cover")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/*/picture")).permitAll()
