@@ -95,11 +95,12 @@ public class YalidineService implements ShippingProviderService {
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode root = objectMapper.readTree(response.getBody());
 
-                // Yalidine returns [] (empty array) when the order_id already exists in their system
+                // Yalidine returns [] (empty array) when the request is rejected — most commonly
+                // because the commune name (city) does not match any Yalidine commune exactly.
                 if (root.isArray()) {
-                    LOG.error("Yalidine returned empty array for order {} — parcel already exists or request was rejected",
-                        order.getUniqueId());
-                    return ShippingResult.failure("Yalidine a déjà enregistré ce colis (order_id dupliqué). Vérifiez le suivi dans le tableau de bord Yalidine.");
+                    LOG.error("Yalidine returned empty array for order {} — request rejected (invalid commune name or other validation error). commune='{}', wilaya='{}'",
+                        order.getUniqueId(), order.getCity(), order.getWilaya());
+                    return ShippingResult.failure("Yalidine a rejeté la demande — vérifiez que le nom de la commune correspond exactement à un nom Yalidine valide (ex: 'Bouzaréah' et non 'Bouzzerea').");
                 }
 
                 JsonNode parcelNode = root.get(order.getUniqueId());
@@ -386,6 +387,66 @@ public class YalidineService implements ShippingProviderService {
         return headers;
     }
 
+    /**
+     * Resolve a customer-supplied city name to the exact commune name Yalidine uses.
+     *
+     * Our wilayaData.js uses unaccented spellings (e.g. "Bouzareah") that Yalidine rejects
+     * during parcel creation because it does exact-string matching. The fees API returns the
+     * canonical names (e.g. "Bouzaréah"), so we fetch them and do accent-insensitive lookup.
+     *
+     * Falls back to the raw name when the API call fails or no match is found.
+     */
+    private String resolveYalidineCommune(String communeName, String wilayaName) {
+        if (communeName == null || communeName.isBlank()) {
+            return communeName;
+        }
+
+        try {
+            Integer fromWilayaId = getWilayaIdFromName(shippingProperties.getOriginWilaya());
+            Integer toWilayaId = getWilayaIdFromName(wilayaName);
+
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            String url = shippingProperties.getYalidine().getBaseUrl() +
+                "/fees/?from_wilaya_id=" + fromWilayaId + "&to_wilaya_id=" + toWilayaId;
+
+            ResponseEntity<YalidineFeesResponse> response = restTemplate.exchange(
+                url, HttpMethod.GET, entity, YalidineFeesResponse.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null &&
+                response.getBody().getPerCommune() != null) {
+
+                String normalizedInput = TextNormalizationUtils.normalizeForSearch(communeName);
+
+                // Exact accent-insensitive match
+                for (YalidineFeesResponse.CommuneFees commune : response.getBody().getPerCommune().values()) {
+                    if (commune.getCommuneName() != null &&
+                        TextNormalizationUtils.normalizeForSearch(commune.getCommuneName()).equals(normalizedInput)) {
+                        LOG.debug("Resolved commune '{}' -> '{}' (exact match)", communeName, commune.getCommuneName());
+                        return commune.getCommuneName();
+                    }
+                }
+
+                // Partial match fallback
+                for (YalidineFeesResponse.CommuneFees commune : response.getBody().getPerCommune().values()) {
+                    if (commune.getCommuneName() != null) {
+                        String normalizedCommune = TextNormalizationUtils.normalizeForSearch(commune.getCommuneName());
+                        if (normalizedCommune.contains(normalizedInput) || normalizedInput.contains(normalizedCommune)) {
+                            LOG.warn("Commune '{}' resolved via partial match -> '{}'", communeName, commune.getCommuneName());
+                            return commune.getCommuneName();
+                        }
+                    }
+                }
+
+                LOG.warn("Could not resolve commune '{}' in wilaya '{}' from Yalidine fees — using raw name", communeName, wilayaName);
+            }
+        } catch (Exception e) {
+            LOG.warn("Failed to resolve commune '{}' from Yalidine API: {}", communeName, e.getMessage());
+        }
+
+        return communeName;
+    }
+
     private YalidineParcelRequest buildParcelRequest(Order order) {
         String[] nameParts = splitFullName(order.getFullName());
         BigDecimal adjustedPrice = adjustPriceForYalidine(order);
@@ -401,6 +462,9 @@ public class YalidineService implements ShippingProviderService {
         }
 
         // For stop desk orders to_commune_name must be the CENTER's commune, not the customer's city.
+        // For home delivery, resolve the stored city to the exact Yalidine commune name — our
+        // wilayaData uses unaccented spellings (e.g. "Bouzareah") that Yalidine rejects; the
+        // fees API returns the canonical accented names, so we match against those.
         String communeName = order.getCity();
         if (Boolean.TRUE.equals(order.getIsStopDesk()) && stopDeskIdInt != null) {
             RelayPointDTO center = getCenterById(stopDeskIdInt);
@@ -411,6 +475,8 @@ public class YalidineService implements ShippingProviderService {
                 LOG.warn("Could not fetch commune for center {} in order {}, falling back to customer city",
                     stopDeskIdInt, order.getUniqueId());
             }
+        } else {
+            communeName = resolveYalidineCommune(order.getCity(), order.getWilaya());
         }
 
         return YalidineParcelRequest.builder()

@@ -353,7 +353,7 @@ public class OrderService {
 
             existingOrder.setStatus(newStatus);
 
-            if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED &&
+            if (newStatus == OrderStatus.CONFIRMED &&
                 existingOrder.getShippingProvider() != null &&
                 existingOrder.getTrackingNumber() == null) {
                 shippingError = createShippingParcel(existingOrder);
@@ -398,10 +398,14 @@ public class OrderService {
         existingOrder.setStatus(newStatus);
         existingOrder.setUpdatedAt(ZonedDateTime.now());
 
-        // Shipping provider integration: create parcel when confirming order
+        // Shipping provider integration: create parcel when confirming order.
+        // Retry if no tracking number yet — handles the case where a previous attempt was
+        // rejected by Yalidine (e.g. invalid commune name) and the admin has since corrected
+        // the order details before re-confirming.
         String shippingError = null;
-        if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED &&
-            existingOrder.getShippingProvider() != null) {
+        if (newStatus == OrderStatus.CONFIRMED &&
+            existingOrder.getShippingProvider() != null &&
+            existingOrder.getTrackingNumber() == null) {
             shippingError = createShippingParcel(existingOrder);
         }
 
