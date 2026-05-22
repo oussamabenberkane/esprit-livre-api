@@ -1,7 +1,13 @@
 package com.oussamabenberkane.espritlivre.web.rest;
 
 import com.oussamabenberkane.espritlivre.service.MetaConversionsApiService;
+import com.oussamabenberkane.espritlivre.service.dto.PixelAddToCartRequestDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PixelCompleteRegistrationRequestDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PixelContactRequestDTO;
 import com.oussamabenberkane.espritlivre.service.dto.PixelEventSummaryDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PixelInitiateCheckoutRequestDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PixelPageViewRequestDTO;
+import com.oussamabenberkane.espritlivre.service.dto.PixelSearchRequestDTO;
 import com.oussamabenberkane.espritlivre.service.dto.PixelViewContentRequestDTO;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +54,64 @@ public class PixelEventResource {
             body.value(),
             body.eventSourceUrl()
         );
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/pixel/page-view")
+    public ResponseEntity<Void> trackPageView(@RequestBody PixelPageViewRequestDTO body) {
+        if (!StringUtils.hasText(body.eventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        metaConversionsApiService.sendPageViewEvent(body.eventId(), body.eventSourceUrl());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/pixel/search")
+    public ResponseEntity<Void> trackSearch(@RequestBody PixelSearchRequestDTO body) {
+        if (!StringUtils.hasText(body.eventId()) || !StringUtils.hasText(body.searchString())) {
+            return ResponseEntity.badRequest().build();
+        }
+        metaConversionsApiService.sendSearchEvent(body.eventId(), body.searchString(), body.eventSourceUrl());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/pixel/add-to-cart")
+    public ResponseEntity<Void> trackAddToCart(@RequestBody PixelAddToCartRequestDTO body) {
+        if (!StringUtils.hasText(body.eventId()) || !StringUtils.hasText(body.contentId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        metaConversionsApiService.sendAddToCartEvent(
+            body.eventId(), body.contentId(), body.contentType(), body.value(), body.numItems(), body.eventSourceUrl()
+        );
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/pixel/initiate-checkout")
+    public ResponseEntity<Void> trackInitiateCheckout(@RequestBody PixelInitiateCheckoutRequestDTO body) {
+        if (!StringUtils.hasText(body.eventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        metaConversionsApiService.sendInitiateCheckoutEvent(
+            body.eventId(), body.value(), body.numItems(), body.contentIds(), body.eventSourceUrl()
+        );
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/pixel/complete-registration")
+    public ResponseEntity<Void> trackCompleteRegistration(@RequestBody PixelCompleteRegistrationRequestDTO body) {
+        if (!StringUtils.hasText(body.eventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        metaConversionsApiService.sendCompleteRegistrationEvent(body.eventId(), body.eventSourceUrl());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/pixel/contact")
+    public ResponseEntity<Void> trackContact(@RequestBody PixelContactRequestDTO body) {
+        if (!StringUtils.hasText(body.eventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        metaConversionsApiService.sendContactEvent(body.eventId(), body.eventSourceUrl());
         return ResponseEntity.ok().build();
     }
 }

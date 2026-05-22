@@ -138,6 +138,326 @@ public class MetaConversionsApiService {
         }
     }
 
+    public void sendPageViewEvent(String eventId, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+        try {
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "PageView");
+            event.put("event_time", System.currentTimeMillis() / 1000L);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+            event.set("custom_data", objectMapper.createObjectNode());
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+            logEvent("PageView");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(r -> {
+                    if (r.statusCode() != 200) LOG.warn("Meta CAPI returned HTTP {} for PageView eventId: {}. Body: {}", r.statusCode(), eventId, r.body());
+                    else LOG.debug("Meta CAPI PageView event sent: {}", eventId);
+                })
+                .exceptionally(ex -> { LOG.error("Meta CAPI PageView request failed for eventId: {}", eventId, ex); return null; });
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI PageView payload for eventId: {}", eventId, e);
+        }
+    }
+
+    public void sendSearchEvent(String eventId, String searchString, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+        try {
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "Search");
+            event.put("event_time", System.currentTimeMillis() / 1000L);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+            ObjectNode customData = objectMapper.createObjectNode();
+            customData.put("search_string", searchString);
+            event.set("custom_data", customData);
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+            logEvent("Search");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(r -> {
+                    if (r.statusCode() != 200) LOG.warn("Meta CAPI returned HTTP {} for Search eventId: {}. Body: {}", r.statusCode(), eventId, r.body());
+                    else LOG.debug("Meta CAPI Search event sent: {}", eventId);
+                })
+                .exceptionally(ex -> { LOG.error("Meta CAPI Search request failed for eventId: {}", eventId, ex); return null; });
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI Search payload for eventId: {}", eventId, e);
+        }
+    }
+
+    public void sendAddToCartEvent(String eventId, String contentId, String contentType, BigDecimal value, int numItems, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+        try {
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "AddToCart");
+            event.put("event_time", System.currentTimeMillis() / 1000L);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+            ObjectNode customData = objectMapper.createObjectNode();
+            customData.put("value", value != null ? value.doubleValue() : 0.0);
+            customData.put("currency", "DZD");
+            customData.put("content_type", StringUtils.hasText(contentType) ? contentType : "product");
+            customData.put("num_items", numItems);
+            ArrayNode ids = objectMapper.createArrayNode();
+            ids.add(contentId);
+            customData.set("content_ids", ids);
+            event.set("custom_data", customData);
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+            logEvent("AddToCart");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(r -> {
+                    if (r.statusCode() != 200) LOG.warn("Meta CAPI returned HTTP {} for AddToCart eventId: {}. Body: {}", r.statusCode(), eventId, r.body());
+                    else LOG.debug("Meta CAPI AddToCart event sent: {}", eventId);
+                })
+                .exceptionally(ex -> { LOG.error("Meta CAPI AddToCart request failed for eventId: {}", eventId, ex); return null; });
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI AddToCart payload for eventId: {}", eventId, e);
+        }
+    }
+
+    public void sendInitiateCheckoutEvent(String eventId, BigDecimal value, int numItems, List<String> contentIds, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+        try {
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "InitiateCheckout");
+            event.put("event_time", System.currentTimeMillis() / 1000L);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+            ObjectNode customData = objectMapper.createObjectNode();
+            customData.put("value", value != null ? value.doubleValue() : 0.0);
+            customData.put("currency", "DZD");
+            customData.put("num_items", numItems);
+            customData.put("content_type", "product");
+            ArrayNode ids = objectMapper.createArrayNode();
+            if (contentIds != null) contentIds.forEach(ids::add);
+            customData.set("content_ids", ids);
+            event.set("custom_data", customData);
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+            logEvent("InitiateCheckout");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(r -> {
+                    if (r.statusCode() != 200) LOG.warn("Meta CAPI returned HTTP {} for InitiateCheckout eventId: {}. Body: {}", r.statusCode(), eventId, r.body());
+                    else LOG.debug("Meta CAPI InitiateCheckout event sent: {}", eventId);
+                })
+                .exceptionally(ex -> { LOG.error("Meta CAPI InitiateCheckout request failed for eventId: {}", eventId, ex); return null; });
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI InitiateCheckout payload for eventId: {}", eventId, e);
+        }
+    }
+
+    public void sendCompleteRegistrationEvent(String eventId, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+        try {
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "CompleteRegistration");
+            event.put("event_time", System.currentTimeMillis() / 1000L);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+            ObjectNode customData = objectMapper.createObjectNode();
+            customData.put("status", true);
+            event.set("custom_data", customData);
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+            logEvent("CompleteRegistration");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(r -> {
+                    if (r.statusCode() != 200) LOG.warn("Meta CAPI returned HTTP {} for CompleteRegistration eventId: {}. Body: {}", r.statusCode(), eventId, r.body());
+                    else LOG.debug("Meta CAPI CompleteRegistration event sent: {}", eventId);
+                })
+                .exceptionally(ex -> { LOG.error("Meta CAPI CompleteRegistration request failed for eventId: {}", eventId, ex); return null; });
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI CompleteRegistration payload for eventId: {}", eventId, e);
+        }
+    }
+
+    public void sendContactEvent(String eventId, String eventSourceUrl) {
+        ApplicationProperties.Meta meta = applicationProperties.getMeta();
+        if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
+            return;
+        }
+        String url = String.format(CAPI_URL, meta.getPixelId()) + "?access_token=" + meta.getAccessToken();
+        String clientIp = null;
+        String userAgent = null;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                clientIp = resolveClientIp(req);
+                userAgent = req.getHeader("User-Agent");
+            }
+        } catch (Exception ignored) {}
+        try {
+            ObjectNode event = objectMapper.createObjectNode();
+            event.put("event_name", "Contact");
+            event.put("event_time", System.currentTimeMillis() / 1000L);
+            event.put("event_id", eventId);
+            event.put("action_source", "website");
+            if (StringUtils.hasText(eventSourceUrl)) event.put("event_source_url", eventSourceUrl);
+            ObjectNode userData = objectMapper.createObjectNode();
+            if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
+            if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            event.set("user_data", userData);
+            event.set("custom_data", objectMapper.createObjectNode());
+            ObjectNode payload = objectMapper.createObjectNode();
+            ArrayNode data = objectMapper.createArrayNode();
+            data.add(event);
+            payload.set("data", data);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(10))
+                .build();
+            logEvent("Contact");
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(r -> {
+                    if (r.statusCode() != 200) LOG.warn("Meta CAPI returned HTTP {} for Contact eventId: {}. Body: {}", r.statusCode(), eventId, r.body());
+                    else LOG.debug("Meta CAPI Contact event sent: {}", eventId);
+                })
+                .exceptionally(ex -> { LOG.error("Meta CAPI Contact request failed for eventId: {}", eventId, ex); return null; });
+        } catch (Exception e) {
+            LOG.error("Failed to build Meta CAPI Contact payload for eventId: {}", eventId, e);
+        }
+    }
+
     /**
      * Sends a Purchase event to Meta CAPI asynchronously (fire-and-forget).
      * All PII fields are SHA-256 hashed before transmission.

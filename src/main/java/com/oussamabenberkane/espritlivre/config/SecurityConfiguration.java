@@ -81,6 +81,7 @@ public class SecurityConfiguration {
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/webhooks/**"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/delivery-fee/**"))
+                    .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/**"))
             )
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
@@ -109,8 +110,14 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/orders")).permitAll()
                     // Public email sending (customer service)
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/contact")).permitAll()
-                    // Meta Conversions API relay (browser sends ViewContent eventId for CAPI deduplication)
+                    // Meta Conversions API relay (browser sends eventId for CAPI deduplication)
                     .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/view-content")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/page-view")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/search")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/add-to-cart")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/initiate-checkout")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/complete-registration")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/contact")).permitAll()
                     // Public images
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/books/*/cover")).permitAll()
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authors/*/picture")).permitAll()
