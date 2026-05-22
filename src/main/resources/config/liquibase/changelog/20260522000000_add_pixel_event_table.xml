@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20260522000000" author="oussama">
+        <createSequence sequenceName="pixel_event_seq" startValue="1" incrementBy="1"/>
+
+        <createTable tableName="pixel_event">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fired_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="pixel_event" indexName="idx_pixel_event_name_fired_at">
+            <column name="event_name"/>
+            <column name="fired_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

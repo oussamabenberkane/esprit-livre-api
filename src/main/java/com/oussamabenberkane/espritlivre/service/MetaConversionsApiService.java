@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
+import com.oussamabenberkane.espritlivre.domain.PixelEvent;
+import com.oussamabenberkane.espritlivre.repository.PixelEventRepository;
 import com.oussamabenberkane.espritlivre.service.dto.PixelEventSummaryDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -17,12 +19,9 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayDeque;
-import java.util.Comparator;
-import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,22 +39,21 @@ public class MetaConversionsApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetaConversionsApiService.class);
     private static final String CAPI_URL = "https://graph.facebook.com/v19.0/%s/events";
-    private static final int MAX_LOG_SIZE = 500;
     private static final List<String> ALL_EVENT_NAMES = List.of(
         "PageView", "ViewContent", "Search", "AddToCart",
         "InitiateCheckout", "Purchase", "CompleteRegistration", "Contact"
     );
 
-    private record PixelEventEntry(String eventName, Instant firedAt) {}
-
-    private final Deque<PixelEventEntry> eventLog = new ArrayDeque<>();
-
     private final ApplicationProperties applicationProperties;
+    private final PixelEventRepository pixelEventRepository;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    public MetaConversionsApiService(ApplicationProperties applicationProperties, ObjectMapper objectMapper) {
+    public MetaConversionsApiService(ApplicationProperties applicationProperties,
+                                     PixelEventRepository pixelEventRepository,
+                                     ObjectMapper objectMapper) {
         this.applicationProperties = applicationProperties;
+        this.pixelEventRepository = pixelEventRepository;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -269,26 +267,26 @@ public class MetaConversionsApiService {
         return name.trim().toLowerCase();
     }
 
-    private synchronized void logEvent(String eventName) {
-        eventLog.addFirst(new PixelEventEntry(eventName, Instant.now()));
-        while (eventLog.size() > MAX_LOG_SIZE) {
-            eventLog.pollLast();
-        }
+    private void logEvent(String eventName) {
+        pixelEventRepository.save(new PixelEvent(eventName, Instant.now()));
     }
 
-    public synchronized List<PixelEventSummaryDTO> getRecentEventSummaries(String period) {
+    public List<PixelEventSummaryDTO> getRecentEventSummaries(String period) {
         Instant cutoff = computeCutoff(period);
-        Map<String, List<PixelEventEntry>> byName = eventLog.stream()
-            .collect(Collectors.groupingBy(PixelEventEntry::eventName));
 
-        return ALL_EVENT_NAMES.stream().map(name -> {
-            List<PixelEventEntry> entries = byName.getOrDefault(name, List.of());
-            long count = entries.stream().filter(e -> e.firedAt().isAfter(cutoff)).count();
-            Optional<Instant> lastSeen = entries.stream()
-                .map(PixelEventEntry::firedAt)
-                .max(Comparator.naturalOrder());
-            return new PixelEventSummaryDTO(name, count, lastSeen.orElse(null));
-        }).collect(Collectors.toList());
+        Map<String, Long> counts = new HashMap<>();
+        for (Object[] row : pixelEventRepository.countByEventNameAfter(cutoff)) {
+            counts.put((String) row[0], (Long) row[1]);
+        }
+
+        Map<String, Instant> lastSeen = new HashMap<>();
+        for (Object[] row : pixelEventRepository.findLastSeenPerEventName()) {
+            lastSeen.put((String) row[0], (Instant) row[1]);
+        }
+
+        return ALL_EVENT_NAMES.stream()
+            .map(name -> new PixelEventSummaryDTO(name, counts.getOrDefault(name, 0L), lastSeen.get(name)))
+            .collect(Collectors.toList());
     }
 
     private Instant computeCutoff(String period) {
