@@ -64,7 +64,7 @@ public class MetaConversionsApiService {
      * Sends a ViewContent event to Meta CAPI asynchronously (fire-and-forget).
      * eventId must match the browser pixel eventID for deduplication.
      */
-    public void sendViewContentEvent(String eventId, String contentId, String contentType, BigDecimal value, String eventSourceUrl) {
+    public void sendViewContentEvent(String eventId, String contentId, String contentType, BigDecimal value, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -96,6 +96,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
 
             ObjectNode customData = objectMapper.createObjectNode();
@@ -138,7 +139,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    public void sendPageViewEvent(String eventId, String eventSourceUrl) {
+    public void sendPageViewEvent(String eventId, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -164,6 +165,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
             event.set("custom_data", objectMapper.createObjectNode());
             ObjectNode payload = objectMapper.createObjectNode();
@@ -188,7 +190,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    public void sendSearchEvent(String eventId, String searchString, String eventSourceUrl) {
+    public void sendSearchEvent(String eventId, String searchString, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -214,6 +216,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
             ObjectNode customData = objectMapper.createObjectNode();
             customData.put("search_string", searchString);
@@ -240,7 +243,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    public void sendAddToCartEvent(String eventId, String contentId, String contentType, BigDecimal value, int numItems, String eventSourceUrl) {
+    public void sendAddToCartEvent(String eventId, String contentId, String contentType, BigDecimal value, int numItems, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -266,6 +269,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
             ObjectNode customData = objectMapper.createObjectNode();
             customData.put("value", value != null ? value.doubleValue() : 0.0);
@@ -298,7 +302,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    public void sendInitiateCheckoutEvent(String eventId, BigDecimal value, int numItems, List<String> contentIds, String eventSourceUrl) {
+    public void sendInitiateCheckoutEvent(String eventId, BigDecimal value, int numItems, List<String> contentIds, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -324,6 +328,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
             ObjectNode customData = objectMapper.createObjectNode();
             customData.put("value", value != null ? value.doubleValue() : 0.0);
@@ -356,7 +361,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    public void sendCompleteRegistrationEvent(String eventId, String eventSourceUrl) {
+    public void sendCompleteRegistrationEvent(String eventId, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -382,6 +387,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
             ObjectNode customData = objectMapper.createObjectNode();
             customData.put("status", true);
@@ -408,7 +414,7 @@ public class MetaConversionsApiService {
         }
     }
 
-    public void sendContactEvent(String eventId, String eventSourceUrl) {
+    public void sendContactEvent(String eventId, String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -434,6 +440,7 @@ public class MetaConversionsApiService {
             ObjectNode userData = objectMapper.createObjectNode();
             if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
             if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+            addMetaCookies(userData, fbc, fbp);
             event.set("user_data", userData);
             event.set("custom_data", objectMapper.createObjectNode());
             ObjectNode payload = objectMapper.createObjectNode();
@@ -562,6 +569,11 @@ public class MetaConversionsApiService {
         String realIp = request.getHeader("X-Real-IP");
         if (StringUtils.hasText(realIp)) return realIp.trim();
         return request.getRemoteAddr();
+    }
+
+    private void addMetaCookies(ObjectNode userData, String fbc, String fbp) {
+        if (StringUtils.hasText(fbc)) userData.put("fbc", fbc);
+        if (StringUtils.hasText(fbp)) userData.put("fbp", fbp);
     }
 
     private void addHashedArray(ObjectNode parent, String key, String normalizedValue) {

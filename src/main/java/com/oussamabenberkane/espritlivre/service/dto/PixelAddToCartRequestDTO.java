@@ -8,5 +8,7 @@ public record PixelAddToCartRequestDTO(
     String contentType,
     BigDecimal value,
     int numItems,
-    String eventSourceUrl
+    String eventSourceUrl,
+    String fbc,
+    String fbp
 ) {}

@@ -7,5 +7,7 @@ public record PixelViewContentRequestDTO(
     String contentId,
     String contentType,
     BigDecimal value,
-    String eventSourceUrl
+    String eventSourceUrl,
+    String fbc,
+    String fbp
 ) {}

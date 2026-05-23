@@ -52,7 +52,9 @@ public class PixelEventResource {
             body.contentId(),
             body.contentType(),
             body.value(),
-            body.eventSourceUrl()
+            body.eventSourceUrl(),
+            body.fbc(),
+            body.fbp()
         );
         return ResponseEntity.ok().build();
     }
@@ -62,7 +64,7 @@ public class PixelEventResource {
         if (!StringUtils.hasText(body.eventId())) {
             return ResponseEntity.badRequest().build();
         }
-        metaConversionsApiService.sendPageViewEvent(body.eventId(), body.eventSourceUrl());
+        metaConversionsApiService.sendPageViewEvent(body.eventId(), body.eventSourceUrl(), body.fbc(), body.fbp());
         return ResponseEntity.ok().build();
     }
 
@@ -71,7 +73,7 @@ public class PixelEventResource {
         if (!StringUtils.hasText(body.eventId()) || !StringUtils.hasText(body.searchString())) {
             return ResponseEntity.badRequest().build();
         }
-        metaConversionsApiService.sendSearchEvent(body.eventId(), body.searchString(), body.eventSourceUrl());
+        metaConversionsApiService.sendSearchEvent(body.eventId(), body.searchString(), body.eventSourceUrl(), body.fbc(), body.fbp());
         return ResponseEntity.ok().build();
     }
 
@@ -81,7 +83,7 @@ public class PixelEventResource {
             return ResponseEntity.badRequest().build();
         }
         metaConversionsApiService.sendAddToCartEvent(
-            body.eventId(), body.contentId(), body.contentType(), body.value(), body.numItems(), body.eventSourceUrl()
+            body.eventId(), body.contentId(), body.contentType(), body.value(), body.numItems(), body.eventSourceUrl(), body.fbc(), body.fbp()
         );
         return ResponseEntity.ok().build();
     }
@@ -92,7 +94,7 @@ public class PixelEventResource {
             return ResponseEntity.badRequest().build();
         }
         metaConversionsApiService.sendInitiateCheckoutEvent(
-            body.eventId(), body.value(), body.numItems(), body.contentIds(), body.eventSourceUrl()
+            body.eventId(), body.value(), body.numItems(), body.contentIds(), body.eventSourceUrl(), body.fbc(), body.fbp()
         );
         return ResponseEntity.ok().build();
     }
@@ -102,7 +104,7 @@ public class PixelEventResource {
         if (!StringUtils.hasText(body.eventId())) {
             return ResponseEntity.badRequest().build();
         }
-        metaConversionsApiService.sendCompleteRegistrationEvent(body.eventId(), body.eventSourceUrl());
+        metaConversionsApiService.sendCompleteRegistrationEvent(body.eventId(), body.eventSourceUrl(), body.fbc(), body.fbp());
         return ResponseEntity.ok().build();
     }
 
@@ -111,7 +113,7 @@ public class PixelEventResource {
         if (!StringUtils.hasText(body.eventId())) {
             return ResponseEntity.badRequest().build();
         }
-        metaConversionsApiService.sendContactEvent(body.eventId(), body.eventSourceUrl());
+        metaConversionsApiService.sendContactEvent(body.eventId(), body.eventSourceUrl(), body.fbc(), body.fbp());
         return ResponseEntity.ok().build();
     }
 }

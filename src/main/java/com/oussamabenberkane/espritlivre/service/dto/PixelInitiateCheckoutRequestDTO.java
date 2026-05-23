@@ -8,5 +8,7 @@ public record PixelInitiateCheckoutRequestDTO(
     BigDecimal value,
     int numItems,
     List<String> contentIds,
-    String eventSourceUrl
+    String eventSourceUrl,
+    String fbc,
+    String fbp
 ) {}
