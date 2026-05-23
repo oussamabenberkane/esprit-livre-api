@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Backfill Purchase pixel events for all orders that existed before the
+        pixel_event table was created (2026-05-22). Orders placed after that
+        date already have their events logged by the live CAPI service.
+    -->
+    <changeSet id="20260523100000" author="oussama">
+        <sql>
+            INSERT INTO pixel_event (id, event_name, fired_at)
+            SELECT nextval('pixel_event_seq'), 'Purchase', created_at
+            FROM jhi_order
+            WHERE created_at &lt; TIMESTAMP '2026-05-22 00:00:00';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
