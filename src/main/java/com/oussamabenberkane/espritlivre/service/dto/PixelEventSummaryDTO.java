@@ -5,12 +5,12 @@ import java.time.Instant;
 public class PixelEventSummaryDTO {
 
     private final String eventName;
-    private final long count24h;
+    private final long count;
     private final Instant lastSeenAt;
 
-    public PixelEventSummaryDTO(String eventName, long count24h, Instant lastSeenAt) {
+    public PixelEventSummaryDTO(String eventName, long count, Instant lastSeenAt) {
         this.eventName = eventName;
-        this.count24h = count24h;
+        this.count = count;
         this.lastSeenAt = lastSeenAt;
     }
 
@@ -18,8 +18,8 @@ public class PixelEventSummaryDTO {
         return eventName;
     }
 
-    public long getCount24h() {
-        return count24h;
+    public long getCount() {
+        return count;
     }
 
     public Instant getLastSeenAt() {
