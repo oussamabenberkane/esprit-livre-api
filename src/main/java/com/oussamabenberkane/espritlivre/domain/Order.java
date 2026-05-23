@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.oussamabenberkane.espritlivre.domain.enumeration.DeliveryFeeMethod;
+import com.oussamabenberkane.espritlivre.domain.enumeration.OrderOrigin;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
@@ -119,6 +120,10 @@ public class Order implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_fee_provider", length = 20)
     private ShippingProvider deliveryFeeProvider;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_origin", length = 20)
+    private OrderOrigin orderOrigin;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -557,6 +562,19 @@ public class Order implements Serializable {
 
     public void setDeliveryFeeProvider(ShippingProvider deliveryFeeProvider) {
         this.deliveryFeeProvider = deliveryFeeProvider;
+    }
+
+    public OrderOrigin getOrderOrigin() {
+        return this.orderOrigin;
+    }
+
+    public Order orderOrigin(OrderOrigin orderOrigin) {
+        this.setOrderOrigin(orderOrigin);
+        return this;
+    }
+
+    public void setOrderOrigin(OrderOrigin orderOrigin) {
+        this.orderOrigin = orderOrigin;
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here

@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.service.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.oussamabenberkane.espritlivre.domain.enumeration.DeliveryFeeMethod;
+import com.oussamabenberkane.espritlivre.domain.enumeration.OrderOrigin;
 import com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingMethod;
 import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
@@ -70,6 +71,8 @@ public class OrderDTO implements Serializable {
     private DeliveryFeeMethod deliveryFeeMethod;
 
     private ShippingProvider deliveryFeeProvider;
+
+    private OrderOrigin orderOrigin;
 
     private UserDTO user;
 
@@ -273,6 +276,14 @@ public class OrderDTO implements Serializable {
 
     public void setDeliveryFeeProvider(ShippingProvider deliveryFeeProvider) {
         this.deliveryFeeProvider = deliveryFeeProvider;
+    }
+
+    public OrderOrigin getOrderOrigin() {
+        return orderOrigin;
+    }
+
+    public void setOrderOrigin(OrderOrigin orderOrigin) {
+        this.orderOrigin = orderOrigin;
     }
 
     public UserDTO getUser() {

@@ -53,5 +53,6 @@
     <include file="config/liquibase/changelog/20260424000000_add_discount_fields_to_book.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260426000000_add_visible_in_catalog_to_book.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260522000000_add_pixel_event_table.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260523000000_add_order_origin_to_order.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>

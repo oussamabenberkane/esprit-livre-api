@@ -183,6 +183,9 @@ public class OrderService {
         order.setIsStopDesk(orderDTO.getIsStopDesk());
         order.setStopDeskId(orderDTO.getStopDeskId());
 
+        // Traffic source / order origin
+        order.setOrderOrigin(orderDTO.getOrderOrigin());
+
         // Process order items - supports both books and book packs
         Set<OrderItem> orderItems = new HashSet<>();
         if (orderDTO.getOrderItems() != null && !orderDTO.getOrderItems().isEmpty()) {
@@ -332,6 +335,7 @@ public class OrderService {
             existingOrder.setStopDeskId(isStopDesk ? orderDTO.getStopDeskId() : null);
         }
         if (orderDTO.getShippingProvider() != null) existingOrder.setShippingProvider(orderDTO.getShippingProvider());
+        if (orderDTO.getOrderOrigin() != null) existingOrder.setOrderOrigin(orderDTO.getOrderOrigin());
         if (orderDTO.getShippingCost() != null) {
             existingOrder.setShippingCost(orderDTO.getShippingCost());
             // Recalculate totalAmount so it stays consistent with the updated shipping cost.
