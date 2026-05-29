@@ -470,7 +470,8 @@ public class MetaConversionsApiService {
      * All PII fields are SHA-256 hashed before transmission.
      */
     public void sendPurchaseEvent(String orderId, BigDecimal value, int numItems, List<String> contentIds,
-                                  String phone, String email, String firstName, String lastName) {
+                                  String phone, String email, String firstName, String lastName,
+                                  String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -490,7 +491,7 @@ public class MetaConversionsApiService {
         } catch (Exception ignored) {}
 
         try {
-            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, email, firstName, lastName, clientIp, userAgent);
+            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, email, firstName, lastName, clientIp, userAgent, fbc, fbp);
 
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -520,7 +521,7 @@ public class MetaConversionsApiService {
 
     private String buildPurchasePayload(String orderId, BigDecimal value, int numItems, List<String> contentIds,
                                         String phone, String email, String firstName, String lastName,
-                                        String clientIp, String userAgent) throws Exception {
+                                        String clientIp, String userAgent, String fbc, String fbp) throws Exception {
         long eventTime = System.currentTimeMillis() / 1000L;
 
         ObjectNode event = objectMapper.createObjectNode();
@@ -542,6 +543,8 @@ public class MetaConversionsApiService {
 
         if (StringUtils.hasText(clientIp)) userData.put("client_ip_address", clientIp);
         if (StringUtils.hasText(userAgent)) userData.put("client_user_agent", userAgent);
+        // fbc (click id) / fbp (browser id) — strongest attribution signals, also used for dedup
+        addMetaCookies(userData, fbc, fbp);
         event.set("user_data", userData);
 
         // Custom data
@@ -584,9 +587,19 @@ public class MetaConversionsApiService {
         parent.set(key, arr);
     }
 
+    /**
+     * Meta requires the phone as digits only, including the country code, without the "+"
+     * sign, symbols or non-significant leading zeros. Local Algerian numbers (0XXXXXXXXX)
+     * are converted to the 213XXXXXXXXX international form before hashing.
+     */
     private String normalizePhone(String phone) {
         if (!StringUtils.hasText(phone)) return null;
-        return phone.replaceAll("\\s+", "").toLowerCase();
+        String digits = phone.replaceAll("[^0-9]", "");
+        if (digits.isEmpty()) return null;
+        if (digits.startsWith("0") && digits.length() == 10) {
+            digits = "213" + digits.substring(1);
+        }
+        return digits;
     }
 
     private String normalizeEmail(String email) {

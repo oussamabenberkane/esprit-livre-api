@@ -74,6 +74,14 @@ public class OrderDTO implements Serializable {
 
     private OrderOrigin orderOrigin;
 
+    // Meta Pixel cookies forwarded by the browser at checkout — used for the server-side
+    // CAPI Purchase event (attribution + dedup). Input-only, never persisted.
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String fbc;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String fbp;
+
     private UserDTO user;
 
     private Set<OrderItemDTO> orderItems = new HashSet<>();
@@ -284,6 +292,22 @@ public class OrderDTO implements Serializable {
 
     public void setOrderOrigin(OrderOrigin orderOrigin) {
         this.orderOrigin = orderOrigin;
+    }
+
+    public String getFbc() {
+        return fbc;
+    }
+
+    public void setFbc(String fbc) {
+        this.fbc = fbc;
+    }
+
+    public String getFbp() {
+        return fbp;
+    }
+
+    public void setFbp(String fbp) {
+        this.fbp = fbp;
     }
 
     public UserDTO getUser() {

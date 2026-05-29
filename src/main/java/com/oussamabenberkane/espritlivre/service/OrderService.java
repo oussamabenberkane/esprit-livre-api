@@ -256,7 +256,9 @@ public class OrderService {
                 order.getPhone(),
                 order.getEmail(),
                 order.getUser() != null ? order.getUser().getFirstName() : null,
-                order.getUser() != null ? order.getUser().getLastName() : null
+                order.getUser() != null ? order.getUser().getLastName() : null,
+                orderDTO.getFbc(),
+                orderDTO.getFbp()
             );
         } catch (Exception e) {
             LOG.error("Failed to send Meta CAPI event for order: {}", savedOrderDTO.getUniqueId(), e);
