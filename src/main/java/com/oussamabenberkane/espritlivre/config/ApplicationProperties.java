@@ -111,6 +111,7 @@ public class ApplicationProperties {
         private boolean enabled = false;
         private String pixelId;
         private String accessToken;
+        private String testEventCode;
 
         public boolean isEnabled() {
             return enabled;
@@ -134,6 +135,14 @@ public class ApplicationProperties {
 
         public void setAccessToken(String accessToken) {
             this.accessToken = accessToken;
+        }
+
+        public String getTestEventCode() {
+            return testEventCode;
+        }
+
+        public void setTestEventCode(String testEventCode) {
+            this.testEventCode = testEventCode;
         }
     }
 

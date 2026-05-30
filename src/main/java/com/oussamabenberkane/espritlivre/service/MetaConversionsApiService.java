@@ -1,5 +1,6 @@
 package com.oussamabenberkane.espritlivre.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -116,7 +117,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
 
@@ -175,7 +176,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
             logEvent("PageView");
@@ -228,7 +229,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
             logEvent("Search");
@@ -287,7 +288,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
             logEvent("AddToCart");
@@ -346,7 +347,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
             logEvent("InitiateCheckout");
@@ -399,7 +400,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
             logEvent("CompleteRegistration");
@@ -450,7 +451,7 @@ public class MetaConversionsApiService {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .POST(HttpRequest.BodyPublishers.ofString(serializePayload(payload)))
                 .timeout(Duration.ofSeconds(10))
                 .build();
             logEvent("Contact");
@@ -563,7 +564,7 @@ public class MetaConversionsApiService {
         data.add(event);
         payload.set("data", data);
 
-        return objectMapper.writeValueAsString(payload);
+        return serializePayload(payload);
     }
 
     private String resolveClientIp(HttpServletRequest request) {
@@ -577,6 +578,19 @@ public class MetaConversionsApiService {
     private void addMetaCookies(ObjectNode userData, String fbc, String fbp) {
         if (StringUtils.hasText(fbc)) userData.put("fbc", fbc);
         if (StringUtils.hasText(fbp)) userData.put("fbp", fbp);
+    }
+
+    /**
+     * Serializes the CAPI payload, injecting {@code test_event_code} at the top level when configured.
+     * When set, events appear in the Meta Events Manager "Test Events" tab for live debugging.
+     * Leave {@code META_TEST_EVENT_CODE} empty in normal production operation.
+     */
+    private String serializePayload(ObjectNode payload) throws JsonProcessingException {
+        String testEventCode = applicationProperties.getMeta().getTestEventCode();
+        if (StringUtils.hasText(testEventCode)) {
+            payload.put("test_event_code", testEventCode);
+        }
+        return objectMapper.writeValueAsString(payload);
     }
 
     private void addHashedArray(ObjectNode parent, String key, String normalizedValue) {

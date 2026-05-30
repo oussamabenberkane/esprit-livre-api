@@ -113,6 +113,7 @@ application:
     enabled: ${META_ENABLED:false}
     pixel-id: ${META_PIXEL_ID:}
     access-token: ${META_ACCESS_TOKEN:}
+    test-event-code: ${META_TEST_EVENT_CODE:}
 
 shipping:
   yalidine:
