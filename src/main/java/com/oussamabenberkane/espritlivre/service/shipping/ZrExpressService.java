@@ -817,6 +817,55 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
+     * Resolve any commune (district) territory UUID belonging to the given wilaya.
+     * Used for the origin wilaya, whose wilaya-level territory has no delivery rate:
+     * rates are uniform across its communes, so any commune yields the correct fee.
+     */
+    private String resolveAnyCommuneTerritoryId(String cityTerritoryId, String wilayaName) {
+        // 1. Reuse a commune already known from hubs for this wilaya (no extra API call).
+        if (cityTerritoryCache.isEmpty()) {
+            buildTerritoryCacheFromHubs();
+        }
+        Map<String, String> knownCommunes = districtTerritoryCache.get(cityTerritoryId);
+        if (knownCommunes != null && !knownCommunes.isEmpty()) {
+            return knownCommunes.values().iterator().next();
+        }
+
+        // 2. Fallback: query the territories API for any commune of this wilaya.
+        try {
+            HttpHeaders headers = createHeaders();
+            ZrExpressSearchRequest searchRequest = ZrExpressSearchRequest.builder()
+                .keyword(wilayaName)
+                .pageSize(50)
+                .build();
+
+            HttpEntity<ZrExpressSearchRequest> entity = new HttpEntity<>(searchRequest, headers);
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/territories/search";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object itemsObj = response.getBody().get("items");
+                if (itemsObj != null) {
+                    List<ZrExpressTerritoryResponse> territories = objectMapper.convertValue(
+                        itemsObj, new TypeReference<List<ZrExpressTerritoryResponse>>() {});
+                    for (ZrExpressTerritoryResponse t : territories) {
+                        if (t.isDistrict() && cityTerritoryId.equalsIgnoreCase(t.getParentId())) {
+                            return t.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not resolve a representative commune for wilaya '{}': {}", wilayaName, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * Search for an existing parcel by external ID and return its tracking number.
      * Used to recover from 409 CONFLICT when the parcel already exists.
      */
@@ -1216,6 +1265,19 @@ public class ZrExpressService implements ShippingProviderService {
                 String districtTerritoryId = resolveDistrictTerritoryId(cityTerritoryId, communeName);
                 if (districtTerritoryId != null) {
                     territoryId = districtTerritoryId;
+                    territoryLevel = "commune";
+                }
+            }
+
+            // The origin wilaya has no wilaya-level rate in ZR Express (its wilaya territory
+            // returns 404). Rates there are defined per commune but are uniform across the
+            // wilaya, so when no specific commune resolved we fall back to a representative
+            // commune. This avoids a 404 that would otherwise surface as a failure and make
+            // the caller fall back to the product's fixed fee (e.g. showing 700 instead of 520).
+            if (isOriginWilaya && "wilaya".equals(territoryLevel)) {
+                String fallbackCommuneId = resolveAnyCommuneTerritoryId(cityTerritoryId, wilayaName);
+                if (fallbackCommuneId != null) {
+                    territoryId = fallbackCommuneId;
                     territoryLevel = "commune";
                 }
             }
