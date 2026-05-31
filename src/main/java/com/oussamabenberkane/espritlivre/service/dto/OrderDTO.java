@@ -82,6 +82,11 @@ public class OrderDTO implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String fbp;
 
+    // Page URL at checkout, forwarded to the server-side CAPI Purchase event so the
+    // event_source_url matches the browser pixel (improves Meta event match quality).
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String eventSourceUrl;
+
     private UserDTO user;
 
     private Set<OrderItemDTO> orderItems = new HashSet<>();
@@ -308,6 +313,14 @@ public class OrderDTO implements Serializable {
 
     public void setFbp(String fbp) {
         this.fbp = fbp;
+    }
+
+    public String getEventSourceUrl() {
+        return eventSourceUrl;
+    }
+
+    public void setEventSourceUrl(String eventSourceUrl) {
+        this.eventSourceUrl = eventSourceUrl;
     }
 
     public UserDTO getUser() {

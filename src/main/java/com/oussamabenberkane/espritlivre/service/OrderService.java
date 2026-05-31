@@ -257,6 +257,7 @@ public class OrderService {
                 order.getEmail(),
                 order.getUser() != null ? order.getUser().getFirstName() : null,
                 order.getUser() != null ? order.getUser().getLastName() : null,
+                orderDTO.getEventSourceUrl(),
                 orderDTO.getFbc(),
                 orderDTO.getFbp()
             );

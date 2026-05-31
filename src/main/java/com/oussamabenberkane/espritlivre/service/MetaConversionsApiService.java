@@ -8,6 +8,7 @@ import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.PixelEvent;
 import com.oussamabenberkane.espritlivre.repository.PixelEventRepository;
 import com.oussamabenberkane.espritlivre.service.dto.PixelEventSummaryDTO;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -472,7 +473,7 @@ public class MetaConversionsApiService {
      */
     public void sendPurchaseEvent(String orderId, BigDecimal value, int numItems, List<String> contentIds,
                                   String phone, String email, String firstName, String lastName,
-                                  String fbc, String fbp) {
+                                  String eventSourceUrl, String fbc, String fbp) {
         ApplicationProperties.Meta meta = applicationProperties.getMeta();
         if (!meta.isEnabled() || !StringUtils.hasText(meta.getPixelId()) || !StringUtils.hasText(meta.getAccessToken())) {
             return;
@@ -492,7 +493,7 @@ public class MetaConversionsApiService {
         } catch (Exception ignored) {}
 
         try {
-            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, email, firstName, lastName, clientIp, userAgent, fbc, fbp);
+            String payload = buildPurchasePayload(orderId, value, numItems, contentIds, phone, email, firstName, lastName, clientIp, userAgent, eventSourceUrl, fbc, fbp);
 
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -522,7 +523,8 @@ public class MetaConversionsApiService {
 
     private String buildPurchasePayload(String orderId, BigDecimal value, int numItems, List<String> contentIds,
                                         String phone, String email, String firstName, String lastName,
-                                        String clientIp, String userAgent, String fbc, String fbp) throws Exception {
+                                        String clientIp, String userAgent,
+                                        String eventSourceUrl, String fbc, String fbp) throws Exception {
         long eventTime = System.currentTimeMillis() / 1000L;
 
         ObjectNode event = objectMapper.createObjectNode();
@@ -530,7 +532,7 @@ public class MetaConversionsApiService {
         event.put("event_time", eventTime);
         event.put("event_id", orderId);
         event.put("action_source", "website");
-        event.put("event_source_url", "https://espritlivre.com/cart");
+        event.put("event_source_url", StringUtils.hasText(eventSourceUrl) ? eventSourceUrl : "https://espritlivre.com/cart");
 
         // User data — all PII SHA-256 hashed, arrays used for multi-value fields
         ObjectNode userData = objectMapper.createObjectNode();
@@ -575,9 +577,32 @@ public class MetaConversionsApiService {
         return request.getRemoteAddr();
     }
 
+    /**
+     * Adds fbc/fbp to user_data. JS-supplied values win (set by fbevents.js). When blank,
+     * falls back to reading the same-named cookies from the inbound request. This closes the
+     * race where the browser pixel hasn't yet written the cookie on the first page hit.
+     * Values are preserved verbatim (no lowercasing, no trimming) — Meta requires exact fbclid.
+     */
     private void addMetaCookies(ObjectNode userData, String fbc, String fbp) {
-        if (StringUtils.hasText(fbc)) userData.put("fbc", fbc);
-        if (StringUtils.hasText(fbp)) userData.put("fbp", fbp);
+        String resolvedFbc = StringUtils.hasText(fbc) ? fbc : readRequestCookie("_fbc");
+        String resolvedFbp = StringUtils.hasText(fbp) ? fbp : readRequestCookie("_fbp");
+        if (StringUtils.hasText(resolvedFbc)) userData.put("fbc", resolvedFbc);
+        if (StringUtils.hasText(resolvedFbp)) userData.put("fbp", resolvedFbp);
+    }
+
+    private String readRequestCookie(String name) {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) return null;
+            Cookie[] cookies = attrs.getRequest().getCookies();
+            if (cookies == null) return null;
+            for (Cookie c : cookies) {
+                if (name.equals(c.getName()) && StringUtils.hasText(c.getValue())) {
+                    return c.getValue();
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     /**

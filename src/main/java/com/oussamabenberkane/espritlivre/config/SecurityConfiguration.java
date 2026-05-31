@@ -9,6 +9,7 @@ import com.oussamabenberkane.espritlivre.security.oauth2.AudienceValidator;
 import com.oussamabenberkane.espritlivre.security.oauth2.CustomClaimConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oussamabenberkane.espritlivre.repository.UserRepository;
+import com.oussamabenberkane.espritlivre.web.filter.FbclidCaptureFilter;
 import com.oussamabenberkane.espritlivre.web.filter.UserActivationCheckFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -70,7 +71,19 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc, UserActivationCheckFilter userActivationCheckFilter) throws Exception {
+    public FbclidCaptureFilter fbclidCaptureFilter() {
+        return new FbclidCaptureFilter();
+    }
+
+    @Bean
+    public FilterRegistrationBean<FbclidCaptureFilter> fbclidCaptureFilterRegistration(FbclidCaptureFilter filter) {
+        FilterRegistrationBean<FbclidCaptureFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc, UserActivationCheckFilter userActivationCheckFilter, FbclidCaptureFilter fbclidCaptureFilter) throws Exception {
         http
             .cors(withDefaults())
             .csrf(csrf ->
@@ -143,7 +156,10 @@ public class SecurityConfiguration {
             .oauth2Login(oauth2 -> oauth2.loginPage("/").userInfoEndpoint(userInfo -> userInfo.oidcUserService(this.oidcUserService())))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(authenticationConverter())))
             .oauth2Client(withDefaults())
-            .addFilterAfter(userActivationCheckFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
+            .addFilterAfter(userActivationCheckFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class)
+            // Captures fbclid query param on any request into a first-party _fbc cookie (Meta CAPI),
+            // closing the race where fbevents.js hasn't yet set the cookie when the first server-side event fires.
+            .addFilterBefore(fbclidCaptureFilter, org.springframework.security.web.context.SecurityContextHolderFilter.class);
         return http.build();
     }
 
