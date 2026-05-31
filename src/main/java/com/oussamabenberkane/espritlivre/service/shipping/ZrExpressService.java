@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -47,6 +48,15 @@ public class ZrExpressService implements ShippingProviderService {
 
     private static final String DELIVERY_TYPE_HOME = "home";
     private static final String DELIVERY_TYPE_PICKUP_POINT = "pickup-point";
+
+    // Wilayas that ZR Express does not serve at all (no territory exists in their system,
+    // confirmed via /territories/search returning zero results). Normalized names.
+    private static final Set<String> UNSUPPORTED_WILAYAS = Set.of(
+        "illizi",
+        "tindouf",
+        "djanet",
+        "bordj badji mokhtar"
+    );
 
     private final ShippingProperties shippingProperties;
     private final RestTemplate restTemplate;
@@ -73,6 +83,11 @@ public class ZrExpressService implements ShippingProviderService {
         if (!shippingProperties.getZrExpress().isEnabled()) {
             LOG.warn("ZR Express integration is disabled, skipping parcel creation for order: {}", order.getUniqueId());
             return ShippingResult.failure("ZR Express integration is disabled");
+        }
+
+        if (isWilayaUnsupported(order.getWilaya())) {
+            LOG.warn("ZR Express does not serve wilaya '{}' for order {}", order.getWilaya(), order.getUniqueId());
+            return ShippingResult.failure("ZR Express ne dessert pas la wilaya : " + order.getWilaya());
         }
 
         try {
@@ -390,8 +405,12 @@ public class ZrExpressService implements ShippingProviderService {
                     );
                     LOG.info("Retrieved {} hubs from ZR Express", hubs.size());
 
-                    // Filter by wilaya name client-side if provided
+                    // ZR Express ignores the server-side isPickupPoint filter, so enforce it
+                    // client-side: only genuine pickup points may be offered as relay points.
+                    // Offering a non-pickup hub would let a customer pick a stopDeskId that
+                    // fails validation at parcel creation ("Hub is not a valid pickup point").
                     return hubs.stream()
+                        .filter(h -> Boolean.TRUE.equals(h.getIsPickupPoint()))
                         .map(ZrExpressHubResponse::toRelayPointDTO)
                         .filter(hub -> wilayaName == null || wilayaName.isBlank() ||
                             matchesWilayaName(hub.getWilayaName(), wilayaName))
@@ -536,7 +555,70 @@ public class ZrExpressService implements ShippingProviderService {
             }
         }
 
+        // Fallback: query the authoritative ZR Express territories API.
+        // The hub-built cache only covers wilayas that have a pickup-point hub; this
+        // resolves any deliverable wilaya and tolerates hub name spelling differences.
+        String apiResult = resolveCityTerritoryIdViaApi(wilayaName);
+        if (apiResult != null) {
+            cityTerritoryCache.putIfAbsent(normalizedName, apiResult);
+            return apiResult;
+        }
+
         LOG.warn("Could not resolve city territory for wilaya: {}", wilayaName);
+        return null;
+    }
+
+    /**
+     * Resolve a wilaya (city-level) territory UUID via the ZR Express /territories/search API.
+     * ZR ignores server-side level filters, so results are filtered client-side by the real
+     * {@code level} field ("wilaya"). Returns null if ZR Express does not serve the wilaya.
+     */
+    private String resolveCityTerritoryIdViaApi(String wilayaName) {
+        try {
+            HttpHeaders headers = createHeaders();
+
+            ZrExpressSearchRequest searchRequest = ZrExpressSearchRequest.builder()
+                .keyword(wilayaName)
+                .pageSize(50)
+                .build();
+
+            HttpEntity<ZrExpressSearchRequest> entity = new HttpEntity<>(searchRequest, headers);
+            String url = shippingProperties.getZrExpress().getBaseUrl() + "/territories/search";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object itemsObj = response.getBody().get("items");
+                if (itemsObj != null) {
+                    List<ZrExpressTerritoryResponse> territories = objectMapper.convertValue(
+                        itemsObj, new TypeReference<List<ZrExpressTerritoryResponse>>() {});
+
+                    String normalized = normalizeLocationName(wilayaName);
+                    // Only wilaya-level territories are valid here. Exact match first, then partial.
+                    for (ZrExpressTerritoryResponse t : territories) {
+                        if (t.isCity() && normalizeLocationName(t.getName()).equals(normalized)) {
+                            LOG.debug("Resolved wilaya '{}' via territories API: {}", wilayaName, t.getId());
+                            return t.getId();
+                        }
+                    }
+                    for (ZrExpressTerritoryResponse t : territories) {
+                        if (!t.isCity()) {
+                            continue;
+                        }
+                        String n = normalizeLocationName(t.getName());
+                        if (n.contains(normalized) || normalized.contains(n)) {
+                            LOG.debug("Resolved wilaya '{}' via territories API (partial): {}", wilayaName, t.getId());
+                            return t.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("ZR Express territories API error resolving wilaya '{}': {}", wilayaName, e.getMessage());
+        }
         return null;
     }
 
@@ -656,19 +738,9 @@ public class ZrExpressService implements ShippingProviderService {
             }
         }
 
-        // If not found in specific city, try all districts (commune might be mismatched with wilaya)
-        for (Map<String, String> districtCache : districtTerritoryCache.values()) {
-            if (districtCache.containsKey(normalizedName)) {
-                LOG.debug("Resolved commune '{}' to territory ID (cross-city match): {}", communeName, districtCache.get(normalizedName));
-                return districtCache.get(normalizedName);
-            }
-            for (Map.Entry<String, String> entry : districtCache.entrySet()) {
-                if (entry.getKey().contains(normalizedName) || normalizedName.contains(entry.getKey())) {
-                    LOG.debug("Resolved commune '{}' to territory ID (cross-city partial match): {}", communeName, entry.getValue());
-                    return entry.getValue();
-                }
-            }
-        }
+        // No cross-wilaya cache guessing: a districtTerritoryId taken from another wilaya
+        // does not belong to this order's cityTerritoryId, and ZR Express rejects the parcel
+        // ("district not under city"). Resolve unknown communes via the authoritative API.
 
         // Fallback: query ZR Express territories API directly
         String apiResult = resolveDistrictTerritoryIdViaApi(cityTerritoryId, communeName);
@@ -692,14 +764,14 @@ public class ZrExpressService implements ShippingProviderService {
         try {
             HttpHeaders headers = createHeaders();
 
-            Map<String, Object> filters = new HashMap<>();
-            filters.put("level", "district");
-            filters.put("parentId", cityTerritoryId);
-
+            // NOTE: ZR Express ignores server-side level/parentId filters on this endpoint,
+            // so we send only the keyword and disambiguate client-side using the real
+            // `level` ("commune") and `parentId` fields returned by the API. This prevents
+            // returning a wilaya-level territory (homonym capitals like "Setif"/"Oran") or a
+            // same-named commune from a different wilaya — both of which ZR would reject.
             ZrExpressSearchRequest searchRequest = ZrExpressSearchRequest.builder()
                 .keyword(communeName)
-                .filters(filters)
-                .pageSize(20)
+                .pageSize(50)
                 .build();
 
             HttpEntity<ZrExpressSearchRequest> entity = new HttpEntity<>(searchRequest, headers);
@@ -717,15 +789,19 @@ public class ZrExpressService implements ShippingProviderService {
                         itemsObj, new TypeReference<List<ZrExpressTerritoryResponse>>() {});
 
                     String normalizedCommune = normalizeLocationName(communeName);
-                    // Exact match first
+                    // Only accept communes that belong to the requested wilaya.
+                    // Exact name match first, then partial.
                     for (ZrExpressTerritoryResponse t : territories) {
-                        if (normalizeLocationName(t.getName()).equals(normalizedCommune)) {
+                        if (t.isDistrict() && cityTerritoryId.equalsIgnoreCase(t.getParentId())
+                            && normalizeLocationName(t.getName()).equals(normalizedCommune)) {
                             LOG.debug("Resolved commune '{}' via territories API: {}", communeName, t.getId());
                             return t.getId();
                         }
                     }
-                    // Partial match fallback
                     for (ZrExpressTerritoryResponse t : territories) {
+                        if (!t.isDistrict() || !cityTerritoryId.equalsIgnoreCase(t.getParentId())) {
+                            continue;
+                        }
                         String n = normalizeLocationName(t.getName());
                         if (n.contains(normalizedCommune) || normalizedCommune.contains(n)) {
                             LOG.debug("Resolved commune '{}' via territories API (partial): {}", communeName, t.getId());
@@ -1051,6 +1127,17 @@ public class ZrExpressService implements ShippingProviderService {
     }
 
     /**
+     * Whether ZR Express does not serve the given wilaya at all.
+     * These wilayas have no territory in ZR's system, so any parcel/fee request fails.
+     */
+    private boolean isWilayaUnsupported(String wilayaName) {
+        if (wilayaName == null) {
+            return false;
+        }
+        return UNSUPPORTED_WILAYAS.contains(normalizeLocationName(wilayaName));
+    }
+
+    /**
      * Normalize location name for caching.
      * Converts accented characters to ASCII equivalents (é→e, ï→i, etc.)
      */
@@ -1104,6 +1191,11 @@ public class ZrExpressService implements ShippingProviderService {
 
         if (wilayaName == null || wilayaName.isBlank()) {
             return DeliveryFeeResult.failure("Destination wilaya name is required");
+        }
+
+        if (isWilayaUnsupported(wilayaName)) {
+            LOG.debug("ZR Express does not serve wilaya '{}', skipping fee calculation", wilayaName);
+            return DeliveryFeeResult.failure("ZR Express ne dessert pas la wilaya : " + wilayaName);
         }
 
         try {

@@ -12,7 +12,7 @@ public class ZrExpressTerritoryResponse {
     private String id;        // UUID
     private Integer code;     // Numeric code (e.g., wilaya code)
     private String name;
-    private String level;     // "city" (wilaya) or "district" (commune)
+    private String level;     // "wilaya" or "commune" (ZR Express territory level)
     private String parentId;  // Parent territory UUID
 
     public ZrExpressTerritoryResponse() {}
@@ -59,16 +59,18 @@ public class ZrExpressTerritoryResponse {
 
     /**
      * Check if this is a city-level territory (wilaya).
+     * ZR Express returns "wilaya"; "city" is tolerated for backwards safety.
      */
     public boolean isCity() {
-        return "city".equalsIgnoreCase(level);
+        return "wilaya".equalsIgnoreCase(level) || "city".equalsIgnoreCase(level);
     }
 
     /**
      * Check if this is a district-level territory (commune).
+     * ZR Express returns "commune"; "district" is tolerated for backwards safety.
      */
     public boolean isDistrict() {
-        return "district".equalsIgnoreCase(level);
+        return "commune".equalsIgnoreCase(level) || "district".equalsIgnoreCase(level);
     }
 
     @Override

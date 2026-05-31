@@ -59,22 +59,41 @@ public class ZrExpressRateResponse {
             return null;
         }
 
-        String targetType = isStopDesk ? "PickupPoint" : "HomeDelivery";
-
+        // Match the requested delivery type explicitly.
+        // ZR Express returns deliveryType values "home", "pickup-point" and "return"
+        // (NOT "HomeDelivery"/"PickupPoint"). We must never fall back to an arbitrary
+        // entry: returning another type's price (e.g. the "pickup-point" or "return"
+        // price for a home delivery) silently quotes the wrong fee to the customer.
         for (DeliveryPrice price : deliveryPrices) {
-            if (price.getDeliveryType() != null &&
-                price.getDeliveryType().equalsIgnoreCase(targetType)) {
-                return price.getPrice() != null ? BigDecimal.valueOf(price.getPrice()) : null;
+            if (matchesDeliveryType(price.getDeliveryType(), isStopDesk)) {
+                return price.getEffectivePrice();
             }
         }
 
-        // If exact type not found, try to find any price
-        // Some territories might only have one delivery type
-        if (!deliveryPrices.isEmpty() && deliveryPrices.get(0).getPrice() != null) {
-            return BigDecimal.valueOf(deliveryPrices.get(0).getPrice());
-        }
-
+        // Requested delivery type not available for this territory — do not guess.
         return null;
+    }
+
+    /**
+     * Match a ZR Express deliveryType string against the requested kind.
+     * Case/separator-insensitive so "pickup-point", "PickupPoint" and "pickup_point"
+     * all match. The "return" tariff is never a customer-facing delivery fee.
+     *
+     * @param deliveryType the raw deliveryType value from the API
+     * @param isStopDesk   true to match pickup-point, false to match home delivery
+     */
+    private static boolean matchesDeliveryType(String deliveryType, boolean isStopDesk) {
+        if (deliveryType == null) {
+            return false;
+        }
+        String normalized = deliveryType.toLowerCase().replaceAll("[^a-z]", "");
+        if (normalized.contains("return")) {
+            return false;
+        }
+        if (isStopDesk) {
+            return normalized.contains("pickup") || normalized.contains("stopdesk") || normalized.contains("desk");
+        }
+        return normalized.contains("home") || normalized.contains("domicile");
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -82,6 +101,7 @@ public class ZrExpressRateResponse {
 
         private String deliveryType;
         private Double price;
+        private Double discountedPrice;
 
         public String getDeliveryType() {
             return deliveryType;
@@ -97,6 +117,23 @@ public class ZrExpressRateResponse {
 
         public void setPrice(Double price) {
             this.price = price;
+        }
+
+        public Double getDiscountedPrice() {
+            return discountedPrice;
+        }
+
+        public void setDiscountedPrice(Double discountedPrice) {
+            this.discountedPrice = discountedPrice;
+        }
+
+        /**
+         * Effective price to charge: the discounted price when ZR Express has applied
+         * one, otherwise the base price. Returns null if neither is set.
+         */
+        public BigDecimal getEffectivePrice() {
+            Double effective = discountedPrice != null ? discountedPrice : price;
+            return effective != null ? BigDecimal.valueOf(effective) : null;
         }
     }
 }
