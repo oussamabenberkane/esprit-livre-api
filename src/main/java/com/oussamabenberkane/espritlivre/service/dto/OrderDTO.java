@@ -82,6 +82,11 @@ public class OrderDTO implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String fbp;
 
+    // Pseudonymous visitor id (SHA-256 hex), same value the browser pixel reports
+    // as external_id — lets Meta tie the CAPI Purchase to the visitor's history.
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String externalId;
+
     // Page URL at checkout, forwarded to the server-side CAPI Purchase event so the
     // event_source_url matches the browser pixel (improves Meta event match quality).
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -313,6 +318,14 @@ public class OrderDTO implements Serializable {
 
     public void setFbp(String fbp) {
         this.fbp = fbp;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public String getEventSourceUrl() {

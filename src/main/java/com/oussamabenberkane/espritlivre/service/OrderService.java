@@ -248,6 +248,16 @@ public class OrderService {
             int numItems = order.getOrderItems().stream()
                 .mapToInt(OrderItem::getQuantity)
                 .sum();
+            // Names: prefer the linked account, but most COD orders are guest orders
+            // (no user) — fall back to splitting the collected full name so fn/ln
+            // reach Meta on every purchase, not only for logged-in buyers.
+            String capiFirstName = order.getUser() != null ? order.getUser().getFirstName() : null;
+            String capiLastName = order.getUser() != null ? order.getUser().getLastName() : null;
+            if (!StringUtils.hasText(capiFirstName) && StringUtils.hasText(order.getFullName())) {
+                String[] nameParts = order.getFullName().trim().split("\\s+", 2);
+                capiFirstName = nameParts[0];
+                capiLastName = nameParts.length > 1 ? nameParts[1] : null;
+            }
             metaConversionsApiService.sendPurchaseEvent(
                 savedOrderDTO.getUniqueId(),
                 savedOrderDTO.getTotalAmount(),
@@ -255,11 +265,15 @@ public class OrderService {
                 contentIds,
                 order.getPhone(),
                 order.getEmail(),
-                order.getUser() != null ? order.getUser().getFirstName() : null,
-                order.getUser() != null ? order.getUser().getLastName() : null,
+                capiFirstName,
+                capiLastName,
+                order.getCity(),
+                order.getWilaya(),
+                order.getPostalCode(),
                 orderDTO.getEventSourceUrl(),
                 orderDTO.getFbc(),
-                orderDTO.getFbp()
+                orderDTO.getFbp(),
+                orderDTO.getExternalId()
             );
         } catch (Exception e) {
             LOG.error("Failed to send Meta CAPI event for order: {}", savedOrderDTO.getUniqueId(), e);

@@ -10,5 +10,10 @@ public record PixelAddToCartRequestDTO(
     int numItems,
     String eventSourceUrl,
     String fbc,
-    String fbp
-) {}
+    String fbp,
+    String externalId,
+    String em,
+    String ph,
+    String fn,
+    String ln
+) implements PixelIdentity {}
