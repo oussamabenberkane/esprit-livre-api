@@ -6,6 +6,7 @@ import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.BookPackService;
 import com.oussamabenberkane.espritlivre.service.BookService;
 import com.oussamabenberkane.espritlivre.service.FileStorageService;
+import com.oussamabenberkane.espritlivre.service.SearchLogService;
 import com.oussamabenberkane.espritlivre.service.ValidationService;
 import com.oussamabenberkane.espritlivre.service.dto.BookDTO;
 import com.oussamabenberkane.espritlivre.service.dto.BookPackDTO;
@@ -34,6 +35,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tech.jhipster.web.util.HeaderUtil;
@@ -64,12 +66,15 @@ public class BookResource {
 
     private final BookPackService bookPackService;
 
-    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService, FileStorageService fileStorageService, BookPackService bookPackService) {
+    private final SearchLogService searchLogService;
+
+    public BookResource(BookService bookService, BookRepository bookRepository, ValidationService validationService, FileStorageService fileStorageService, BookPackService bookPackService, SearchLogService searchLogService) {
         this.bookService = bookService;
         this.bookRepository = bookRepository;
         this.validationService = validationService;
         this.fileStorageService = fileStorageService;
         this.bookPackService = bookPackService;
+        this.searchLogService = searchLogService;
     }
 
     /**
@@ -150,14 +155,22 @@ public class BookResource {
         @RequestParam(required = false) List<String> language,
         @RequestParam(required = false) String status,
         @RequestParam(required = false) Boolean onSale,
-        @RequestParam(required = false) Boolean visibleInCatalog
+        @RequestParam(required = false) Boolean visibleInCatalog,
+        @RequestHeader(value = "X-Visitor-Id", required = false) String visitorId
     ) {
         validationService.validatePriceRange(minPrice, maxPrice, ENTITY_NAME);
         // Non-admins always see only catalog-visible books
-        Boolean effectiveVisibility = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)
-            ? visibleInCatalog
-            : Boolean.TRUE;
+        boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
+        Boolean effectiveVisibility = isAdmin ? visibleInCatalog : Boolean.TRUE;
         Page<BookDTO> page = bookService.findAll(pageable, search, author, minPrice, maxPrice, categoryId, mainDisplayId, language, status, onSale, effectiveVisibility);
+
+        // Persist committed customer searches for analysis: first page only (pagination
+        // re-hits this endpoint), admins excluded (catalog management searches are not customer intent).
+        if (StringUtils.hasText(search) && pageable.getPageNumber() == 0 && !isAdmin) {
+            String userLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
+            searchLogService.logSearch(search, page.getTotalElements(), visitorId, userLogin);
+        }
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page);
     }

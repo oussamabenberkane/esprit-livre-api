@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20260611000000" author="oussama">
+        <createSequence sequenceName="search_log_seq" startValue="1" incrementBy="1"/>
+
+        <createTable tableName="search_log">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="search_term" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="normalized_term" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="results_count" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_login" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="visitor_id" type="varchar(64)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="searched_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="search_log" indexName="idx_search_log_searched_at">
+            <column name="searched_at"/>
+        </createIndex>
+
+        <createIndex tableName="search_log" indexName="idx_search_log_term_date">
+            <column name="normalized_term"/>
+            <column name="searched_at"/>
+        </createIndex>
+
+        <createIndex tableName="search_log" indexName="idx_search_log_dedup">
+            <column name="visitor_id"/>
+            <column name="normalized_term"/>
+            <column name="searched_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

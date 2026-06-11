@@ -55,5 +55,6 @@
     <include file="config/liquibase/changelog/20260522000000_add_pixel_event_table.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260523000000_add_order_origin_to_order.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260523100000_backfill_purchase_pixel_events.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260611000000_add_search_log_table.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
 </databaseChangeLog>
