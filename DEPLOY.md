@@ -24,7 +24,7 @@ git pull
 
 | What changed | Command |
 |---|---|
-| API source / config | `docker compose restart api` |
+| API source / config | `docker compose build api && docker compose up -d api` |
 | Nginx config (`nginx/`) | `docker exec espritlivre-nginx nginx -s reload` |
 | User frontend | `docker compose build user-frontend && docker compose up -d user-frontend` |
 | Admin frontend | `docker compose build admin-frontend && docker compose up -d admin-frontend` |
@@ -32,6 +32,12 @@ git pull
 | Everything | `docker compose up -d --build` |
 
 > The API takes ~30 s to become healthy after restart. Check with `docker compose ps`.
+
+> **IMPORTANT — after recreating any container (`up -d` with a new image), reload nginx:**
+> `docker exec espritlivre-nginx nginx -s reload`
+> Nginx resolves the upstream container IPs once at startup. Recreated containers get new IPs,
+> so stale entries can route a domain to the wrong app (e.g. admin.espritlivre.com serving the
+> storefront, observed 2026-06-11). A plain `restart` (same container, same IP) doesn't need this.
 
 ### 4. Verify
 
