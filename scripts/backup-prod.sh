@@ -4,10 +4,15 @@
 #   scripts/backup-prod.sh           # take a new backup
 #   scripts/backup-prod.sh --prune   # take a new backup, then delete backups
 #                                    # older than the 10 most recent
+#
+# Destination: $EL_BACKUP_ROOT, defaulting to ~/OneDrive/Desktop/app-backups.
+# Runs from Git Bash on Windows: rsync is not available (tar over ssh instead),
+# and `ln -s` silently deep-copies, so "latest" is a marker file, not a symlink.
 set -euo pipefail
 
 SSH_HOST="personal"
-LOCAL_ROOT="${HOME}/backups/el"
+LOCAL_ROOT="${EL_BACKUP_ROOT:-${HOME}/OneDrive/Desktop/app-backups}"
+REMOTE_ENV_FILE="/root/esprit-livre/api/.env"
 KEEP_LAST=10
 TIMESTAMP="$(date +%Y-%m-%d-%H%M%S)"
 REMOTE_STAGE="/root/.backup-staging-$$-${TIMESTAMP}"
@@ -41,21 +46,51 @@ log "starting backup ${TIMESTAMP}"
 log "preparing remote staging dir"
 ssh "$SSH_HOST" "mkdir -p '$REMOTE_STAGE'"
 
-log "dumping postgres (pg_dump -F c)"
-ssh "$SSH_HOST" "docker exec espritlivre-postgres pg_dump -U el -F c el-prod-db > '$REMOTE_STAGE/postgres.dump'" \
-    || fail "pg_dump failed"
+# DB names come from the server's .env so this never drifts from the compose
+# config. Keycloak keeps its own database (KC_DB_NAME) in the same postgres —
+# it holds all users/credentials and must be dumped alongside the app DB.
+log "dumping postgres (app db, keycloak db, globals)"
+ssh "$SSH_HOST" "
+    set -e
+    DB_USER=\$(grep -E '^DB_USER=' '$REMOTE_ENV_FILE' | cut -d= -f2)
+    DB_NAME=\$(grep -E '^DB_NAME=' '$REMOTE_ENV_FILE' | cut -d= -f2)
+    KC_DB_NAME=\$(grep -E '^KC_DB_NAME=' '$REMOTE_ENV_FILE' | cut -d= -f2)
+    : \"\${DB_USER:?missing from .env}\" \"\${DB_NAME:?missing from .env}\" \"\${KC_DB_NAME:?missing from .env}\"
+    docker exec espritlivre-postgres pg_dump -U \"\$DB_USER\" -F c \"\$DB_NAME\" > '$REMOTE_STAGE/postgres-app.dump'
+    docker exec espritlivre-postgres pg_dump -U \"\$DB_USER\" -F c \"\$KC_DB_NAME\" > '$REMOTE_STAGE/postgres-keycloak.dump'
+    docker exec espritlivre-postgres pg_dumpall -U \"\$DB_USER\" --globals-only > '$REMOTE_STAGE/postgres-globals.sql'
+" || fail "postgres dumps failed"
 
 log "exporting keycloak realm (live)"
 # kc.sh export writes into the container; pull it out with docker cp.
 # Note: kc.sh exits non-zero because the running KC already holds the management
 # port (9000). The export itself completes before that — verify the realm file
 # exists rather than trusting the exit code.
+# The export spawns a SECOND JVM inside the 1G-capped container; it inherits the
+# container's MaxRAMPercentage=50 and can trip the cgroup OOM killer (seen
+# 2026-06-12). Cap the export JVM's heap and retry, since the OOM is timing-
+# dependent on the live KC's footprint.
 ssh "$SSH_HOST" "
     set -e
-    docker exec espritlivre-keycloak rm -rf /tmp/kc-export
-    docker exec espritlivre-keycloak /opt/keycloak/bin/kc.sh export \
-        --dir /tmp/kc-export --realm jhipster --users realm_file >/dev/null 2>&1 || true
-    docker exec espritlivre-keycloak test -f /tmp/kc-export/jhipster-realm.json
+    ok=0
+    for attempt in 1 2 3; do
+        docker exec espritlivre-keycloak rm -rf /tmp/kc-export
+        docker exec -e JAVA_OPTS_APPEND='-XX:MaxRAMPercentage=25.0' espritlivre-keycloak \
+            /opt/keycloak/bin/kc.sh export --dir /tmp/kc-export --realm jhipster --users realm_file \
+            > /tmp/kc-export-attempt.log 2>&1 || true
+        if docker exec espritlivre-keycloak test -f /tmp/kc-export/jhipster-realm.json; then
+            ok=1
+            break
+        fi
+        echo \"keycloak export attempt \$attempt failed, retrying\" >&2
+    done
+    if [ \$ok -ne 1 ]; then
+        echo 'keycloak export failed after 3 attempts; last log lines:' >&2
+        tail -5 /tmp/kc-export-attempt.log >&2
+        rm -f /tmp/kc-export-attempt.log
+        exit 1
+    fi
+    rm -f /tmp/kc-export-attempt.log
     docker cp espritlivre-keycloak:/tmp/kc-export '$REMOTE_STAGE/keycloak-export'
     docker exec espritlivre-keycloak rm -rf /tmp/kc-export
     tar -C '$REMOTE_STAGE' -czf '$REMOTE_STAGE/keycloak-realm.tar.gz' keycloak-export
@@ -78,6 +113,20 @@ log "archiving TLS certs (/etc/letsencrypt)"
 ssh "$SSH_HOST" "tar -C /etc -czf '$REMOTE_STAGE/tls-letsencrypt.tar.gz' letsencrypt" \
     || fail "tls tar failed"
 
+# Cert renewal lives outside /root/esprit-livre: root's crontab calls
+# /root/renew-espritlivre-certs.sh, and acme.sh keeps account keys + issued
+# certs in /root/.acme.sh. Without these a restored host can't renew.
+log "archiving cert renewal infra (crontab, renew script, acme.sh)"
+ssh "$SSH_HOST" "
+    set -e
+    mkdir -p '$REMOTE_STAGE/host-extras'
+    crontab -l > '$REMOTE_STAGE/host-extras/crontab-root.txt'
+    cp /root/renew-espritlivre-certs.sh '$REMOTE_STAGE/host-extras/'
+    cp -a /root/.acme.sh '$REMOTE_STAGE/host-extras/acme.sh'
+    tar -C '$REMOTE_STAGE' -czf '$REMOTE_STAGE/host-extras.tar.gz' host-extras
+    rm -rf '$REMOTE_STAGE/host-extras'
+" || fail "host-extras tar failed"
+
 log "building manifest"
 ssh "$SSH_HOST" "
     cd '$REMOTE_STAGE'
@@ -89,7 +138,7 @@ ssh "$SSH_HOST" "
         docker ps --format '  {{.Names}}\t{{.Image}}' | grep espritlivre || true
         echo
         echo 'files:'
-        for f in *.dump *.tar.gz; do
+        for f in *.dump *.sql *.tar.gz; do
             [ -f \"\$f\" ] || continue
             size=\$(stat -c%s \"\$f\")
             sha=\$(sha256sum \"\$f\" | awk '{print \$1}')
@@ -99,14 +148,19 @@ ssh "$SSH_HOST" "
 " || fail "manifest build failed"
 
 # 2. Transfer ----------------------------------------------------------------
-log "transferring to ${LOCAL_PARTIAL}"
+log "transferring to ${LOCAL_PARTIAL} (tar over ssh)"
 mkdir -p "$LOCAL_PARTIAL"
-rsync -aq --info=progress2 "${SSH_HOST}:${REMOTE_STAGE}/" "$LOCAL_PARTIAL/" \
-    || fail "rsync failed"
+ssh "$SSH_HOST" "tar -C '$REMOTE_STAGE' -cf - ." | tar -C "$LOCAL_PARTIAL" -xf - \
+    || fail "transfer failed"
+
+log "verifying checksums against manifest"
+(cd "$LOCAL_PARTIAL" && \
+    awk '/^files:/{f=1;next} f && NF==3 {print $3 "  " $1}' MANIFEST.txt | sha256sum -c --quiet) \
+    || fail "checksum verification failed"
 
 # 3. Atomic finalize ---------------------------------------------------------
 mv "$LOCAL_PARTIAL" "$LOCAL_FINAL"
-ln -sfn "$LOCAL_FINAL" "$LOCAL_ROOT/latest"
+printf '%s\n' "$TIMESTAMP" > "$LOCAL_ROOT/latest.txt"
 log "finalized ${LOCAL_FINAL}"
 
 # 4. Summary -----------------------------------------------------------------
@@ -116,7 +170,7 @@ TOTAL=$(du -sh "$LOCAL_FINAL" | awk '{print $1}')
 echo
 echo "=== backup complete ==="
 echo "location : $LOCAL_FINAL"
-echo "symlink  : $LOCAL_ROOT/latest"
+echo "latest   : $LOCAL_ROOT/latest.txt -> $TIMESTAMP"
 echo "size     : $TOTAL"
 echo "elapsed  : ${ELAPSED}s"
 echo "contents :"
