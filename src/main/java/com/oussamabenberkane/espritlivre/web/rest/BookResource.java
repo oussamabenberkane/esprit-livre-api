@@ -167,7 +167,9 @@ public class BookResource {
         // Persist committed customer searches for analysis: first page only (pagination
         // re-hits this endpoint), admins excluded (catalog management searches are not customer intent).
         if (StringUtils.hasText(search) && pageable.getPageNumber() == 0 && !isAdmin) {
-            String userLogin = SecurityUtils.getCurrentUserLogin().orElse(null);
+            // Anonymous requests carry the literal principal "anonymousUser" — only
+            // attribute the search to a login for genuinely authenticated users.
+            String userLogin = SecurityUtils.isAuthenticated() ? SecurityUtils.getCurrentUserLogin().orElse(null) : null;
             searchLogService.logSearch(search, page.getTotalElements(), visitorId, userLogin);
         }
 
