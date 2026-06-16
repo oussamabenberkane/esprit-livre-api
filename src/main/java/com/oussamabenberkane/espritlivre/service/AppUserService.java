@@ -568,18 +568,29 @@ public class AppUserService {
 
         Page<User> users = userRepository.findAll(buildNonAdminUserSpec(active, search), pageable);
 
-        // Aggregate order count / amount paid for the current page only (one extra query, no N+1).
-        List<String> userIds = users.getContent().stream().map(User::getId).toList();
-        Map<String, OrderRepository.UserOrderStatsProjection> statsByUserId = userIds.isEmpty()
+        // Attribute delivered orders to each user by normalized phone (the app's
+        // customer key) — most orders are guest orders linked only by phone, so the
+        // user FK alone would miss them. One grouped query for the page, no N+1.
+        Map<String, String> normalizedPhoneByUserId = new HashMap<>();
+        for (User user : users.getContent()) {
+            String normalizedPhone = OrderService.normalizePhoneNumber(user.getPhone());
+            if (normalizedPhone != null && !normalizedPhone.isEmpty()) {
+                normalizedPhoneByUserId.put(user.getId(), normalizedPhone);
+            }
+        }
+
+        List<String> phones = normalizedPhoneByUserId.values().stream().distinct().toList();
+        Map<String, OrderRepository.UserOrderStatsProjection> statsByPhone = phones.isEmpty()
             ? Map.of()
             : orderRepository
-                .findDeliveredOrderStatsByUserIds(userIds)
+                .findDeliveredOrderStatsByPhones(phones)
                 .stream()
-                .collect(Collectors.toMap(OrderRepository.UserOrderStatsProjection::getUserId, stats -> stats));
+                .collect(Collectors.toMap(OrderRepository.UserOrderStatsProjection::getPhone, stats -> stats));
 
         return users.map(user -> {
             AppUserDTO dto = mapToDTO(user);
-            OrderRepository.UserOrderStatsProjection stats = statsByUserId.get(user.getId());
+            String normalizedPhone = normalizedPhoneByUserId.get(user.getId());
+            OrderRepository.UserOrderStatsProjection stats = normalizedPhone != null ? statsByPhone.get(normalizedPhone) : null;
             if (stats != null) {
                 dto.setTotalOrders(stats.getOrderCount() != null ? stats.getOrderCount() : 0L);
                 dto.setTotalSpent(stats.getTotalSpent() != null ? stats.getTotalSpent() : BigDecimal.ZERO);

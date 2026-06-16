@@ -103,29 +103,31 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     Optional<Order> findByUniqueIdAndActiveTrue(@Param("uniqueId") String uniqueId);
 
     /**
-     * Aggregate per-user order statistics for a set of users.
+     * Aggregate order statistics grouped by customer phone number.
+     * Customers are identified by phone across the app (the vast majority of orders
+     * are guest orders linked only by phone, not by the user FK), so per-customer
+     * spending must be keyed on the (already normalized) order phone.
      * Only counts active, DELIVERED orders so the figures match the dashboard's
      * revenue definition (gross {@code total_amount}, including shipping).
-     * Users with no delivered orders are simply absent from the result.
      *
-     * @param userIds the user ids to aggregate
-     * @return one row per user that has at least one delivered order
+     * @param phones the normalized phone numbers to aggregate
+     * @return one row per phone that has at least one delivered order
      */
     @Query(
-        "select o.user.id as userId, count(o.id) as orderCount, coalesce(sum(o.totalAmount), 0) as totalSpent " +
+        "select o.phone as phone, count(o.id) as orderCount, coalesce(sum(o.totalAmount), 0) as totalSpent " +
         "from Order o " +
-        "where o.user.id in :userIds " +
+        "where o.phone in :phones " +
         "  and o.active = true " +
         "  and o.status = com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus.DELIVERED " +
-        "group by o.user.id"
+        "group by o.phone"
     )
-    List<UserOrderStatsProjection> findDeliveredOrderStatsByUserIds(@Param("userIds") List<String> userIds);
+    List<UserOrderStatsProjection> findDeliveredOrderStatsByPhones(@Param("phones") List<String> phones);
 
     /**
-     * Projection for aggregated per-user order statistics.
+     * Projection for aggregated per-customer order statistics.
      */
     interface UserOrderStatsProjection {
-        String getUserId();
+        String getPhone();
         Long getOrderCount();
         BigDecimal getTotalSpent();
     }
