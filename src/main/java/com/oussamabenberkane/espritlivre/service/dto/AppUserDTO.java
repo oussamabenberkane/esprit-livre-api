@@ -5,6 +5,7 @@ import com.oussamabenberkane.espritlivre.domain.enumeration.ShippingProvider;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -57,6 +58,12 @@ public class AppUserDTO {
     private ShippingProvider defaultShippingProvider;
 
     private boolean activated = false;
+
+    // Aggregated order statistics (populated for admin user listings only).
+    // Counts active, DELIVERED orders; totalSpent is the gross amount paid (incl. shipping).
+    private long totalOrders = 0;
+
+    private BigDecimal totalSpent = BigDecimal.ZERO;
 
     // Getters and Setters
     public String getId() {
@@ -185,6 +192,22 @@ public class AppUserDTO {
 
     public void setActivated(boolean activated) {
         this.activated = activated;
+    }
+
+    public long getTotalOrders() {
+        return totalOrders;
+    }
+
+    public void setTotalOrders(long totalOrders) {
+        this.totalOrders = totalOrders;
+    }
+
+    public BigDecimal getTotalSpent() {
+        return totalSpent;
+    }
+
+    public void setTotalSpent(BigDecimal totalSpent) {
+        this.totalSpent = totalSpent;
     }
 
     @Override

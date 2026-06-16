@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.service;
 
 import com.oussamabenberkane.espritlivre.config.ApplicationProperties;
 import com.oussamabenberkane.espritlivre.domain.User;
+import com.oussamabenberkane.espritlivre.repository.OrderRepository;
 import com.oussamabenberkane.espritlivre.repository.UserRepository;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
@@ -34,11 +35,13 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -50,6 +53,7 @@ public class AppUserService {
     private final MailService mailService;
     private final CacheManager cacheManager;
     private final OrderService orderService;
+    private final OrderRepository orderRepository;
     private final FileStorageService fileStorageService;
     private final RestTemplate restTemplate;
     private final ApplicationProperties applicationProperties;
@@ -62,6 +66,7 @@ public class AppUserService {
         MailService mailService,
         CacheManager cacheManager,
         OrderService orderService,
+        OrderRepository orderRepository,
         FileStorageService fileStorageService,
         RestTemplate restTemplate,
         ApplicationProperties applicationProperties
@@ -70,6 +75,7 @@ public class AppUserService {
         this.mailService = mailService;
         this.cacheManager = cacheManager;
         this.orderService = orderService;
+        this.orderRepository = orderRepository;
         this.fileStorageService = fileStorageService;
         this.restTemplate = restTemplate;
         this.applicationProperties = applicationProperties;
@@ -565,7 +571,24 @@ public class AppUserService {
             users = userRepository.findAllByAuthoritiesNotContaining("ROLE_ADMIN", pageable);
         }
 
-        return users.map(this::mapToDTO);
+        // Aggregate order count / amount paid for the current page only (one extra query, no N+1).
+        List<String> userIds = users.getContent().stream().map(User::getId).toList();
+        Map<String, OrderRepository.UserOrderStatsProjection> statsByUserId = userIds.isEmpty()
+            ? Map.of()
+            : orderRepository
+                .findDeliveredOrderStatsByUserIds(userIds)
+                .stream()
+                .collect(Collectors.toMap(OrderRepository.UserOrderStatsProjection::getUserId, stats -> stats));
+
+        return users.map(user -> {
+            AppUserDTO dto = mapToDTO(user);
+            OrderRepository.UserOrderStatsProjection stats = statsByUserId.get(user.getId());
+            if (stats != null) {
+                dto.setTotalOrders(stats.getOrderCount() != null ? stats.getOrderCount() : 0L);
+                dto.setTotalSpent(stats.getTotalSpent() != null ? stats.getTotalSpent() : BigDecimal.ZERO);
+            }
+            return dto;
+        });
     }
 
     /**

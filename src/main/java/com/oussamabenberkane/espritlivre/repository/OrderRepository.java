@@ -2,6 +2,7 @@ package com.oussamabenberkane.espritlivre.repository;
 
 import com.oussamabenberkane.espritlivre.domain.Order;
 import com.oussamabenberkane.espritlivre.service.specs.OrderSpecifications;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -100,4 +101,32 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
      */
     @Query("select o from Order o where o.uniqueId = :uniqueId and o.active = true")
     Optional<Order> findByUniqueIdAndActiveTrue(@Param("uniqueId") String uniqueId);
+
+    /**
+     * Aggregate per-user order statistics for a set of users.
+     * Only counts active, DELIVERED orders so the figures match the dashboard's
+     * revenue definition (gross {@code total_amount}, including shipping).
+     * Users with no delivered orders are simply absent from the result.
+     *
+     * @param userIds the user ids to aggregate
+     * @return one row per user that has at least one delivered order
+     */
+    @Query(
+        "select o.user.id as userId, count(o.id) as orderCount, coalesce(sum(o.totalAmount), 0) as totalSpent " +
+        "from Order o " +
+        "where o.user.id in :userIds " +
+        "  and o.active = true " +
+        "  and o.status = com.oussamabenberkane.espritlivre.domain.enumeration.OrderStatus.DELIVERED " +
+        "group by o.user.id"
+    )
+    List<UserOrderStatsProjection> findDeliveredOrderStatsByUserIds(@Param("userIds") List<String> userIds);
+
+    /**
+     * Projection for aggregated per-user order statistics.
+     */
+    interface UserOrderStatsProjection {
+        String getUserId();
+        Long getOrderCount();
+        BigDecimal getTotalSpent();
+    }
 }
