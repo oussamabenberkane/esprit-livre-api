@@ -51,16 +51,18 @@ public class AdminResource {
      * {@code GET  /admin/users} : Get all non-admin users (admin only).
      *
      * @param active Optional filter for active/inactive users (null = all users).
+     * @param search Optional free-text search across login, name, email and phone.
      * @param pageable Pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of users in body.
      */
     @GetMapping("/users")
     public ResponseEntity<Page<AppUserDTO>> getAllUsers(
         @RequestParam(required = false) Boolean active,
+        @RequestParam(required = false) String search,
         Pageable pageable
     ) {
-        LOG.debug("REST request to get all non-admin users with active filter: {}", active);
-        Page<AppUserDTO> page = appUserService.getAllNonAdminUsers(active, pageable);
+        LOG.debug("REST request to get all non-admin users with active filter: {} and search: {}", active, search);
+        Page<AppUserDTO> page = appUserService.getAllNonAdminUsers(active, search, pageable);
         return ResponseEntity.ok(page);
     }
 
@@ -78,16 +80,22 @@ public class AdminResource {
     }
 
     /**
-     * {@code GET  /admin/users/export} : Export all non-admin users to Excel (admin only).
+     * {@code GET  /admin/users/export} : Export non-admin users to Excel (admin only).
+     * Honors the same active/search filters as the listing so the export matches the current view.
      *
+     * @param active Optional filter for active/inactive users (null = all users).
+     * @param search Optional free-text search across login, name, email and phone.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the Excel file as a byte array.
      */
     @GetMapping("/users/export")
-    public ResponseEntity<Resource> exportUsers() {
-        LOG.debug("REST request to export all non-admin users to Excel");
+    public ResponseEntity<Resource> exportUsers(
+        @RequestParam(required = false) Boolean active,
+        @RequestParam(required = false) String search
+    ) {
+        LOG.debug("REST request to export non-admin users to Excel with active filter: {} and search: {}", active, search);
 
         try {
-            byte[] excelData = appUserService.exportUsersToExcel();
+            byte[] excelData = appUserService.exportUsersToExcel(active, search);
 
             // Generate filename with current timestamp
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));

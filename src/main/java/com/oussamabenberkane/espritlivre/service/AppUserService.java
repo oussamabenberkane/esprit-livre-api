@@ -7,6 +7,7 @@ import com.oussamabenberkane.espritlivre.repository.UserRepository;
 import com.oussamabenberkane.espritlivre.security.SecurityUtils;
 import com.oussamabenberkane.espritlivre.service.dto.AppUserDTO;
 import com.oussamabenberkane.espritlivre.service.dto.PasswordChangeDTO;
+import com.oussamabenberkane.espritlivre.service.specs.UserSpecifications;
 import com.oussamabenberkane.espritlivre.web.rest.errors.BadRequestAlertException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.poi.ss.usermodel.*;
@@ -16,9 +17,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -554,22 +555,18 @@ public class AppUserService {
     }
 
     /**
-     * Get all non-admin users with optional filtering and sorting.
+     * Get all non-admin users with optional active filter, free-text search and sorting.
      *
      * @param active Optional filter for active/inactive users (null = all users)
+     * @param search Optional free-text search (login, name, email, phone); null/blank = no filter
      * @param pageable Pagination and sorting information
      * @return Page of non-admin users
      */
     @Transactional(readOnly = true)
-    public Page<AppUserDTO> getAllNonAdminUsers(Boolean active, Pageable pageable) {
-        LOG.debug("Request to get all non-admin users with active filter: {}", active);
+    public Page<AppUserDTO> getAllNonAdminUsers(Boolean active, String search, Pageable pageable) {
+        LOG.debug("Request to get all non-admin users with active filter: {} and search: {}", active, search);
 
-        Page<User> users;
-        if (active != null) {
-            users = userRepository.findAllByActivatedAndAuthoritiesNotContaining(active, "ROLE_ADMIN", pageable);
-        } else {
-            users = userRepository.findAllByAuthoritiesNotContaining("ROLE_ADMIN", pageable);
-        }
+        Page<User> users = userRepository.findAll(buildNonAdminUserSpec(active, search), pageable);
 
         // Aggregate order count / amount paid for the current page only (one extra query, no N+1).
         List<String> userIds = users.getContent().stream().map(User::getId).toList();
@@ -589,6 +586,21 @@ public class AppUserService {
             }
             return dto;
         });
+    }
+
+    /**
+     * Build the Specification for the admin non-admin-users listing/export:
+     * excludes ROLE_ADMIN accounts, then applies the optional active and free-text filters.
+     * Shared by {@link #getAllNonAdminUsers} and {@link #exportUsersToExcel} so both stay in sync.
+     *
+     * @param active Optional activation filter (null = all)
+     * @param search Optional free-text search (null/blank = no filter)
+     * @return the composed specification
+     */
+    private Specification<User> buildNonAdminUserSpec(Boolean active, String search) {
+        return Specification.where(UserSpecifications.withoutAuthority("ROLE_ADMIN"))
+            .and(UserSpecifications.activatedEquals(active))
+            .and(UserSpecifications.searchByText(search));
     }
 
     /**
@@ -617,18 +629,20 @@ public class AppUserService {
     }
 
     /**
-     * Export all non-admin users to Excel format.
+     * Export non-admin users to Excel format, honoring the same active/search filters
+     * as the admin listing so the export matches what the admin currently sees.
      *
+     * @param active Optional filter for active/inactive users (null = all users)
+     * @param search Optional free-text search (login, name, email, phone); null/blank = no filter
      * @return byte array containing the Excel file
      * @throws IOException if there's an error creating the Excel file
      */
     @Transactional(readOnly = true)
-    public byte[] exportUsersToExcel() throws IOException {
-        LOG.debug("Request to export all non-admin users to Excel");
+    public byte[] exportUsersToExcel(Boolean active, String search) throws IOException {
+        LOG.debug("Request to export non-admin users to Excel with active filter: {} and search: {}", active, search);
 
-        // Fetch all non-admin users, sorted by creation date descending
-        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Direction.DESC, "createdDate"));
-        List<User> users = userRepository.findAllByAuthoritiesNotContaining("ROLE_ADMIN", pageable).getContent();
+        // Fetch matching non-admin users, sorted by creation date descending
+        List<User> users = userRepository.findAll(buildNonAdminUserSpec(active, search), Sort.by(Sort.Direction.DESC, "createdDate"));
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Users");
