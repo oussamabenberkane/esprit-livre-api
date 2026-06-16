@@ -50,6 +50,28 @@ curl -s https://api.espritlivre.com/management/health    # API health
 
 ---
 
+## SSH access
+
+Authorized public keys for the `root` user on the VPS (`185.187.235.22`).
+
+| Owner | Key |
+|---|---|
+| talantikitabdelhadi9@gmail.com | `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAK6B0hecAmLrdAJ9hwMaWgKRCdqC/jiKVc1EB6fYq+` |
+
+### Grant access (run on the server)
+
+```bash
+ssh personal   # log in with an already-authorized key
+
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAK6B0hecAmLrdAJ9hwMaWgKRCdqC/jiKVc1EB6fYq+ talantikitabdelhadi9@gmail.com' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+> Only add **public** keys here. Never paste a private key into this file or `authorized_keys`.
+
+---
+
 ## SSL certificates
 
 Certs live in `nginx/ssl/` (copied from Let's Encrypt). Two pairs:
