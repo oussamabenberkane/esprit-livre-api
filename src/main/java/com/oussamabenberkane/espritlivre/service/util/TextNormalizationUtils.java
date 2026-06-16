@@ -1,12 +1,34 @@
 package com.oussamabenberkane.espritlivre.service.util;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Utility class for text normalization in search operations.
  * Provides methods for accent-insensitive text matching and phone number normalization.
  */
 public final class TextNormalizationUtils {
+
+    /**
+     * Book binding/format descriptors (accent-free, lowercase) that catalog feeds and external
+     * product names sometimes append to a title, e.g. "La femme de ménage-broché".
+     * These formats are not stored on the Book entity, so when present in a search term they
+     * make the contiguous LIKE match fail and the search returns nothing. They are stripped
+     * from the end of the search term before matching.
+     */
+    private static final Set<String> BOOK_FORMAT_KEYWORDS = Set.of(
+        "broche", // broché - paperback
+        "relie", // relié - hardcover
+        "poche", // livre de poche
+        "cartonne", // cartonné
+        "souple", // couverture souple
+        "rigide", // couverture rigide
+        "paperback",
+        "hardcover"
+    );
 
     private TextNormalizationUtils() {
         // Utility class, prevent instantiation
@@ -39,6 +61,35 @@ public final class TextNormalizationUtils {
             .replaceAll("[\\-–—]", " ")
             .replaceAll("\\s+", " ")
             .trim();
+    }
+
+    /**
+     * Remove trailing book-format descriptors (broché, relié, poche, ...) from an already
+     * accent-normalized, space-separated search term so a query like "la femme de menage broche"
+     * still matches the stored title "La femme de ménage".
+     *
+     * Only trailing format tokens are stripped, and at least one token is always kept, so that a
+     * deliberate search for "broché" alone still works. Because the remaining prefix is still a
+     * substring of the full title, a contiguous LIKE match can never be lost by this step.
+     *
+     * Examples:
+     * - "la femme de menage broche" -> "la femme de menage"
+     * - "la femme de menage" -> "la femme de menage" (unchanged)
+     * - "broche" -> "broche" (kept, nothing else to fall back to)
+     *
+     * @param normalizedText accent-normalized, lowercase, space-separated text
+     * @return the text with trailing format descriptors removed
+     */
+    public static String stripBookFormatKeywords(String normalizedText) {
+        if (normalizedText == null || normalizedText.isBlank()) {
+            return normalizedText == null ? "" : normalizedText;
+        }
+        List<String> tokens = new ArrayList<>(Arrays.asList(normalizedText.trim().split("\\s+")));
+        // Strip trailing format descriptors while keeping at least one meaningful token.
+        while (tokens.size() > 1 && BOOK_FORMAT_KEYWORDS.contains(tokens.get(tokens.size() - 1))) {
+            tokens.remove(tokens.size() - 1);
+        }
+        return String.join(" ", tokens);
     }
 
     /**

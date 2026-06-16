@@ -92,8 +92,14 @@ public class BookSpecifications {
                 return builder.conjunction();
             }
 
-            // Normalize search term to remove accents for consistent matching
-            String normalizedSearch = TextNormalizationUtils.normalizeForSearch(searchTerm);
+            // Normalize search term to remove accents for consistent matching, then drop any
+            // trailing book-format descriptors (e.g. "-broché") that are not stored on the entity.
+            String normalizedSearch = TextNormalizationUtils.stripBookFormatKeywords(
+                TextNormalizationUtils.normalizeForSearch(searchTerm)
+            );
+            if (normalizedSearch.isEmpty()) {
+                return builder.conjunction();
+            }
             String searchPattern = "%" + normalizedSearch + "%";
             query.distinct(true);
 
