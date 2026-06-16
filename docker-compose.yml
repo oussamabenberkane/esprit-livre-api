@@ -251,6 +251,7 @@ services:
       - keycloak
       - user-frontend
       - admin-frontend
+      - whatsapp-agent
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
@@ -261,6 +262,81 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # ===========================================
+  # Redis (shared state for the WhatsApp agent)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: espritlivre-redis
+    restart: unless-stopped
+    # RDB snapshots (no AOF) so a dump.rdb always exists for the backup script.
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "no"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ===========================================
+  # WhatsApp Agent (WhatsApp Cloud API + Messenger + Instagram)
+  # ===========================================
+  whatsapp-agent:
+    build:
+      context: ../whatsapp-agent
+      dockerfile: Dockerfile
+    image: espritlivre/whatsapp-agent:${VERSION:-latest}
+    container_name: espritlivre-whatsapp-agent
+    restart: unless-stopped
+    environment:
+      # WhatsApp Cloud API (Meta)
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:?WHATSAPP_TOKEN is required}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:?WHATSAPP_PHONE_NUMBER_ID is required}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:?WHATSAPP_VERIFY_TOKEN is required}
+      GRAPH_API_VERSION: ${GRAPH_API_VERSION:-v23.0}
+      # LLM
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:?MISTRAL_API_KEY is required}
+      MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
+      # Messenger + Instagram (optional — empty disables those channels)
+      PAGE_ACCESS_TOKEN: ${PAGE_ACCESS_TOKEN:-}
+      # Catalog API (public endpoints; hairpins back through nginx)
+      CATALOG_API_URL: https://api.${DOMAIN:-espritlivre.com}
+      # Shared state — required for multi-worker dedup/history
+      REDIS_URL: redis://redis:6379/0
+    networks:
+      - backend
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Image has no curl; use the bundled python.
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 # ===========================================
 # Volumes
@@ -276,6 +352,8 @@ volumes:
     name: espritlivre_api_logs
   nginx_cache:
     name: espritlivre_nginx_cache
+  redis_data:
+    name: espritlivre_redis_data
 
 # ===========================================
 # Networks

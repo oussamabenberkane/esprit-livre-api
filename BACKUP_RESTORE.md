@@ -17,6 +17,7 @@ scripts/restore-prod.sh --postgres
 
 # Actually restore (prompts for typed timestamp unless --yes):
 scripts/restore-prod.sh --postgres --execute
+scripts/restore-prod.sh --redis --execute      # whatsapp agent state only
 scripts/restore-prod.sh --all --execute --yes
 ```
 
@@ -32,6 +33,7 @@ A run dir has these files (sizes as of 2026-04-12, will grow):
 | `postgres.dump` | `pg_dump -F c` of `el-prod-db` (hot, consistent) | 327K |
 | `keycloak-realm.tar.gz` | `kc.sh export --realm jhipster --users realm_file` | 16K |
 | `media.tar.gz` | tar of `espritlivre_api_media` volume | 8.0M |
+| `redis.tar.gz` | tar of `espritlivre_redis_data` volume (whatsapp agent state) | <1M |
 | `host-config.tar.gz` | `/root/esprit-livre/` — compose, nginx confs, `.env` | 53M |
 | `tls-letsencrypt.tar.gz` | `/etc/letsencrypt/` — certs + renewal state | 883K |
 | `MANIFEST.txt` | sizes + sha256 of every file, container list | ~1K |
@@ -69,6 +71,18 @@ passed.
   Safe because media files are write-once; no API process holds open handles
   across the restore.
 
+### redis
+- `espritlivre_redis_data` holds the WhatsApp agent's shared state: conversation
+  history (`wa:hist:*`, 24h TTL) and webhook dedup (`wa:seen:*`, 1h TTL). It is
+  **ephemeral by design** — losing it only means the bot forgets recent context
+  and may re-process a webhook delivered during the gap. We still snapshot it
+  because it's cheap and gives conversation continuity across a restore.
+- Backup runs `redis-cli SAVE` (synchronous RDB write) then tars the volume
+  read-only — same throwaway-`alpine` idiom as media.
+- Restore **stops `espritlivre-whatsapp-agent` and `espritlivre-redis`**, wipes &
+  untars the volume, then starts both. Redis loads the restored `dump.rdb` on
+  start; the agent is restarted so it reconnects cleanly.
+
 ### tls
 - `/etc/letsencrypt/` lives **on the host**, not in a volume.
 - Restore untars into `/etc/` and restarts `espritlivre-nginx`. Brief
@@ -94,9 +108,11 @@ passed.
 - **Fail-fast, no rollback**: if any step errors, remaining steps are
   skipped and the script prints `applied` / `failed` / `skipped` and exits
   non-zero. Prod will be in a mixed state — investigate manually.
-- **Restore order** is fixed: postgres → keycloak → media → tls → host-config.
-  Don't change it: postgres must be restored before the API comes back up,
-  and KC must reload its realm before handling auth against the restored DB.
+- **Restore order** is fixed: postgres → keycloak → media → redis → tls →
+  host-config. Don't change it: postgres must be restored before the API comes
+  back up, and KC must reload its realm before handling auth against the
+  restored DB. Redis is independent of the others but kept before tls so all
+  data-volume restores happen together.
 
 ## Server topology (facts, don't re-probe)
 
@@ -110,10 +126,13 @@ passed.
   - `espritlivre-keycloak` — Keycloak 26.2.3
   - `espritlivre-nginx` — nginx:alpine (containerized, **not** on host)
   - `espritlivre-user-frontend`, `espritlivre-admin-frontend` — stateless
+  - `espritlivre-whatsapp-agent` — Flask/gunicorn bot, fronted at `bot.espritlivre.com`
+  - `espritlivre-redis` — Redis 7, whatsapp agent shared state
 - Postgres: user `el`, db `el-prod-db`
 - Keycloak: realm `jhipster`
 - Named volumes: `espritlivre_postgres_data`, `espritlivre_api_media`,
-  `espritlivre_keycloak_data`, `espritlivre_api_logs`, `espritlivre_nginx_cache`
+  `espritlivre_keycloak_data`, `espritlivre_api_logs`, `espritlivre_nginx_cache`,
+  `espritlivre_redis_data`
 - TLS certs: `/etc/letsencrypt/live/app.espritlivre.com/` (subdomains), `/etc/letsencrypt/live/espritlivre.com/` (apex, on the host)
 - Public URL: `https://espritlivre.com/`
 
@@ -161,7 +180,19 @@ ssh personal '
     rm /tmp/media.tar.gz
 '
 
-# 4. tls
+# 4. redis (whatsapp agent state)
+scp "$B/redis.tar.gz" personal:/tmp/
+ssh personal '
+    docker stop espritlivre-whatsapp-agent espritlivre-redis
+    docker run --rm \
+        -v espritlivre_redis_data:/dst \
+        -v /tmp/redis.tar.gz:/src.tar.gz:ro \
+        alpine sh -c "rm -rf /dst/* /dst/.[!.]* 2>/dev/null || true; tar -C /dst -xzf /src.tar.gz"
+    docker start espritlivre-redis espritlivre-whatsapp-agent
+    rm /tmp/redis.tar.gz
+'
+
+# 5. tls
 scp "$B/tls-letsencrypt.tar.gz" personal:/tmp/
 ssh personal '
     tar -C /etc -xzf /tmp/tls-letsencrypt.tar.gz
@@ -169,7 +200,7 @@ ssh personal '
     rm /tmp/tls-letsencrypt.tar.gz
 '
 
-# 5. host-config (ONLY on a fresh host)
+# 6. host-config (ONLY on a fresh host)
 scp "$B/host-config.tar.gz" personal:/tmp/
 ssh personal '
     tar -C /root -xzf /tmp/host-config.tar.gz

@@ -105,6 +105,19 @@ ssh "$SSH_HOST" "
         alpine tar -C /src -czf /out/media.tar.gz .
 " || fail "media tar failed"
 
+# Redis holds the WhatsApp agent's conversation history + webhook dedup. It's
+# TTL'd/ephemeral, but cheap to capture. SAVE forces a synchronous RDB write so
+# the on-disk dump.rdb is current before we tar the volume read-only.
+log "snapshotting redis (whatsapp agent state)"
+ssh "$SSH_HOST" "
+    set -e
+    docker exec espritlivre-redis redis-cli SAVE >/dev/null
+    docker run --rm \
+        -v espritlivre_redis_data:/src:ro \
+        -v '$REMOTE_STAGE':/out \
+        alpine tar -C /src -czf /out/redis.tar.gz .
+" || fail "redis snapshot failed"
+
 log "archiving host config (compose, nginx, .env)"
 ssh "$SSH_HOST" "tar -C /root -czf '$REMOTE_STAGE/host-config.tar.gz' esprit-livre" \
     || fail "host-config tar failed"

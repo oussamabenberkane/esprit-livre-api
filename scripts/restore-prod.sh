@@ -8,12 +8,13 @@
 #   --postgres       drop & recreate el-prod-db, pg_restore from postgres.dump
 #   --keycloak       kc.sh import --override true (realm jhipster)
 #   --media          wipe & repopulate the espritlivre_api_media volume
+#   --redis          wipe & repopulate the espritlivre_redis_data volume
 #   --tls            extract tls-letsencrypt.tar.gz into /etc/, restart nginx
 #   --host-config    print manual extraction instructions (NO automated action)
 #   --all            select every component above
 #
 # Default is DRY RUN — prints the commands it would run. Pass --execute to
-# actually run them. Destructive components (postgres/keycloak/media) then
+# actually run them. Destructive components (postgres/keycloak/media/redis) then
 # require a typed-timestamp confirmation unless --yes is also passed. --tls
 # alone prompts for a y/N confirmation unless --yes.
 #
@@ -28,13 +29,14 @@ BACKUP_DIR=""
 DO_POSTGRES=0
 DO_KEYCLOAK=0
 DO_MEDIA=0
+DO_REDIS=0
 DO_TLS=0
 DO_HOSTCONFIG=0
 EXECUTE=0
 ASSUME_YES=0
 
 usage() {
-    sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 for arg in "$@"; do
@@ -42,9 +44,10 @@ for arg in "$@"; do
         --postgres)    DO_POSTGRES=1 ;;
         --keycloak)    DO_KEYCLOAK=1 ;;
         --media)       DO_MEDIA=1 ;;
+        --redis)       DO_REDIS=1 ;;
         --tls)         DO_TLS=1 ;;
         --host-config) DO_HOSTCONFIG=1 ;;
-        --all)         DO_POSTGRES=1; DO_KEYCLOAK=1; DO_MEDIA=1; DO_TLS=1; DO_HOSTCONFIG=1 ;;
+        --all)         DO_POSTGRES=1; DO_KEYCLOAK=1; DO_MEDIA=1; DO_REDIS=1; DO_TLS=1; DO_HOSTCONFIG=1 ;;
         --execute)     EXECUTE=1 ;;
         --yes)         ASSUME_YES=1 ;;
         -h|--help)     usage; exit 0 ;;
@@ -59,9 +62,9 @@ BACKUP_DIR="$(readlink -f "$BACKUP_DIR")"
 [[ -d "$BACKUP_DIR" ]] || { echo "not a directory: $BACKUP_DIR" >&2; exit 1; }
 BACKUP_TS="$(basename "$BACKUP_DIR")"
 
-SELECTED=$((DO_POSTGRES + DO_KEYCLOAK + DO_MEDIA + DO_TLS + DO_HOSTCONFIG))
+SELECTED=$((DO_POSTGRES + DO_KEYCLOAK + DO_MEDIA + DO_REDIS + DO_TLS + DO_HOSTCONFIG))
 if (( SELECTED == 0 )); then
-    echo "no components selected — pick at least one (--postgres, --keycloak, --media, --tls, --host-config, --all)" >&2
+    echo "no components selected — pick at least one (--postgres, --keycloak, --media, --redis, --tls, --host-config, --all)" >&2
     exit 2
 fi
 
@@ -81,14 +84,15 @@ PLAN=()
 (( DO_POSTGRES ))   && PLAN+=("postgres")
 (( DO_KEYCLOAK ))   && PLAN+=("keycloak")
 (( DO_MEDIA ))      && PLAN+=("media")
+(( DO_REDIS ))      && PLAN+=("redis")
 (( DO_TLS ))        && PLAN+=("tls")
 (( DO_HOSTCONFIG )) && PLAN+=("host-config")
 
 DESTRUCTIVE=0
-(( DO_POSTGRES + DO_KEYCLOAK + DO_MEDIA > 0 )) && DESTRUCTIVE=1
+(( DO_POSTGRES + DO_KEYCLOAK + DO_MEDIA + DO_REDIS > 0 )) && DESTRUCTIVE=1
 
 NEEDS_REMOTE=0
-(( DO_POSTGRES + DO_KEYCLOAK + DO_MEDIA + DO_TLS > 0 )) && NEEDS_REMOTE=1
+(( DO_POSTGRES + DO_KEYCLOAK + DO_MEDIA + DO_REDIS + DO_TLS > 0 )) && NEEDS_REMOTE=1
 
 echo
 echo "=== restore plan ==="
@@ -139,6 +143,21 @@ docker run --rm \\
 EOF
 }
 
+plan_redis() {
+cat <<EOF
+----- redis -----
+docker stop espritlivre-whatsapp-agent
+docker stop espritlivre-redis
+docker run --rm \\
+    -v espritlivre_redis_data:/dst \\
+    -v '$REMOTE_STAGE/redis.tar.gz':/src.tar.gz:ro \\
+    alpine sh -c 'rm -rf /dst/* /dst/.[!.]* 2>/dev/null || true; tar -C /dst -xzf /src.tar.gz'
+docker start espritlivre-redis
+docker start espritlivre-whatsapp-agent
+
+EOF
+}
+
 plan_tls() {
 cat <<EOF
 ----- tls -----
@@ -166,6 +185,7 @@ for step in "${PLAN[@]}"; do
         postgres)    plan_postgres ;;
         keycloak)    plan_keycloak ;;
         media)       plan_media ;;
+        redis)       plan_redis ;;
         tls)         plan_tls ;;
         host-config) plan_hostconfig ;;
     esac
@@ -183,6 +203,7 @@ if (( DESTRUCTIVE == 1 && ASSUME_YES == 0 )); then
     (( DO_POSTGRES )) && destructive_list+="postgres "
     (( DO_KEYCLOAK )) && destructive_list+="keycloak "
     (( DO_MEDIA ))    && destructive_list+="media "
+    (( DO_REDIS ))    && destructive_list+="redis "
     echo "!!! this will destroy prod data for: ${destructive_list}"
     echo "    backup timestamp: ${BACKUP_TS}"
     read -r -p "type the timestamp to confirm: " reply
@@ -257,6 +278,24 @@ docker run --rm \
 EOF
 }
 
+run_redis() {
+    log "restore: redis"
+    ssh "$SSH_HOST" bash -s <<EOF
+set -e
+# Stop the agent (writer) and redis before swapping the volume, so redis
+# doesn't overwrite the restored dump.rdb on shutdown. Redis loads the RDB on
+# the next start.
+docker stop espritlivre-whatsapp-agent >/dev/null
+docker stop espritlivre-redis >/dev/null
+docker run --rm \
+    -v espritlivre_redis_data:/dst \
+    -v '$REMOTE_STAGE/redis.tar.gz':/src.tar.gz:ro \
+    alpine sh -c 'rm -rf /dst/* /dst/.[!.]* 2>/dev/null || true; tar -C /dst -xzf /src.tar.gz'
+docker start espritlivre-redis >/dev/null
+docker start espritlivre-whatsapp-agent >/dev/null
+EOF
+}
+
 run_tls() {
     log "restore: tls"
     ssh "$SSH_HOST" bash -s <<EOF
@@ -274,6 +313,7 @@ run_step() {
         postgres)    run_postgres ;;
         keycloak)    run_keycloak ;;
         media)       run_media ;;
+        redis)       run_redis ;;
         tls)         run_tls ;;
         host-config) log "skipping host-config (manual-only component)"; return 0 ;;
     esac
