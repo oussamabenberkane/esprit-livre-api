@@ -186,6 +186,19 @@ Fill in all the required values in `.env`:
 - OAuth client secret (from Keycloak)
 - Shipping API keys
 - Email credentials
+- `INTERNAL_SHARED_SECRET` — WhatsApp ↔ admin handoff secret (see note below)
+
+> **`INTERNAL_SHARED_SECRET` (WhatsApp admin handoff).** Shared secret that authenticates the
+> private bot↔API endpoints (`/internal/**`, reachable only on the docker network — nginx returns
+> 404 publicly). Generate one with `openssl rand -base64 32` and set it **once** in `.env`; the same
+> value is consumed by both the `api` service (`INTERNAL_SHARED_SECRET` → `application.bot.shared-secret`)
+> and the `whatsapp-agent` service (injected as `INTERNAL_API_SECRET`). If left empty, conversation
+> persistence and the admin take-over/reply features are disabled and the bot simply keeps answering
+> customers on its own (fail-open) — nothing else breaks.
+>
+> ```bash
+> echo "INTERNAL_SHARED_SECRET=$(openssl rand -base64 32)" >> .env
+> ```
 
 ### 3. Setup SSL Certificates
 
@@ -397,6 +410,7 @@ docker exec -it espritlivre-nginx nginx -t
 ## Security Checklist
 
 - [ ] Strong passwords in `.env` (use `openssl rand -base64 32`)
+- [ ] `INTERNAL_SHARED_SECRET` set in `.env` (bot↔API handoff; `openssl rand -base64 32`)
 - [ ] SSL certificates properly configured
 - [ ] Firewall configured (only 80, 443 open)
 - [ ] Regular backups configured

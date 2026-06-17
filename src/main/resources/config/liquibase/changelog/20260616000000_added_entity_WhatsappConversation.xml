@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20260616000000-seq" author="esprit-livre">
+        <createSequence sequenceName="whatsapp_conversation_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <!--
+        Added the entity Conversation (messaging inbox, channel-agnostic).
+    -->
+    <changeSet id="20260616000000-1" author="esprit-livre">
+        <createTable tableName="whatsapp_conversation">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="channel" type="varchar(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="sender_id" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="customer_name" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="customer_phone" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="status" type="varchar(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="last_message_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="last_message_snippet" type="varchar(500)">
+                <constraints nullable="true" />
+            </column>
+            <column name="last_inbound_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="unread_count" type="integer" defaultValueNumeric="0">
+                <constraints nullable="true" />
+            </column>
+            <column name="escalation_reason" type="varchar(500)">
+                <constraints nullable="true" />
+            </column>
+            <column name="assigned_to" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="active" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="true" />
+            </column>
+            <column name="created_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="updated_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+            tableName="whatsapp_conversation"
+            columnNames="channel, sender_id"
+            constraintName="ux_whatsapp_conversation__channel_sender"/>
+
+        <createIndex tableName="whatsapp_conversation" indexName="idx_whatsapp_conversation__last_message_at">
+            <column name="last_message_at"/>
+        </createIndex>
+
+        <dropDefaultValue tableName="whatsapp_conversation" columnName="last_message_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="whatsapp_conversation" columnName="last_inbound_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="whatsapp_conversation" columnName="created_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="whatsapp_conversation" columnName="updated_at" columnDataType="${datetimeType}"/>
+    </changeSet>
+</databaseChangeLog>

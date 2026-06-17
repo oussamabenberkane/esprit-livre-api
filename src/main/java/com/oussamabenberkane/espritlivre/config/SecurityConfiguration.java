@@ -9,6 +9,7 @@ import com.oussamabenberkane.espritlivre.security.oauth2.AudienceValidator;
 import com.oussamabenberkane.espritlivre.security.oauth2.CustomClaimConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oussamabenberkane.espritlivre.repository.UserRepository;
+import com.oussamabenberkane.espritlivre.web.filter.InternalAuthFilter;
 import com.oussamabenberkane.espritlivre.web.filter.UserActivationCheckFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -70,7 +71,12 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc, UserActivationCheckFilter userActivationCheckFilter) throws Exception {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        MvcRequestMatcher.Builder mvc,
+        UserActivationCheckFilter userActivationCheckFilter,
+        ApplicationProperties applicationProperties
+    ) throws Exception {
         http
             .cors(withDefaults())
             .csrf(csrf ->
@@ -82,6 +88,8 @@ public class SecurityConfiguration {
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/webhooks/**"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/delivery-fee/**"))
                     .ignoringRequestMatchers(mvc.pattern(HttpMethod.POST, "/api/pixel/**"))
+                    // Server-to-server bot calls (shared-secret auth, no browser/CSRF cookie).
+                    .ignoringRequestMatchers(mvc.pattern("/internal/**"))
             )
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
@@ -132,6 +140,8 @@ public class SecurityConfiguration {
                     .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/relay-points/search")).permitAll()
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).authenticated()
+                    // Bot-only endpoints — authenticated by the shared-secret InternalAuthFilter.
+                    .requestMatchers(mvc.pattern("/internal/**")).hasAuthority(InternalAuthFilter.AUTHORITY)
                     .requestMatchers(mvc.pattern("/websocket/**")).authenticated()
                     .requestMatchers(mvc.pattern("/v3/api-docs/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/management/health")).permitAll()
@@ -143,6 +153,10 @@ public class SecurityConfiguration {
             .oauth2Login(oauth2 -> oauth2.loginPage("/").userInfoEndpoint(userInfo -> userInfo.oidcUserService(this.oidcUserService())))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(authenticationConverter())))
             .oauth2Client(withDefaults())
+            .addFilterBefore(
+                new InternalAuthFilter(applicationProperties.getBot().getSharedSecret()),
+                org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class
+            )
             .addFilterAfter(userActivationCheckFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
         return http.build();
     }

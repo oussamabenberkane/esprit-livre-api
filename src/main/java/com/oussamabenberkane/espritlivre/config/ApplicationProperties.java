@@ -23,6 +23,8 @@ public class ApplicationProperties {
 
     private final Meta meta = new Meta();
 
+    private final Bot bot = new Bot();
+
     // jhipster-needle-application-properties-property
 
     public Liquibase getLiquibase() {
@@ -59,6 +61,10 @@ public class ApplicationProperties {
 
     public Meta getMeta() {
         return meta;
+    }
+
+    public Bot getBot() {
+        return bot;
     }
 
     // jhipster-needle-application-properties-property-getter
@@ -143,6 +149,32 @@ public class ApplicationProperties {
 
         public void setTestEventCode(String testEventCode) {
             this.testEventCode = testEventCode;
+        }
+    }
+
+    /**
+     * WhatsApp/messaging bot integration. The API calls the bot's internal send endpoint
+     * over the docker network (never via the public internet) using a shared secret.
+     */
+    public static class Bot {
+
+        private String internalUrl = "http://whatsapp-agent:8000";
+        private String sharedSecret;
+
+        public String getInternalUrl() {
+            return internalUrl;
+        }
+
+        public void setInternalUrl(String internalUrl) {
+            this.internalUrl = internalUrl;
+        }
+
+        public String getSharedSecret() {
+            return sharedSecret;
+        }
+
+        public void setSharedSecret(String sharedSecret) {
+            this.sharedSecret = sharedSecret;
         }
     }
 

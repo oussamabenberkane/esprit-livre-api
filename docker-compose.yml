@@ -127,6 +127,10 @@ services:
       META_PIXEL_ID: ${META_PIXEL_ID:-}
       META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
       META_TEST_EVENT_CODE: ${META_TEST_EVENT_CODE:-}
+      # WhatsApp bot handoff: internal endpoint (docker network) + shared secret.
+      # Empty secret disables admin->bot delivery until set in .env.
+      BOT_INTERNAL_URL: http://whatsapp-agent:8000
+      INTERNAL_SHARED_SECRET: ${INTERNAL_SHARED_SECRET:-}
       # Mail (configure your SMTP)
       SPRING_MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       SPRING_MAIL_PORT: ${MAIL_PORT:-587}
@@ -316,6 +320,10 @@ services:
       CATALOG_API_URL: https://api.${DOMAIN:-espritlivre.com}
       # Shared state — required for multi-worker dedup/history
       REDIS_URL: redis://redis:6379/0
+      # API Spring interne (handoff admin) — journal durable + statut + livraison admin.
+      # Même secret que côté API. Vide = journalisation/handoff désactivés (fail-open).
+      INTERNAL_API_URL: http://api:8080
+      INTERNAL_API_SECRET: ${INTERNAL_SHARED_SECRET:-}
     networks:
       - backend
     depends_on:

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20260616000001-seq" author="esprit-livre">
+        <createSequence sequenceName="whatsapp_message_seq" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <!--
+        Added the entity Message.
+    -->
+    <changeSet id="20260616000001-1" author="esprit-livre">
+        <createTable tableName="whatsapp_message">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="direction" type="varchar(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="sender_type" type="varchar(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="content" type="varchar(4096)">
+                <constraints nullable="false" />
+            </column>
+            <column name="external_message_id" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="admin_login" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="sent_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="created_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="conversation_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <dropDefaultValue tableName="whatsapp_message" columnName="sent_at" columnDataType="${datetimeType}"/>
+        <dropDefaultValue tableName="whatsapp_message" columnName="created_at" columnDataType="${datetimeType}"/>
+    </changeSet>
+</databaseChangeLog>

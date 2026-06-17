@@ -245,6 +245,11 @@ jhipster:
 application:
   admin-email: contact@espritlivre.com
   dev-website: https://oussamabenberkane.com
+  bot:
+    # WhatsApp bot internal endpoint, reached over the docker network (never via nginx).
+    internal-url: ${BOT_INTERNAL_URL:http://whatsapp-agent:8000}
+    # Shared secret guarding the bot<->API internal endpoints. Set in prod via .env.
+    shared-secret: ${INTERNAL_SHARED_SECRET:}
 
 shipping:
   origin-wilaya: ${SHIPPING_ORIGIN_WILAYA:Bejaia}

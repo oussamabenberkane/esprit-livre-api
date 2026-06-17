@@ -20,6 +20,8 @@
     <include file="config/liquibase/changelog/20250926220000_added_entity_Author.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251025000000_added_entity_BookPack.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251025000000_added_entity_BookPack_sequence.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260616000000_added_entity_WhatsappConversation.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260616000001_added_entity_Message.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
     <include file="config/liquibase/changelog/20250923211229_added_entity_constraints_Tag.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250923211624_added_entity_constraints_Like.xml" relativeToChangelogFile="false"/>
@@ -27,6 +29,7 @@
     <include file="config/liquibase/changelog/20250923212846_added_entity_constraints_OrderItem.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20250926220001_added_entity_constraints_Author.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251025000000_added_entity_constraints_BookPack.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260616000002_added_entity_constraints_Message.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <include file="config/liquibase/changelog/20250926220002_update_book_author_relationship.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20251004132406_add_user_app_fields.xml" relativeToChangelogFile="false"/>

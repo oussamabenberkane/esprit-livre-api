@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <!--
+        Added the constraints for entity Message.
+    -->
+    <changeSet id="20260616000002-1" author="esprit-livre">
+
+        <addForeignKeyConstraint baseColumnNames="conversation_id"
+                                 baseTableName="whatsapp_message"
+                                 constraintName="fk_whatsapp_message__conversation_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="whatsapp_conversation"
+                                 onDelete="CASCADE"/>
+
+        <!-- Idempotent persistence: a given Meta message id is stored at most once.
+             Postgres allows multiple NULLs, so outbound-without-id rows are unaffected. -->
+        <addUniqueConstraint tableName="whatsapp_message"
+                             columnNames="external_message_id"
+                             constraintName="ux_whatsapp_message__external_message_id"/>
+
+        <createIndex tableName="whatsapp_message" indexName="idx_whatsapp_message__conversation">
+            <column name="conversation_id"/>
+            <column name="id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
