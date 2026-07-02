@@ -81,7 +81,21 @@ Certs live in `nginx/ssl/` (copied from Let's Encrypt). Two pairs:
 | `fullchain.pem` / `privkey.pem` | `app`, `admin`, `api`, `auth`.espritlivre.com |
 | `apex.fullchain.pem` / `apex.privkey.pem` | `espritlivre.com`, `www.espritlivre.com` |
 
-Certbot auto-renews, but the copies in `nginx/ssl/` must be refreshed manually after renewal:
+Renewal is fully automatic since 2026-07-02: the certbot systemd timer (`certbot.timer`, twice
+daily) renews via webroot (`/root/esprit-livre/api/nginx/certbot`, served by the dockerized nginx
+on port 80 at `/.well-known/acme-challenge/`), and a deploy hook copies the renewed pair into
+`nginx/ssl/` and reloads nginx:
+
+- Hook: `/etc/letsencrypt/renewal-hooks/deploy/espritlivre-copy-certs.sh` (only fires after a
+  *successful* renewal; maps `app.espritlivre.com` → `fullchain/privkey.pem` and
+  `espritlivre.com` → `apex.*.pem`)
+- The old bimonthly root-cron (`/root/renew-espritlivre-certs.sh`) is disabled (commented out in
+  `crontab -l`). It copied certs even when renewal failed, which is how the July 2026 expiry went
+  unnoticed. Don't re-enable it.
+- Check renewal health with `certbot certificates` — both espritlivre certs should always show
+  \> 30 days to expiry.
+
+Manual fallback (hook missing or out-of-band copy needed):
 
 ```bash
 # Subdomain cert
@@ -94,6 +108,21 @@ cp /etc/letsencrypt/live/espritlivre.com/privkey.pem   nginx/ssl/apex.privkey.pe
 
 docker exec espritlivre-nginx nginx -s reload
 ```
+
+> **Incident 2026-07-01/02 — api/admin/auth served an expired cert.** The renewal config
+> `/etc/letsencrypt/renewal/app.espritlivre.com.conf` had a hand-edited section header
+> `[[webroot]]` where certbot expects `[[webroot_map]]`, so every renewal attempt (certbot.timer
+> and the old cron) died asking interactively for a webroot, while the cron script still copied
+> the expired files and logged success. Fixed by renaming the section, adding a `webroot_path`
+> fallback, renewing, and installing the deploy hook above.
+
+> **Open issue — apex cert can't renew until www DNS is fixed.** `www.espritlivre.com` currently
+> CNAMEs to `legacy.espritlivre.com` (65.21.166.134 — a different server), so the http-01
+> challenge for `www` returns 404 from the wrong box and renewal of the apex cert
+> (`espritlivre.com` + `www.espritlivre.com`) fails. **The apex cert expires 2026-07-22.**
+> Either point `www` back to `espritlivre.com` (per the DNS table below), or reissue the apex
+> cert without `www`:
+> `certbot certonly --cert-name espritlivre.com --webroot -w /root/esprit-livre/api/nginx/certbot -d espritlivre.com`
 
 ---
 
